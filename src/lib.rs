@@ -1,7 +1,9 @@
+mod window;
 mod tuples;
 
 use std::error::Error;
 
+use crate::window::mycanvas::MyCanvas;
 use crate::tuples::coord::Point;
 use crate::tuples::coord::Vector;
 use crate::tuples::color::Color;
@@ -37,12 +39,11 @@ impl Environment {
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    // projectile starts one unit above the origin.​
-    // velocity is normalized to 1 unit/tick.​
-    
+    let canvas = MyCanvas::new(900, 550);
+
     let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 
-        Vector::new(1.0, 1.0, 0.0).normalize()
+        Vector::new(1.0, 1.8, 0.0).normalize() * 11.25
     );
     
     let e = Environment::new(
@@ -51,11 +52,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     );
     
     while p.position.y > 0.0 {
-        println!("{:?}", p);
-        println!("{:?}", e);
-        println!("");
+        canvas.draw(Color::new(1.0, 0.8, 0.6), p.position.x as usize, canvas.height - p.position.y as usize);
         p = tick(&e, &p);
     }
+
+    canvas.to_PPM("C:\\Users\\peter\\Downloads\\test.ppm");
 
     return Ok(());
 }
