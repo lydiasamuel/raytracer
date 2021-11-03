@@ -2,8 +2,9 @@ mod tuples;
 
 use std::error::Error;
 
-use tuples::Point;
-use tuples::Vector;
+use crate::tuples::coord::Point;
+use crate::tuples::coord::Vector;
+use crate::tuples::color::Color;
 
 #[derive(Debug)]
 struct Projectile {
