@@ -1,5 +1,6 @@
 mod window;
 mod tuples;
+mod matrices;
 
 use std::error::Error;
 use std::fs;
@@ -9,6 +10,7 @@ use crate::tuples::vector::Vector;
 use crate::tuples::color::Color;
 use crate::tuples::projectile::Projectile;
 use crate::tuples::environment::Environment;
+use crate::matrices::matrix::Matrix;
 
 pub struct Config {
     pub filename: String,
@@ -34,7 +36,19 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let height = 550;
     let canvas = MyCanvas::new(width, height);
 
-    let mut p = Projectile::new(
+    let dataA = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
+    let dataB = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.5, 6.0]];
+    let matrixA = Matrix::from_rows(&dataA);
+    let matrixB = Matrix::from_rows(&dataB);
+
+    if (matrixA == matrixB) {
+        println!("YES");
+    }
+    else {
+        println!("NO")
+    }
+
+    /*let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 
         Vector::new(1.0, 1.8, 0.0).normalize() * 11.25
     );
@@ -49,7 +63,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         p = tick(&e, &p);
     }
 
-    canvas.to_PPM(config.filename.as_str());
+    canvas.to_PPM(config.filename.as_str());*/
 
     return Ok(());
 }
