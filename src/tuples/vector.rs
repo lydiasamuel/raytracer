@@ -1,4 +1,5 @@
 use std::ops::{Add, Sub, Mul, Div, Neg};
+use crate::tuples::point::Point;
 
 const EPSILON: f64 = 0.00001;
 
@@ -7,7 +8,7 @@ pub struct Vector {
     pub x: f64,
     pub y: f64,
     pub z: f64,
-    w: f64
+    pub w: f64
 }
 
 impl Vector {
@@ -165,12 +166,4 @@ impl Sub<Point> for Vector {
             w: self.w - rhs.w
         };
     }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Point {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-    w: f64
 }

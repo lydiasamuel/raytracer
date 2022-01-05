@@ -1,0 +1,135 @@
+use std::ops::{Add, Sub, Mul, Div, Neg};
+use crate::tuples::vector::Vector;
+
+const EPSILON: f64 = 0.00001;
+
+#[derive(Debug, Copy, Clone)]
+pub struct Point {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64
+}
+
+impl Point {
+    pub fn new(x: f64, y: f64, z: f64) -> Point {
+        return Point {
+            x,
+            y,
+            z,
+            w: 1.0
+        };
+    }
+}
+
+impl PartialEq for Point {
+    fn eq(&self, other: &Self) -> bool {
+        if (self.x - other.x).abs() > EPSILON {
+            return false;
+        }
+        else if (self.y - other.y).abs() > EPSILON {
+            return false;
+        }
+        else if (self.z - other.z).abs() > EPSILON {
+            return false;
+        }
+        else if (self.w - other.w).abs() > EPSILON {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+}
+
+impl Neg for Point {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        return Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            w: -self.w
+        };
+    }
+}
+
+impl Mul<f64> for Point {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self {
+        return Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+            w: self.w * rhs
+        }
+    }
+}
+
+impl Div<f64> for Point {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self {
+        return Self {
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
+            w: self.w / rhs
+        }
+    }
+}
+
+// Might not make sense
+impl Add for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        return Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+            w: self.w + rhs.w
+        };
+    }
+}
+
+impl Add<Vector> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Vector) -> Self {
+        return Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+            w: self.w + rhs.w
+        };
+    }
+}
+
+impl Sub for Point {
+    type Output = Vector;
+
+    fn sub(self, rhs: Self) -> Vector {
+        return Vector {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+            w: self.w - rhs.w
+        };
+    }
+}
+
+impl Sub<Vector> for Point {
+    type Output = Point;
+
+    fn sub(self, rhs: Vector) -> Point {
+        return Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+            w: self.w - rhs.w
+        };
+    }
+}

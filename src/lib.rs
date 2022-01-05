@@ -2,44 +2,37 @@ mod window;
 mod tuples;
 
 use std::error::Error;
-
+use std::fs;
 use crate::window::mycanvas::MyCanvas;
-use crate::tuples::coord::Point;
-use crate::tuples::coord::Vector;
+use crate::tuples::point::Point;
+use crate::tuples::vector::Vector;
 use crate::tuples::color::Color;
+use crate::tuples::projectile::Projectile;
+use crate::tuples::environment::Environment;
 
-#[derive(Debug)]
-struct Projectile {
-    pub position: Point,
-    pub velocity: Vector
+pub struct Config {
+    pub filename: String,
 }
 
-impl Projectile {
-    pub fn new(position: Point, velocity: Vector) -> Projectile {
-        return Projectile {
-            position,
-            velocity
-        };
-    }
-}
-
-#[derive(Debug)]
-struct Environment {
-    pub gravity: Vector,
-    pub wind: Vector
-}
-
-impl Environment {
-    pub fn new(gravity: Vector, wind: Vector) -> Environment {
-        return Environment {
-            gravity,
-            wind
+impl Config {
+    pub fn new(args: &[String]) -> Result<Config, &str> {
+        // --snip--
+        if args.len() != 2 {
+            return Err("not enough arguments");
         }
+
+        let filename = args[1].clone();
+
+        return Ok(Config {
+            filename
+        });
     }
 }
 
-pub fn run() -> Result<(), Box<dyn Error>> {
-    let canvas = MyCanvas::new(900, 550);
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let width = 900;
+    let height = 550;
+    let canvas = MyCanvas::new(width, height);
 
     let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 
@@ -52,11 +45,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     );
     
     while p.position.y > 0.0 {
-        canvas.draw(Color::new(1.0, 0.8, 0.6), p.position.x as usize, canvas.height - p.position.y as usize);
+        canvas.draw(Color::new(1.0, 0.8, 0.6), p.position.x as usize, height - p.position.y as usize);
         p = tick(&e, &p);
     }
 
-    canvas.to_PPM("C:\\Users\\peter\\Downloads\\test.ppm");
+    canvas.to_PPM(config.filename.as_str());
 
     return Ok(());
 }
