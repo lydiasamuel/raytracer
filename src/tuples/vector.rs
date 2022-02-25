@@ -79,7 +79,7 @@ impl PartialEq for Vector {
 impl Neg for Vector {
     type Output = Self;
 
-    fn neg(&self) -> Self {
+    fn neg(self) -> Self {
         return Self {
             x: -self.x,
             y: -self.y,
@@ -92,7 +92,7 @@ impl Neg for Vector {
 impl Mul<f64> for Vector {
     type Output = Self;
 
-    fn mul(&self, rhs: f64) -> Self {
+    fn mul(self, rhs: f64) -> Self {
         return Self {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -105,7 +105,7 @@ impl Mul<f64> for Vector {
 impl Div<f64> for Vector {
     type Output = Self;
 
-    fn div(&self, rhs: f64) -> Self {
+    fn div(self, rhs: f64) -> Self {
         return Self {
             x: self.x / rhs,
             y: self.y / rhs,
@@ -118,7 +118,7 @@ impl Div<f64> for Vector {
 impl Add for Vector {
     type Output = Self;
 
-    fn add(&self, rhs: Self) -> Self {
+    fn add(self, rhs: Self) -> Self {
         return Self {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
@@ -131,7 +131,7 @@ impl Add for Vector {
 impl Add<Point> for Vector {
     type Output = Point;
 
-    fn add(&self, rhs: Point) -> Point {
+    fn add(self, rhs: Point) -> Point {
         return Point {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
@@ -144,7 +144,7 @@ impl Add<Point> for Vector {
 impl Sub for Vector {
     type Output = Self;
 
-    fn sub(&self, rhs: Self) -> Self {
+    fn sub(self, rhs: Self) -> Self {
         return Self {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
@@ -158,7 +158,7 @@ impl Sub for Vector {
 impl Sub<Point> for Vector {
     type Output = Point;
 
-    fn sub(&self, rhs: Point) -> Point {
+    fn sub(self, rhs: Point) -> Point {
         return Point {
             x: self.x - rhs.x,
             y: self.y - rhs.y,

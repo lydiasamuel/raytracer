@@ -48,6 +48,10 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         println!("NO")
     }
 
+    let matrixC = matrixA * matrixB;
+
+    print!("{}", matrixC);
+
     /*let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 
         Vector::new(1.0, 1.8, 0.0).normalize() * 11.25
