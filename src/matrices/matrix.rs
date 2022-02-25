@@ -22,12 +22,12 @@ impl Matrix {
     }
 
     pub fn from_rows(rows: &Vec<Vec<f64>>) -> Matrix {
-        let tmp = Box::new(Array2D::from_rows(rows));
+        let tmp = Array2D::from_rows(rows);
 
         return Matrix {
-            width: tmp.num_cols(),
+            width: tmp.num_columns(),
             height: tmp.num_rows(),
-            grid: tmp,
+            grid: Box::new(tmp),
         };
     }
 
@@ -40,27 +40,11 @@ impl Matrix {
     }
 
     pub fn at(&self, row: usize, col: usize) -> f64 {
-        if row >= self.num_rows() {
-            panic!();
-        }
-        if col >= self.num_cols() {
-            panic!();
-        }
-
         return self.grid[(row, col)];
     }
 
     pub fn set(&mut self, row: usize, col: usize, value: f64) -> Result<(), Error> {
-        if row >= self.num_rows() {
-            panic!();
-        }
-        if col >= self.num_cols() {
-            panic!();
-        }
-
-        self.grid.set(row, col, value);
-
-        return Ok(());
+        self.grid.set(row, col, value)
     }
 }
 

@@ -36,8 +36,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let height = 550;
     let canvas = MyCanvas::new(width, height);
 
-    let dataA = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
-    let dataB = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.5, 6.0]];
+    let dataA = vec![vec![1.0, 2.0], vec![4.0, 5.0]];
+    let dataB = vec![vec![1.0, 2.0], vec![4.0, 5.5]];
     let matrixA = Matrix::from_rows(&dataA);
     let matrixB = Matrix::from_rows(&dataB);
 
