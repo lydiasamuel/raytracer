@@ -76,10 +76,7 @@ impl Mul for Matrix {
     type Output = Self;
 
     fn mul(self, rhs: Matrix) -> Self {
-        if self.num_rows() != rhs.num_cols() {
-            panic!();
-        }
-        else if self.num_cols() != rhs.num_rows() {
+        if self.num_cols() != rhs.num_rows() {
             panic!();
         }
 
@@ -111,7 +108,7 @@ impl fmt::Display for Matrix {
 
         for row_iter in self.grid.rows_iter() {
             for n in row_iter {
-                result.push_str(format!("{}, ", n).as_str());
+                result.push_str(format!("{} ", n).as_str());
             }
             result.push_str("\n");
         }
