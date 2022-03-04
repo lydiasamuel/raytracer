@@ -13,11 +13,15 @@ pub struct Point {
 
 impl Point {
     pub fn new(x: f64, y: f64, z: f64) -> Point {
+        return Point::construct(x, y, z, 1.0);
+    }
+
+    pub fn construct(x: f64, y: f64, z: f64, w: f64) -> Point {
         return Point {
             x,
             y,
             z,
-            w: 1.0
+            w
         };
     }
 }

@@ -36,21 +36,10 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let height = 550;
     let canvas = MyCanvas::new(width, height);
 
-    let dataA = vec![vec![1.0, 2.0], vec![4.0, 5.0]];
-    let dataB = vec![vec![1.0, 2.0], vec![4.0, 5.5]];
+    let dataA = vec![vec![8.0, -5.0, 9.0, 2.0], vec![7.0, 5.0, 6.0, 1.0], vec![-6.0, 0.0, 9.0, 6.0], vec![-3.0, 0.0, -9.0, -4.0]];
     let matrixA = Matrix::from_rows(&dataA);
-    let matrixB = Matrix::from_rows(&dataB);
 
-    if (matrixA == matrixB) {
-        println!("YES");
-    }
-    else {
-        println!("NO")
-    }
-
-    let matrixC = matrixA * matrixB;
-
-    print!("{}", matrixC);
+    print!("{}", matrixA.inverse());
 
     /*let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 

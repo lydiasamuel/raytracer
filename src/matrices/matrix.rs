@@ -1,3 +1,5 @@
+use crate::Vector;
+use crate::Point;
 use std::fmt;
 use std::ops::{Mul};
 
@@ -29,6 +31,127 @@ impl Matrix {
             height: tmp.num_rows(),
             grid: Box::new(tmp),
         };
+    }
+
+    pub fn identity(size: usize) -> Matrix {
+        let mut tmp = Array2D::filled_with(0.0, size, size);
+
+        for i in 0..size {
+            tmp.set(i, i, 1.0);
+        }
+
+        return Matrix {
+            width: tmp.num_columns(),
+            height: tmp.num_rows(),
+            grid: Box::new(tmp),
+        };
+    }
+
+    // These ampersands represent references, and they allow you to refer to some value without taking ownership of it.
+    pub fn transpose(&self) -> Matrix {
+        // Swap the dimensions around
+        let mut result = Matrix::new(self.num_cols(), self.num_rows());
+
+        for i in 0..self.num_rows() {
+            for j in 0..self.num_cols() {
+                result.set(j, i, self.at(i, j));
+            }
+        }
+
+        return result;
+    }
+
+    pub fn invertable(&self) -> bool {
+        return ((self.determinant()).abs() - 0.0) > EPSILON;
+    }
+
+    pub fn inverse(&self) -> Matrix {
+        let rows = self.num_rows();
+        let cols = self.num_cols();
+        let det = self.determinant();
+        let mut result = Matrix::new(rows, cols);
+
+        if (self.invertable()) {
+            for row in 0..rows {
+                for col in 0..cols {
+                    let cofactor = self.cofactor(row, col);
+
+                    result.set(col, row, cofactor / det);
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    // Works with 2x2 Matrices
+    pub fn determinant(&self) -> f64 {
+        if self.num_rows() == 2 && self.num_cols() == 2 {
+            let a = self.at(0, 0);
+            let b = self.at(0, 1);
+            let c = self.at(1, 0);
+            let d = self.at(1, 1);
+    
+            return a * d - b * c;
+        }
+        else {
+            let mut det = 0.0;
+
+            for col in 0..self.num_cols() {
+                det = det + (self.at(0, col) * self.cofactor(0, col));
+            }
+
+            return det;
+        }
+    }
+
+    fn cofactor(&self, row: usize, col: usize) -> f64 {
+        if self.num_rows() == 4 && self.num_cols() == 4 {
+            let base: f64 = -1.0;
+            let exp: f64 = (row + col) as f64;
+
+            let sub = self.submatrix(row, col);
+            let det = sub.determinant();
+
+            return base.powf(exp) * det;
+        } else {
+            if (row + col) % 2 != 0 {
+                return -self.minor(row, col);
+            }
+            else {
+                return self.minor(row, col);
+            }
+        } 
+    }
+
+    // Works with 3x3 Matrices
+    fn minor(&self, row: usize, col: usize) -> f64 {        
+        let sub = self.submatrix(row, col);
+
+        return sub.determinant();
+    }
+
+    fn submatrix(&self, row: usize, col: usize) -> Matrix {
+        let mut result = Matrix::new(self.num_rows() - 1, self.num_cols() - 1);
+
+        let mut new_row = 0;
+        let mut new_col = 0;
+
+        for i in 0..self.num_rows() {
+            if i != row {
+                for j in 0..self.num_cols() {
+                    if j != col {
+                        result.set(new_row, new_col, self.at(i, j));
+                        new_col = new_col + 1;
+                    }
+                }
+
+                new_col = 0;
+                new_row = new_row + 1;
+            }
+        }
+
+        return result;
     }
 
     pub fn num_rows(&self) -> usize {
@@ -86,19 +209,62 @@ impl Mul for Matrix {
 
         let mut result = Matrix::new(first_dimension, second_dimension);
 
-        for i in 0..first_dimension {
-            for j in 0..second_dimension {
+        // Matrix multiplication computes the dot product of every row-column combination in the two matrices!
+        for row in 0..first_dimension {
+            for col in 0..second_dimension {
                 let mut sum: f64 = 0.0;
 
                 for k in 0..shared_dimension {
-                    sum = sum + (self.at(i, k) * rhs.at(k, j));
+                    sum = sum + (self.at(row, k) * rhs.at(k, col));
                 }
 
-                result.set(i, j, sum);
+                result.set(row, col, sum);
             }
         }
 
         return result;
+    }
+}
+
+impl Mul<Point> for Matrix {
+    type Output = Point;
+
+    fn mul(self, rhs: Point) -> Point {
+        if (self.num_cols() != 4 || self.num_rows() != 4) {
+            panic!();
+        }
+
+        let mut tup = [0.0, 0.0, 0.0, 0.0];
+
+        for i in 0..4 {
+            tup[i] = self.at(i, 0) * rhs.x + 
+                self.at(i, 1) * rhs.y + 
+                self.at(i, 2) * rhs.z + 
+                self.at(i, 3) * rhs.w;
+        }
+
+        return Point::construct(tup[0], tup[1], tup[2], tup[3]);
+    }
+}
+
+impl Mul<Vector> for Matrix {
+    type Output = Vector;
+
+    fn mul(self, rhs: Vector) -> Vector {
+        if (self.num_cols() != 4 || self.num_rows() != 4) {
+            panic!();
+        }
+
+        let mut tup = [0.0, 0.0, 0.0, 0.0];
+
+        for i in 0..4 {
+            tup[i] = self.at(i, 0) * rhs.x + 
+                self.at(i, 1) * rhs.y + 
+                self.at(i, 2) * rhs.z + 
+                self.at(i, 3) * rhs.w;
+        }
+
+        return Vector::construct(tup[0], tup[1], tup[2], tup[3]);
     }
 }
 

@@ -13,11 +13,15 @@ pub struct Vector {
 
 impl Vector {
     pub fn new(x: f64, y: f64, z: f64) -> Vector {
+        return Vector::construct(x, y, z, 0.0);
+    }
+
+    pub fn construct(x: f64, y: f64, z: f64, w: f64) -> Vector {
         return Vector {
             x,
             y,
             z,
-            w: 0.0
+            w
         };
     }
 
