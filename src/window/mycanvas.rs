@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::fs::File;
-use std::io::{Write, BufReader, BufRead, Error};
+use std::io::{Write, Error};
 
 use canvas::Canvas;
 
@@ -59,13 +59,27 @@ impl MyCanvas {
         return Color::new(r, g, b);
     }
 
-    pub fn to_PPM(&self, path: &str) -> Result<(), Error> {
+    pub fn to_ppm(&self, path: &str) -> Result<(), Error> {
         let mut output = File::create(path)?;
 
         // Write header information at the start of the file
-        writeln!(output, "P3");
-        writeln!(output, "{}", format!("{} {}", self.width, self.height));
-        writeln!(output, "255");
+        let header = writeln!(output, "P3");
+        match header {
+            Ok(()) => {},
+            Err(error) => panic!("Error writing header info to PPM output: {:?}", error)
+        }
+
+        let header = writeln!(output, "{}", format!("{} {}", self.width, self.height));
+        match header {
+            Ok(()) => {},
+            Err(error) => panic!("Error writing header info to PPM output: {:?}", error)
+        }
+
+        let header = writeln!(output, "255");
+        match header {
+            Ok(()) => {},
+            Err(error) => panic!("Error writing header info to PPM output: {:?}", error)
+        }
 
         for row in 0..self.height {
             let mut count = 0;
@@ -76,13 +90,26 @@ impl MyCanvas {
                 count += pixel.len() + 1; // Extra space at the end
 
                 if count > 70 { // Start a newline if it goes past 70
-                    write!(output, "\n");
+                    let body = write!(output, "\n");
+                    match body {
+                        Ok(()) => {},
+                        Err(error) => panic!("Error writing content to PPM output: {:?}", error)
+                    }
                     count = (count + 1) % 70; 
                 }
 
-                write!(output, "{} ", pixel);
+                let body = write!(output, "{} ", pixel);
+                match body {
+                    Ok(()) => {},
+                    Err(error) => panic!("Error writing content to PPM output: {:?}", error)
+                }
             }
-            write!(output, "\n");
+            
+            let body = write!(output, "\n");
+            match body {
+                Ok(()) => {},
+                Err(error) => panic!("Error writing content to PPM output: {:?}", error)
+            }
         }
 
         return Ok(());

@@ -14,19 +14,20 @@ pub struct Matrix {
     pub grid: Box<Array2D<f64>>,
 }
 
-pub struct MatrixMulError;
+pub struct MatrixOperationDimensionError;
 
-impl fmt::Display for MatrixMulError {
+impl fmt::Display for MatrixOperationDimensionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Mismatched matrix sizes in multiplication, please ensure the dimensions are compatible!")
+        write!(f, "Matrix dimensions error, please ensure all dimensions are compatible or within bounds!")
     }
 }
 
-impl fmt::Debug for MatrixMulError {
+impl fmt::Debug for MatrixOperationDimensionError{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{{ file: {}, line: {} }}", file!(), line!())
     }
 }
+
 
 impl Matrix {
     pub fn new(num_rows: usize, num_cols: usize) -> Matrix {
@@ -95,10 +96,15 @@ impl Matrix {
         let det = self.determinant();
         let mut result = Matrix::new(rows, cols);
 
-        if (self.invertable()) {
+        if self.invertable() {
             for row in 0..rows {
                 for col in 0..cols {
                     let cofactor = self.cofactor(row, col);
+
+                    let cofactor = match cofactor {
+                        Ok(result) => result,
+                        Err(error) => panic!("Cofactor for inverse could not be calculated: {:?}", error)
+                    };
 
                     let fill = result.set(col, row, cofactor / det);
 
@@ -127,14 +133,22 @@ impl Matrix {
             let mut det = 0.0;
 
             for col in 0..self.num_cols() {
-                det = det + (self.at(0, col) * self.cofactor(0, col));
+                let cofactor = self.cofactor(0, col);
+
+                let cofactor = match cofactor {
+                    Ok(result) => result,
+                    Err(error) => panic!("Cofactor for determinant could not be calculated: {:?}", error)
+                };
+
+                det = det + (self.at(0, col) * cofactor);
             }
 
             return det;
         }
     }
 
-    fn cofactor(&self, row: usize, col: usize) -> f64 {
+    // Works with 4x4 and 3x3 matrices 
+    fn cofactor(&self, row: usize, col: usize) -> Result<f64, MatrixOperationDimensionError>{
         if self.num_rows() == 4 && self.num_cols() == 4 {
             let base: f64 = -1.0;
             let exp: f64 = (row + col) as f64;
@@ -142,15 +156,19 @@ impl Matrix {
             let sub = self.submatrix(row, col);
             let det = sub.determinant();
 
-            return base.powf(exp) * det;
-        } else {
+            return Ok(base.powf(exp) * det);
+        } 
+        else if self.num_rows() == 3 && self.num_cols() == 3 {
             if (row + col) % 2 != 0 {
-                return -self.minor(row, col);
+                return Ok(-self.minor(row, col));
             }
             else {
-                return self.minor(row, col);
+                return Ok(self.minor(row, col));
             }
         } 
+        else {
+            return Err(MatrixOperationDimensionError);
+        }
     }
 
     // Works with 3x3 Matrices
@@ -233,11 +251,11 @@ impl PartialEq for Matrix {
 }
 
 impl Mul for Matrix {
-    type Output = Result<Self, MatrixMulError>;
+    type Output = Result<Self, MatrixOperationDimensionError>;
 
-    fn mul(self, rhs: Matrix) -> Result<Self, MatrixMulError> {
+    fn mul(self, rhs: Matrix) -> Result<Self, MatrixOperationDimensionError> {
         if self.num_cols() != rhs.num_rows() {
-            return Err(MatrixMulError)
+            return Err(MatrixOperationDimensionError)
         }
 
         let first_dimension = self.num_rows();
@@ -269,11 +287,11 @@ impl Mul for Matrix {
 }
 
 impl Mul<Point> for Matrix {
-    type Output = Result<Point, MatrixMulError>;
+    type Output = Result<Point, MatrixOperationDimensionError>;
 
-    fn mul(self, rhs: Point) -> Result<Point, MatrixMulError> {
+    fn mul(self, rhs: Point) -> Result<Point, MatrixOperationDimensionError> {
         if self.num_cols() != 4 || self.num_rows() != 4 {
-            return Err(MatrixMulError)
+            return Err(MatrixOperationDimensionError)
         }
 
         let mut tup = [0.0, 0.0, 0.0, 0.0];
@@ -290,11 +308,11 @@ impl Mul<Point> for Matrix {
 }
 
 impl Mul<Vector> for Matrix {
-    type Output = Result<Vector, MatrixMulError>;
+    type Output = Result<Vector, MatrixOperationDimensionError>;
 
-    fn mul(self, rhs: Vector) -> Result<Vector, MatrixMulError> {
+    fn mul(self, rhs: Vector) -> Result<Vector, MatrixOperationDimensionError> {
         if self.num_cols() != 4 || self.num_rows() != 4 {
-            return Err(MatrixMulError);
+            return Err(MatrixOperationDimensionError);
         }
 
         let mut tup = [0.0, 0.0, 0.0, 0.0];

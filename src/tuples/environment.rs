@@ -1,4 +1,3 @@
-use crate::tuples::point::Point;
 use crate::tuples::vector::Vector;
 
 #[derive(Debug)]

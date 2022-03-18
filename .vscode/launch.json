@@ -8,9 +8,9 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "C:/Users/lydia/Documents/GitHub/raytracer/target/debug/whitted.exe",
-            "args": ["C:/Users/lydia/Downloads"],
-            "cwd": "C:/Users/lydia/Documents/GitHub/raytracer/target"
+            "program": "/home/lydia/source/raytracer/target/debug/whitted",
+            "args": ["/home/lydia/Downloads"],
+            "cwd": "/home/lydia/source/raytracer/target"
         }
     ]
 }
