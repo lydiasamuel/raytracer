@@ -14,6 +14,20 @@ pub struct Matrix {
     pub grid: Box<Array2D<f64>>,
 }
 
+pub struct MatrixMulError;
+
+impl fmt::Display for MatrixMulError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Mismatched matrix sizes in multiplication, please ensure the dimensions are compatible!")
+    }
+}
+
+impl fmt::Debug for MatrixMulError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{ file: {}, line: {} }}", file!(), line!())
+    }
+}
+
 impl Matrix {
     pub fn new(num_rows: usize, num_cols: usize) -> Matrix {
         return Matrix {
@@ -37,7 +51,12 @@ impl Matrix {
         let mut tmp = Array2D::filled_with(0.0, size, size);
 
         for i in 0..size {
-            tmp.set(i, i, 1.0);
+            let fill = tmp.set(i, i, 1.0);
+
+            match fill {
+                Ok(()) => {},
+                Err(error) => panic!("Identity could not be created: {:?}", error)
+            }
         }
 
         return Matrix {
@@ -54,7 +73,12 @@ impl Matrix {
 
         for i in 0..self.num_rows() {
             for j in 0..self.num_cols() {
-                result.set(j, i, self.at(i, j));
+                let fill = result.set(j, i, self.at(i, j));
+
+                match fill {
+                    Ok(()) => {},
+                    Err(error) => panic!("Transposition could not be created: {:?}", error)
+                }
             }
         }
 
@@ -76,7 +100,12 @@ impl Matrix {
                 for col in 0..cols {
                     let cofactor = self.cofactor(row, col);
 
-                    result.set(col, row, cofactor / det);
+                    let fill = result.set(col, row, cofactor / det);
+
+                    match fill {
+                        Ok(()) => {},
+                        Err(error) => panic!("Inverse could not be created: {:?}", error)
+                    }
                 }
             }
         }
@@ -141,7 +170,13 @@ impl Matrix {
             if i != row {
                 for j in 0..self.num_cols() {
                     if j != col {
-                        result.set(new_row, new_col, self.at(i, j));
+                        let fill = result.set(new_row, new_col, self.at(i, j));
+
+                        match fill {
+                            Ok(()) => {},
+                            Err(error) => panic!("Submatrix could not be created: {:?}", error)
+                        }
+
                         new_col = new_col + 1;
                     }
                 }
@@ -173,9 +208,11 @@ impl Matrix {
 
 impl PartialEq for Matrix {
     fn eq(&self, other: &Self) -> bool {
-        let mut row: usize = 0;
-        let mut col: usize = 0;
+        let mut col: usize;
+        let mut row: usize;
 
+        row = 0;
+        
         for row_iter in other.grid.rows_iter() {
             col = 0;
 
@@ -196,11 +233,11 @@ impl PartialEq for Matrix {
 }
 
 impl Mul for Matrix {
-    type Output = Self;
+    type Output = Result<Self, MatrixMulError>;
 
-    fn mul(self, rhs: Matrix) -> Self {
+    fn mul(self, rhs: Matrix) -> Result<Self, MatrixMulError> {
         if self.num_cols() != rhs.num_rows() {
-            panic!();
+            return Err(MatrixMulError)
         }
 
         let first_dimension = self.num_rows();
@@ -218,20 +255,25 @@ impl Mul for Matrix {
                     sum = sum + (self.at(row, k) * rhs.at(k, col));
                 }
 
-                result.set(row, col, sum);
+                let fill = result.set(row, col, sum);
+
+                match fill {
+                    Ok(()) => {},
+                    Err(error) => panic!("Matrix multiplication could not be performed: {:?}", error)
+                }
             }
         }
 
-        return result;
+        return Ok(result);
     }
 }
 
 impl Mul<Point> for Matrix {
-    type Output = Point;
+    type Output = Result<Point, MatrixMulError>;
 
-    fn mul(self, rhs: Point) -> Point {
-        if (self.num_cols() != 4 || self.num_rows() != 4) {
-            panic!();
+    fn mul(self, rhs: Point) -> Result<Point, MatrixMulError> {
+        if self.num_cols() != 4 || self.num_rows() != 4 {
+            return Err(MatrixMulError)
         }
 
         let mut tup = [0.0, 0.0, 0.0, 0.0];
@@ -243,16 +285,16 @@ impl Mul<Point> for Matrix {
                 self.at(i, 3) * rhs.w;
         }
 
-        return Point::construct(tup[0], tup[1], tup[2], tup[3]);
+        return Ok(Point::construct(tup[0], tup[1], tup[2], tup[3]));
     }
 }
 
 impl Mul<Vector> for Matrix {
-    type Output = Vector;
+    type Output = Result<Vector, MatrixMulError>;
 
-    fn mul(self, rhs: Vector) -> Vector {
-        if (self.num_cols() != 4 || self.num_rows() != 4) {
-            panic!();
+    fn mul(self, rhs: Vector) -> Result<Vector, MatrixMulError> {
+        if self.num_cols() != 4 || self.num_rows() != 4 {
+            return Err(MatrixMulError);
         }
 
         let mut tup = [0.0, 0.0, 0.0, 0.0];
@@ -264,7 +306,7 @@ impl Mul<Vector> for Matrix {
                 self.at(i, 3) * rhs.w;
         }
 
-        return Vector::construct(tup[0], tup[1], tup[2], tup[3]);
+        return Ok(Vector::construct(tup[0], tup[1], tup[2], tup[3]));
     }
 }
 
