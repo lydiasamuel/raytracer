@@ -48,6 +48,195 @@ impl Matrix {
         };
     }
 
+    pub fn translation(x: f64, y: f64, z: f64) -> Matrix {
+        let mut transform = Matrix::identity(4);
+        
+        let fill = transform.set(0, 3, x);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Translation matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 3, y);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Translation matrix could not be created: {:?}", error)
+        }
+        
+        let fill = transform.set(2, 3, z);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Translation matrix could not be created: {:?}", error)
+        }
+
+        return transform;
+    }
+
+    // Reflection is just scaling by a negative -1 along a certain axis
+    pub fn scaling(x: f64, y: f64, z: f64) -> Matrix {
+        let mut transform = Matrix::identity(4);
+        
+        let fill = transform.set(0, 0, x);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 1, y);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
+        }
+        
+        let fill = transform.set(2, 2, z);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
+        }
+
+        return transform;
+    }
+    
+    pub fn rotation_x(radians: f64) -> Matrix {
+        let mut transform = Matrix::identity(4);
+
+        // radians(deg) = deg * (pi / 180)
+
+        let fill = transform.set(1, 1, radians.cos());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(2, 2, radians.cos());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 2, -radians.sin());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(2, 1, radians.sin());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
+        }
+        
+        return transform;
+    }
+
+    pub fn rotation_y(radians: f64) -> Matrix {
+        let mut transform = Matrix::identity(4);
+
+        // radians(deg) = deg * (pi / 180)
+
+        let fill = transform.set(0, 0, radians.cos());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(2, 2, radians.cos());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(2, 0, -radians.sin());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(0, 2, radians.sin());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
+        }
+        
+        return transform;
+    } 
+
+    pub fn rotation_z(radians: f64) -> Matrix {
+        let mut transform = Matrix::identity(4);
+
+        // radians(deg) = deg * (pi / 180)
+
+        let fill = transform.set(0, 0, radians.cos());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 1, radians.cos());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(0, 1, -radians.sin());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 0, radians.sin());
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
+        }
+        
+        return transform;
+    }
+
+    pub fn shearing(x2y: f64, x2z: f64, y2x: f64, y2z: f64, z2x: f64, z2y: f64) -> Matrix {
+        let mut transform = Matrix::identity(4);
+
+        // radians(deg) = deg * (pi / 180)
+
+        let fill = transform.set(0, 1, x2y);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(0, 2, x2z);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 0, y2x);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(1, 2, y2z);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(2, 0, z2x);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
+        }
+
+        let fill = transform.set(2, 1, z2y);
+        match fill {
+            Ok(()) => {},
+            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
+        }
+
+        return transform;
+    }
+
     pub fn identity(size: usize) -> Matrix {
         let mut tmp = Array2D::filled_with(0.0, size, size);
 

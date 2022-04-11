@@ -1,4 +1,5 @@
 use std::ops::{Add, Sub, Mul, Div, Neg};
+use std::fmt;
 use crate::tuples::vector::Vector;
 
 const EPSILON: f64 = 0.00001;
@@ -9,6 +10,12 @@ pub struct Point {
     pub y: f64,
     pub z: f64,
     pub w: f64
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "(x: {}, y: {}, z: {}, w: {})", self.x, self.y, self.z, self.w)
+    }
 }
 
 impl Point {

@@ -41,6 +41,16 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     print!("{}", matrix_a.inverse());
 
+    let transform = Matrix::rotation_x(0.25 * std::f64::consts::PI);
+    let inv_transform = transform.inverse();
+    let p = Point::new(0.0, 1.0, 0.0);
+    let result = inv_transform * p;
+
+    match result {
+        Ok(x) => print!("{}\n", x),
+        Err(error) => panic!("Translation matrix could not be created: {:?}", error)
+    }
+
     /*let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 
         Vector::new(1.0, 1.8, 0.0).normalize() * 11.25
