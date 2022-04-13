@@ -1,16 +1,19 @@
 mod window;
 mod tuples;
 mod matrices;
+mod geoentity;
 
+use std::sync::Mutex;
 use std::error::Error;
 use std::fs;
+
 use crate::window::mycanvas::MyCanvas;
 use crate::tuples::point::Point;
 use crate::tuples::vector::Vector;
 use crate::tuples::color::Color;
-use crate::tuples::projectile::Projectile;
-use crate::tuples::environment::Environment;
+use crate::tuples::ray::Ray;
 use crate::matrices::matrix::Matrix;
+use crate::geoentity::sphere::Sphere;
 
 pub struct Config {
     pub filename: String,
@@ -31,26 +34,41 @@ impl Config {
     }
 }
 
+pub struct IdentityCreator {
+    count: Mutex<u64>
+}
+
+impl IdentityCreator {
+    pub fn new() -> IdentityCreator {
+        return IdentityCreator {
+            count: Mutex::new(0)
+        }
+    }
+
+    pub fn get(&self) -> u64 {
+        let mut current = self.count.lock().unwrap();
+
+        let result = *current;
+        *current = result + 1;
+
+        return result;
+    }
+}
+
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let width = 900;
     let height = 550;
     let canvas = MyCanvas::new(width, height);
 
-    let data_a = vec![vec![8.0, -5.0, 9.0, 2.0], vec![7.0, 5.0, 6.0, 1.0], vec![-6.0, 0.0, 9.0, 6.0], vec![-3.0, 0.0, -9.0, -4.0]];
-    let matrix_a = Matrix::from_rows(&data_a);
+    let id_creator = IdentityCreator::new();
+    
+    let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
+    let sphere = Sphere::unit(id_creator.get());
 
-    print!("{}", matrix_a.inverse());
+    let xs = sphere.intersect(ray);
 
-    let transform = Matrix::rotation_x(0.25 * std::f64::consts::PI);
-    let inv_transform = transform.inverse();
-    let p = Point::new(0.0, 1.0, 0.0);
-    let result = inv_transform * p;
-
-    match result {
-        Ok(x) => print!("{}\n", x),
-        Err(error) => panic!("Translation matrix could not be created: {:?}", error)
-    }
-
+    println!("{}, {}", xs[0], xs[1]);
+  
     /*let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 
         Vector::new(1.0, 1.8, 0.0).normalize() * 11.25
@@ -69,11 +87,4 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     canvas.to_ppm(config.filename.as_str());*/
 
     return Ok(());
-}
-
-fn tick(env: &Environment, proj: &Projectile) -> Projectile {
-    let position = proj.position + proj.velocity;
-    let velocity = proj.velocity + env.gravity + env.wind;
-
-    return Projectile::new(position, velocity);
 }

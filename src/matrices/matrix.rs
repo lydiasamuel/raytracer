@@ -28,7 +28,6 @@ impl fmt::Debug for MatrixOperationDimensionError{
     }
 }
 
-
 impl Matrix {
     pub fn new(num_rows: usize, num_cols: usize) -> Matrix {
         return Matrix {
@@ -523,7 +522,7 @@ impl fmt::Display for Matrix {
 
         for row_iter in self.grid.rows_iter() {
             for n in row_iter {
-                result.push_str(format!("{} ", n).as_str());
+                result.push_str(format!("{}\t", n).as_str());
             }
             result.push_str("\n");
         }
