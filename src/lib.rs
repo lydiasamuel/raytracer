@@ -3,6 +3,7 @@ mod tuples;
 mod matrices;
 mod geoentity;
 
+use std::rc::Rc;
 use std::sync::Mutex;
 use std::error::Error;
 use std::fs;
@@ -14,6 +15,8 @@ use crate::tuples::color::Color;
 use crate::tuples::ray::Ray;
 use crate::matrices::matrix::Matrix;
 use crate::geoentity::sphere::Sphere;
+use crate::geoentity::intersected::Intersected;
+use crate::tuples::intersection::Intersection;
 
 pub struct Config {
     pub filename: String,
@@ -62,12 +65,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let id_creator = IdentityCreator::new();
     
-    let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-    let sphere = Sphere::unit(id_creator.get());
+    let ray = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
+    let sphere = Rc::new(Sphere::unit(id_creator.get()));
 
-    let xs = sphere.intersect(ray);
+    let xs = Sphere::intersect(&sphere, ray);
+    let hits = Intersection::hit(&xs);
 
-    println!("{}, {}", xs[0], xs[1]);
+    //println!("{}, {}", xs[0], xs[1]);
   
     /*let mut p = Projectile::new(
         Point::new(0.0, 1.0, 0.0), 

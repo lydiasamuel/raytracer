@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use crate::geoentity::intersected::Intersected;
+use crate::tuples::intersection::Intersection;
 use crate::Vector;
 use crate::Point;
 use crate::Ray;
@@ -24,7 +28,7 @@ impl Sphere {
         return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0);
     }
 
-    pub fn intersect(&self, ray: Ray) -> Vec<f64> {
+    pub fn intersect(this: &Rc<Sphere>, ray: Ray) -> Vec<Intersection> {
         // (p - c) . (p - c) = r^2  Eq.1 of a Circle i.e. all points p equal distance from the center c
         // p = o + (t * d)  Eq.2 for a ray i.e. all points starting from the origin in that direction
 
@@ -38,22 +42,31 @@ impl Sphere {
         // B = 2(o - c) . d
         // Y = (o - c) . (o - c) - r^2
 
-        let dist = ray.origin - self.center;
+        let dist = ray.origin - this.center;
 
         let alpha = Vector::dot(ray.direction, ray.direction);
         let beta = Vector::dot(dist * 2.0, ray.direction);
-        let gamma = Vector::dot(dist, dist) - (self.radius * self.radius);
+        let gamma = Vector::dot(dist, dist) - (this.radius * this.radius);
 
         let discriminant = (beta * beta) - ((alpha *  gamma) * 4.0);
 
         // There are no solutions to this quadratic equation
-        if discriminant < EPSILON || (alpha - 0.0).abs() < EPSILON {
+        if discriminant < 0.0 {
             return Vec::new();
         }
 
         let t1 = (-beta + discriminant.sqrt()) / (alpha * 2.0);
         let t2 = (-beta - discriminant.sqrt()) / (alpha * 2.0);
 
-        return vec![t1, t2];
+        let i1 = Intersection::new(t1, this.clone());
+        let i2 = Intersection::new(t2, this.clone());
+
+        return vec![i1, i2];
     }
-} 
+}
+
+impl Intersected for Sphere {
+    fn get_id(&self) -> u64 {
+        return self.id;
+    }
+}
