@@ -1,31 +1,32 @@
 use std::rc::Rc;
 
+use crate::Matrix;
 use crate::geoentity::intersected::Intersected;
 use crate::tuples::intersection::Intersection;
 use crate::Vector;
 use crate::Point;
 use crate::Ray;
 
-const EPSILON: f64 = 0.00001;
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Sphere {
     id: u64,
     center: Point,
-    radius: f64
+    radius: f64,
+    transform: Matrix
 }
 
 impl Sphere {
-    pub fn new(id: u64, center: Point, radius: f64) -> Sphere {
+    pub fn new(id: u64, center: Point, radius: f64, transform: Matrix) -> Sphere {
         return Sphere {
             id,
             center,
-            radius
+            radius,
+            transform
         }
     }
 
     pub fn unit(id: u64) -> Sphere {
-        return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0);
+        return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0, Matrix::identity(4));
     }
 
     pub fn intersect(this: &Rc<Sphere>, ray: Ray) -> Vec<Intersection> {
@@ -41,6 +42,9 @@ impl Sphere {
         // A = d . d
         // B = 2(o - c) . d
         // Y = (o - c) . (o - c) - r^2
+
+        let transform = this.transform.inverse();
+        let ray = ray.transform(transform);
 
         let dist = ray.origin - this.center;
 
@@ -62,6 +66,15 @@ impl Sphere {
         let i2 = Intersection::new(t2, this.clone());
 
         return vec![i1, i2];
+    }
+
+    pub fn set_transform(self, transform: Matrix) -> Sphere {
+        return Sphere {
+            id: self.id,
+            center: self.center,
+            radius: self.radius,
+            transform
+        }
     }
 }
 

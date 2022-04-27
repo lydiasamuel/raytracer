@@ -59,36 +59,49 @@ impl IdentityCreator {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let width = 900;
-    let height = 550;
-    let canvas = MyCanvas::new(width, height);
-
     let id_creator = IdentityCreator::new();
+
+    let wall_z = 10.0;
+    let wall_size = 7.0;
+
+    let canvas_pixels = 100;
+    let pixel_size = wall_size / (canvas_pixels as f64);
+    let half = wall_size / 2.0;
+
+    let canvas = MyCanvas::new(canvas_pixels, canvas_pixels);
+    let color = Color::new(1.0, 0.0, 0.0);
+
+    let ray_origin = Point::new(0.0, 0.0, -5.0);
     
-    let ray = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
     let sphere = Rc::new(Sphere::unit(id_creator.get()));
 
-    let xs = Sphere::intersect(&sphere, ray);
-    let hits = Intersection::hit(&xs);
+    // for each row of pixels in the canvas
+    for y in 0..canvas_pixels {
+        // compute the world y coordinate (top = +half, bottom = -half)
+        let world_y = half - (pixel_size * (y as f64));
 
-    //println!("{}, {}", xs[0], xs[1]);
-  
-    /*let mut p = Projectile::new(
-        Point::new(0.0, 1.0, 0.0), 
-        Vector::new(1.0, 1.8, 0.0).normalize() * 11.25
-    );
-    
-    let e = Environment::new(
-        Vector::new(0.0, -0.1, 0.0),
-        Vector::new(-0.01, 0.0, 0.0)
-    );
-    
-    while p.position.y > 0.0 {
-        canvas.draw(Color::new(1.0, 0.8, 0.6), p.position.x as usize, height - p.position.y as usize);
-        p = tick(&e, &p);
+        // for each pixel in the row
+        for x in 0..canvas_pixels {
+            // compute the world x coordinate (left = -half, right = half)
+            let world_x = -half + (pixel_size * (x as f64));
+
+            // describe the point on the wall that the ray will target
+            let position = Point::new(world_x, world_y, wall_z);
+            let vector = position - ray_origin;
+            let ray = Ray::new(ray_origin, vector.normalize());
+
+            let xs = Sphere::intersect(&sphere, ray);
+            let hit = Intersection::hit(&xs);
+            
+            match hit {
+                Some(_) => { canvas.draw(color, x, y) }
+                None => {}
+            }
+        }
+
     }
 
-    canvas.to_ppm(config.filename.as_str());*/
+    canvas.to_ppm(config.filename.as_str());
 
     return Ok(());
 }

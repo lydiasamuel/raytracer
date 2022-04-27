@@ -12,6 +12,7 @@ pub struct Matrix {
     pub width: usize,
     pub height: usize,
     pub grid: Box<Array2D<f64>>,
+    pub transform_type: Option<MatrixTransform>
 }
 
 pub struct MatrixOperationDimensionError;
@@ -28,12 +29,24 @@ impl fmt::Debug for MatrixOperationDimensionError{
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum MatrixTransform {
+    Translation,
+    Scaling,
+    XRotation,
+    YRotation,
+    ZRotation,
+    Shearing,
+    Identity
+}
+
 impl Matrix {
     pub fn new(num_rows: usize, num_cols: usize) -> Matrix {
         return Matrix {
             width: num_cols,
             height: num_rows,
             grid: Box::new(Array2D::filled_with(0.0, num_rows, num_cols)),
+            transform_type: None
         };
     }
 
@@ -44,6 +57,7 @@ impl Matrix {
             width: tmp.num_columns(),
             height: tmp.num_rows(),
             grid: Box::new(tmp),
+            transform_type: None
         };
     }
 
@@ -67,6 +81,8 @@ impl Matrix {
             Ok(()) => {},
             Err(error) => panic!("Translation matrix could not be created: {:?}", error)
         }
+
+        transform.transform_type = Some(MatrixTransform::Translation);
 
         return transform;
     }
@@ -92,6 +108,8 @@ impl Matrix {
             Ok(()) => {},
             Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
         }
+
+        transform.transform_type = Some(MatrixTransform::Scaling);
 
         return transform;
     }
@@ -125,6 +143,8 @@ impl Matrix {
             Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
         }
         
+        transform.transform_type = Some(MatrixTransform::XRotation);
+
         return transform;
     }
 
@@ -157,6 +177,8 @@ impl Matrix {
             Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
         }
         
+        transform.transform_type = Some(MatrixTransform::YRotation);
+
         return transform;
     } 
 
@@ -188,6 +210,8 @@ impl Matrix {
             Ok(()) => {},
             Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
         }
+
+        transform.transform_type = Some(MatrixTransform::ZRotation);
         
         return transform;
     }
@@ -233,6 +257,8 @@ impl Matrix {
             Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
         }
 
+        transform.transform_type = Some(MatrixTransform::Shearing);
+
         return transform;
     }
 
@@ -252,6 +278,7 @@ impl Matrix {
             width: tmp.num_columns(),
             height: tmp.num_rows(),
             grid: Box::new(tmp),
+            transform_type: Some(MatrixTransform::Identity)
         };
     }
 
@@ -270,6 +297,8 @@ impl Matrix {
                 }
             }
         }
+
+        result.transform_type = self.transform_type;
 
         return result;
     }
@@ -303,6 +332,8 @@ impl Matrix {
                 }
             }
         }
+
+        result.transform_type = self.transform_type;
         
         return result;
     }
@@ -391,6 +422,8 @@ impl Matrix {
                 new_row = new_row + 1;
             }
         }
+
+        result.transform_type = self.transform_type;
 
         return result;
     }
