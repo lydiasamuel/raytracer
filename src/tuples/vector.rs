@@ -65,6 +65,10 @@ impl Vector {
             w: 0.0
         };
     }
+
+    pub fn reflect(&self, normal: Vector) -> Vector {
+        return *self - (normal * 2.0 * Vector::dot(*self, normal));
+    }
 }
 
 impl PartialEq for Vector {

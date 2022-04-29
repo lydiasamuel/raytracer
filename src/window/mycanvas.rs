@@ -35,7 +35,7 @@ impl MyCanvas {
         return x <= self.width && y < self.height;
     }
 
-    fn clamp(x: f32) -> u8 {
+    fn clamp(x: f64) -> u8 {
         let c = 255.0 * x;
 
         if c > 255.0 {
@@ -52,9 +52,9 @@ impl MyCanvas {
     pub fn at(&self, x: usize, y: usize) -> Color {
         let c = self.canvas.borrow()[(x, y)];
         
-        let r = (c[0] as f32) / 255.0;
-        let g = (c[1] as f32) / 255.0;
-        let b = (c[2] as f32) / 255.0;
+        let r = (c[0] as f64) / 255.0;
+        let g = (c[1] as f64) / 255.0;
+        let b = (c[2] as f64) / 255.0;
 
         return Color::new(r, g, b);
     }

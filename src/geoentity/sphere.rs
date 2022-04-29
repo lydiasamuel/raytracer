@@ -3,6 +3,7 @@ use std::rc::Rc;
 use crate::Matrix;
 use crate::geoentity::intersected::Intersected;
 use crate::tuples::intersection::Intersection;
+use crate::tuples::material::Phong;
 use crate::Vector;
 use crate::Point;
 use crate::Ray;
@@ -12,21 +13,23 @@ pub struct Sphere {
     id: u64,
     center: Point,
     radius: f64,
-    transform: Matrix
+    transform: Matrix, // Used to translate a point from object space to world space
+    material: Phong
 }
 
 impl Sphere {
-    pub fn new(id: u64, center: Point, radius: f64, transform: Matrix) -> Sphere {
+    pub fn new(id: u64, center: Point, radius: f64, transform: Matrix, material: Phong) -> Sphere {
         return Sphere {
             id,
             center,
             radius,
-            transform
+            transform,
+            material
         }
     }
 
     pub fn unit(id: u64) -> Sphere {
-        return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0, Matrix::identity(4));
+        return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0, Matrix::identity(4), Phong::default());
     }
 
     pub fn intersect(this: &Rc<Sphere>, ray: Ray) -> Vec<Intersection> {
@@ -43,6 +46,7 @@ impl Sphere {
         // B = 2(o - c) . d
         // Y = (o - c) . (o - c) - r^2
 
+        // These two lines convert the ray which is in world space, into object space i.e. relative to the object itself.
         let transform = this.transform.inverse();
         let ray = ray.transform(transform);
 
@@ -73,7 +77,18 @@ impl Sphere {
             id: self.id,
             center: self.center,
             radius: self.radius,
-            transform
+            transform,
+            material: self.material
+        }
+    }
+
+    pub fn set_material(self, material: Phong) -> Sphere {
+        return Sphere {
+            id: self.id,
+            center: self.center,
+            radius: self.radius,
+            transform: self.transform,
+            material
         }
     }
 }
@@ -81,5 +96,22 @@ impl Sphere {
 impl Intersected for Sphere {
     fn get_id(&self) -> u64 {
         return self.id;
+    }
+
+    fn normal_at(&self, point: Point) -> Vector {
+        let origin = Point::new(0.0, 0.0, 0.0);
+        let object_point = (self.transform.inverse() * point).unwrap();
+
+        let object_normal_vector = (object_point - origin).normalize();
+        let world_vector_transform = self.transform/*.submatrix(3, 3)*/.inverse().transpose();
+        let mut world_normal_vector = (world_vector_transform * object_normal_vector).unwrap();
+
+        world_normal_vector.w = 0.0; // Hack to reset the vector w marker back to 0, rather than multiplying by 3x3
+
+        return world_normal_vector.normalize();
+    }
+
+    fn material(&self) -> Phong {
+        return self.material;
     }
 }

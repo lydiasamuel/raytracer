@@ -16,6 +16,8 @@ use crate::tuples::ray::Ray;
 use crate::matrices::matrix::Matrix;
 use crate::geoentity::sphere::Sphere;
 use crate::geoentity::intersected::Intersected;
+use crate::tuples::light::PointLight;
+use crate::tuples::material::Phong;
 use crate::tuples::intersection::Intersection;
 
 pub struct Config {
@@ -69,11 +71,17 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let half = wall_size / 2.0;
 
     let canvas = MyCanvas::new(canvas_pixels, canvas_pixels);
-    let color = Color::new(1.0, 0.0, 0.0);
 
     let ray_origin = Point::new(0.0, 0.0, -5.0);
     
-    let sphere = Rc::new(Sphere::unit(id_creator.get()));
+    let sphere = Sphere::unit(id_creator.get());
+    let material = Phong::new(Color::new(1.0, 0.2, 1.0), 0.1, 0.9, 0.9, 200.0);
+    let sphere = sphere.set_material(material);
+    let sphere = Rc::new(sphere);
+
+    let light_position = Point::new(-10.0, 10.0, -10.0);
+    let light_color = Color::new(1.0, 1.0, 1.0);
+    let light = PointLight::new(light_color, light_position);
 
     // for each row of pixels in the canvas
     for y in 0..canvas_pixels {
@@ -94,11 +102,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             let hit = Intersection::hit(&xs);
             
             match hit {
-                Some(_) => { canvas.draw(color, x, y) }
+                Some(tmp) => { 
+                    let point = ray.position(tmp.time);
+                    let normal = tmp.entity.normal_at(point);
+                    let eye = -ray.direction;
+
+                    let color = tmp.entity.material().lighting(point, light, eye, normal);
+
+                    canvas.draw(color, x, y) 
+                }
                 None => {}
             }
         }
-
     }
 
     canvas.to_ppm(config.filename.as_str());
