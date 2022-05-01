@@ -6,7 +6,6 @@ mod geoentity;
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::error::Error;
-use std::fs;
 
 use crate::window::mycanvas::MyCanvas;
 use crate::tuples::point::Point;
@@ -15,7 +14,6 @@ use crate::tuples::color::Color;
 use crate::tuples::ray::Ray;
 use crate::matrices::matrix::Matrix;
 use crate::geoentity::sphere::Sphere;
-use crate::geoentity::intersected::Intersected;
 use crate::tuples::light::PointLight;
 use crate::tuples::material::Phong;
 use crate::tuples::intersection::Intersection;
@@ -66,7 +64,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let wall_z = 10.0;
     let wall_size = 7.0;
 
-    let canvas_pixels = 100;
+    let canvas_pixels = 500;
     let pixel_size = wall_size / (canvas_pixels as f64);
     let half = wall_size / 2.0;
 
@@ -98,16 +96,16 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             let vector = position - ray_origin;
             let ray = Ray::new(ray_origin, vector.normalize());
 
-            let xs = Sphere::intersect(&sphere, ray);
+            let xs = Sphere::intersect(&sphere, &ray);
             let hit = Intersection::hit(&xs);
             
             match hit {
                 Some(tmp) => { 
                     let point = ray.position(tmp.time);
-                    let normal = tmp.entity.normal_at(point);
+                    let normal = tmp.entity.normal_at(&point);
                     let eye = -ray.direction;
 
-                    let color = tmp.entity.material().lighting(point, light, eye, normal);
+                    let color = tmp.entity.material().lighting(&point, &light, &eye, &normal);
 
                     canvas.draw(color, x, y) 
                 }
@@ -116,7 +114,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         }
     }
 
-    canvas.to_ppm(config.filename.as_str());
+    let file = canvas.to_ppm(config.filename.as_str());
+
+    match file {
+        Ok(()) => {},
+        Err(error) => panic!("Image could not be saved: {:?}", error)
+    }
 
     return Ok(());
 }

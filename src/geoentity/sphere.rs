@@ -32,7 +32,7 @@ impl Sphere {
         return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0, Matrix::identity(4), Phong::default());
     }
 
-    pub fn intersect(this: &Rc<Sphere>, ray: Ray) -> Vec<Intersection> {
+    pub fn intersect(this: &Rc<Sphere>, ray: &Ray) -> Vec<Intersection> {
         // (p - c) . (p - c) = r^2  Eq.1 of a Circle i.e. all points p equal distance from the center c
         // p = o + (t * d)  Eq.2 for a ray i.e. all points starting from the origin in that direction
 
@@ -98,9 +98,9 @@ impl Intersected for Sphere {
         return self.id;
     }
 
-    fn normal_at(&self, point: Point) -> Vector {
+    fn normal_at(&self, point: &Point) -> Vector {
         let origin = Point::new(0.0, 0.0, 0.0);
-        let object_point = (self.transform.inverse() * point).unwrap();
+        let object_point = (self.transform.inverse() * (*point)).unwrap();
 
         let object_normal_vector = (object_point - origin).normalize();
         let world_vector_transform = self.transform/*.submatrix(3, 3)*/.inverse().transpose();
