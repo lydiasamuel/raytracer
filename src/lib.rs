@@ -2,6 +2,8 @@ mod window;
 mod tuples;
 mod matrices;
 mod geoentity;
+mod universe;
+
 
 use std::rc::Rc;
 use std::sync::Mutex;
@@ -17,6 +19,8 @@ use crate::geoentity::sphere::Sphere;
 use crate::tuples::light::PointLight;
 use crate::tuples::material::Phong;
 use crate::tuples::intersection::Intersection;
+use crate::geoentity::intersectable::Intersectable;
+use crate::universe::world::World;
 
 pub struct Config {
     pub filename: String,
@@ -61,6 +65,7 @@ impl IdentityCreator {
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let id_creator = IdentityCreator::new();
 
+    /*
     let wall_z = 10.0;
     let wall_size = 7.0;
 
@@ -96,7 +101,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             let vector = position - ray_origin;
             let ray = Ray::new(ray_origin, vector.normalize());
 
-            let xs = Sphere::intersect(&sphere, &ray);
+            let xs = sphere.clone().intersect(&ray);
             let hit = Intersection::hit(&xs);
             
             match hit {
@@ -120,6 +125,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         Ok(()) => {},
         Err(error) => panic!("Image could not be saved: {:?}", error)
     }
+
+    */
+
+    let world = World::default(&id_creator);
+
+    let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
+
+    let xs = world.intersect(&ray);
 
     return Ok(());
 }

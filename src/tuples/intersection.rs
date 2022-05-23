@@ -1,14 +1,14 @@
 use std::rc::Rc;
 
-use crate::geoentity::intersected::Intersected;
+use crate::geoentity::intersectable::Intersectable;
 
 pub struct Intersection {
     pub time: f64,
-    pub entity: Rc<dyn Intersected>
+    pub entity: Rc<dyn Intersectable>
 }
 
 impl Intersection{
-    pub fn new(time: f64, entity: Rc<dyn Intersected>) -> Intersection {
+    pub fn new(time: f64, entity: Rc<dyn Intersectable>) -> Intersection {
         return Intersection {
             time,
             entity
