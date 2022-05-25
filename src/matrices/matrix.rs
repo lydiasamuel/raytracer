@@ -62,26 +62,15 @@ impl Matrix {
     }
 
     pub fn translation(x: f64, y: f64, z: f64) -> Matrix {
-        let mut transform = Matrix::identity(4);
+        let mut transform = Matrix::from_rows(
+            &vec![
+                vec![1.0, 0.0, 0.0, x],
+                vec![0.0, 1.0, 0.0, y],
+                vec![0.0, 0.0, 1.0, z],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
         
-        let fill = transform.set(0, 3, x);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Translation matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 3, y);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Translation matrix could not be created: {:?}", error)
-        }
-        
-        let fill = transform.set(2, 3, z);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Translation matrix could not be created: {:?}", error)
-        }
-
         transform.transform_type = Some(MatrixTransform::Translation);
 
         return transform;
@@ -89,25 +78,14 @@ impl Matrix {
 
     // Reflection is just scaling by a negative -1 along a certain axis
     pub fn scaling(x: f64, y: f64, z: f64) -> Matrix {
-        let mut transform = Matrix::identity(4);
-        
-        let fill = transform.set(0, 0, x);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 1, y);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
-        }
-        
-        let fill = transform.set(2, 2, z);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Scaling matrix could not be created: {:?}", error)
-        }
+        let mut transform = Matrix::from_rows(
+            &vec![
+                vec![x, 0.0, 0.0, 0.0],
+                vec![0.0, y, 0.0, 0.0],
+                vec![0.0, 0.0, z, 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
 
         transform.transform_type = Some(MatrixTransform::Scaling);
 
@@ -115,33 +93,14 @@ impl Matrix {
     }
     
     pub fn rotation_x(radians: f64) -> Matrix {
-        let mut transform = Matrix::identity(4);
-
-        // radians(deg) = deg * (pi / 180)
-
-        let fill = transform.set(1, 1, radians.cos());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(2, 2, radians.cos());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 2, -radians.sin());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(2, 1, radians.sin());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for X axis could not be created: {:?}", error)
-        }
+        let mut transform = Matrix::from_rows(
+            &vec![
+                vec![1.0, 0.0, 0.0, 0.0],
+                vec![0.0, radians.cos(), -radians.sin(), 0.0], 
+                vec![0.0, radians.sin(), radians.cos(), 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
         
         transform.transform_type = Some(MatrixTransform::XRotation);
 
@@ -149,67 +108,29 @@ impl Matrix {
     }
 
     pub fn rotation_y(radians: f64) -> Matrix {
-        let mut transform = Matrix::identity(4);
+        let mut transform = Matrix::from_rows(
+            &vec![
+                vec![radians.cos(), 0.0, radians.sin(), 0.0],
+                vec![0.0, 1.0, 0.0, 0.0],
+                vec![-radians.sin(), 0.0, radians.cos(), 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
 
-        // radians(deg) = deg * (pi / 180)
-
-        let fill = transform.set(0, 0, radians.cos());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(2, 2, radians.cos());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(2, 0, -radians.sin());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(0, 2, radians.sin());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Y axis could not be created: {:?}", error)
-        }
-        
         transform.transform_type = Some(MatrixTransform::YRotation);
 
         return transform;
     } 
 
     pub fn rotation_z(radians: f64) -> Matrix {
-        let mut transform = Matrix::identity(4);
-
-        // radians(deg) = deg * (pi / 180)
-
-        let fill = transform.set(0, 0, radians.cos());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 1, radians.cos());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(0, 1, -radians.sin());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 0, radians.sin());
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Rotation matrix for Z axis could not be created: {:?}", error)
-        }
+        let mut transform = Matrix::from_rows(
+            &vec![
+                vec![radians.cos(), -radians.sin(), 0.0, 0.0],
+                vec![radians.sin(), radians.cos(), 0.0, 0.0],
+                vec![0.0, 0.0, 1.0, 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
 
         transform.transform_type = Some(MatrixTransform::ZRotation);
         
@@ -217,45 +138,14 @@ impl Matrix {
     }
 
     pub fn shearing(x2y: f64, x2z: f64, y2x: f64, y2z: f64, z2x: f64, z2y: f64) -> Matrix {
-        let mut transform = Matrix::identity(4);
-
-        // radians(deg) = deg * (pi / 180)
-
-        let fill = transform.set(0, 1, x2y);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(0, 2, x2z);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 0, y2x);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(1, 2, y2z);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(2, 0, z2x);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
-        }
-
-        let fill = transform.set(2, 1, z2y);
-        match fill {
-            Ok(()) => {},
-            Err(error) => panic!("Shearing matrix could not be created: {:?}", error)
-        }
+        let mut transform = Matrix::from_rows(
+            &vec![
+                vec![1.0, x2y, x2z, 0.0],
+                vec![y2x, 1.0, y2z, 0.0],
+                vec![z2x, z2y, 1.0, 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
 
         transform.transform_type = Some(MatrixTransform::Shearing);
 
@@ -263,10 +153,10 @@ impl Matrix {
     }
 
     pub fn identity(size: usize) -> Matrix {
-        let mut tmp = Array2D::filled_with(0.0, size, size);
+        let mut id = Array2D::filled_with(0.0, size, size);
 
         for i in 0..size {
-            let fill = tmp.set(i, i, 1.0);
+            let fill = id.set(i, i, 1.0);
 
             match fill {
                 Ok(()) => {},
@@ -275,9 +165,9 @@ impl Matrix {
         }
 
         return Matrix {
-            width: tmp.num_columns(),
-            height: tmp.num_rows(),
-            grid: Box::new(tmp),
+            width: id.num_columns(),
+            height: id.num_rows(),
+            grid: Box::new(id),
             transform_type: Some(MatrixTransform::Identity)
         };
     }

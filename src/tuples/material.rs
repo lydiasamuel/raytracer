@@ -27,7 +27,7 @@ impl Phong {
         return Phong::new(Color::new(1.0, 1.0, 1.0), 0.1, 0.9, 0.9, 200.0);
     }
 
-    pub fn lighting(&self, point: &Point, light: &PointLight, eye: &Vector, normal: &Vector) -> Color {
+    pub fn lighting(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector) -> Color {
         // Combine the surface color with the light's color/intensity
         let effective_color = self.color * light.intensity;
 
@@ -43,7 +43,7 @@ impl Phong {
         // light_dot_normal represents the cosine of the angle between the
         // light vector and the normal vector. A negative number means the
         // light is on the other side of the surface.
-        let light_dot_normal = Vector::dot(light_vector, *normal);
+        let light_dot_normal = Vector::dot(light_vector, *normalv);
 
         if light_dot_normal >= 0.0 {
             // Compute the diffuse contribution
@@ -52,8 +52,8 @@ impl Phong {
             // reflect_dot_eye represents the cosine of the angle between the
             // reflection vector and the eye vector. A negative number means the
             // light reflects away from the eye.
-            let reflect_vector = (-light_vector).reflect(*normal);
-            let reflect_dot_eye = Vector::dot(reflect_vector, *eye);
+            let reflect_vector = (-light_vector).reflect(*normalv);
+            let reflect_dot_eye = Vector::dot(reflect_vector, *eyev);
 
             if reflect_dot_eye > 0.0 {
                 // Compute the specular contribution

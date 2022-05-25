@@ -22,41 +22,11 @@ impl Ray {
     }
 
     pub fn transform(&self, matrix: Matrix) -> Ray {
-        let result: Ray;
+        let transform = matrix.clone();
 
-        match matrix.transform_type {
-            Some(MatrixTransform::Translation) => {
-                let new_origin = matrix * self.origin;
-                result = Ray::new(new_origin.unwrap(), self.direction);
-            },
-            Some(MatrixTransform::Scaling) => {
-                let tmp = matrix.clone();
+        let new_origin = matrix * self.origin;
+        let new_direction = transform * self.direction;
 
-                let new_origin = matrix * self.origin;
-                let new_direction = tmp * self.direction;
-
-                result = Ray::new(new_origin.unwrap(), new_direction.unwrap());
-            },
-            Some(MatrixTransform::XRotation) => {
-                result = self.clone();
-            },
-            Some(MatrixTransform::YRotation) => {
-                result = self.clone();
-            },
-            Some(MatrixTransform::ZRotation) => {
-                result = self.clone();
-            },
-            Some(MatrixTransform::Shearing) => {
-                result = self.clone();
-            },
-            Some(MatrixTransform::Identity) => {
-                result = self.clone();
-            },
-            None => {
-                result = self.clone();
-            }
-        }
-
-        return result;
+        return Ray::new(new_origin.unwrap(), new_direction.unwrap());
     }
 }

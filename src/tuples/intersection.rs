@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::rc::Rc;
 
 use crate::geoentity::intersectable::Intersectable;
@@ -15,33 +16,17 @@ impl Intersection{
         }
     }
 
+    // Expects the intersect list to be in ascending sorted order
     pub fn hit(intersects: &Vec<Intersection>) -> Option<Intersection> {
-        let mut hit = false;
-        let mut king: usize = 0;
-        let mut i: usize = 0;
+        let mut result = None;
 
-        for x in intersects {
-            let current = x.time;
-
-            if current > 0.0 {
-                let best = intersects.get(king).unwrap().time;
-
-                if current < best {
-                    king = i;
-                }
-                
-                hit = true;
+        for i in 0..intersects.len() {
+            if intersects[i].time > 0.0 {
+                let intersect = Intersection::new(intersects[i].time, intersects[i].entity.clone());
+                return Some(intersect);
             }
-
-            i = i + 1;
         }
 
-        if hit {
-            let tmp = intersects.get(king).unwrap();
-            return Some(Intersection::new(tmp.time, tmp.entity.clone()));
-        } 
-        else {
-            return None;
-        }
+        return result;
     }
 }
