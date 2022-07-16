@@ -81,8 +81,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
 pub fn build_camera() -> Camera {
     return Camera::new(
+        600, 
         300, 
-        150, 
         std::f64::consts::PI / 3.0,
         Camera::view_transform(
             Point::new(0.0, 1.5, -5.0),

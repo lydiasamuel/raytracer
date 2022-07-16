@@ -13,6 +13,8 @@ use crate::Intersection;
 use crate::Ray;
 use crate::universe::computations::Computations;
 
+const EPSILON: f64 = 0.00001;
+
 pub struct World {
     objects: Vec<Rc<dyn Intersectable>>,
     lights: Vec<Rc<PointLight>>
@@ -60,9 +62,6 @@ impl World {
 
             result = self.shade_hit(&comps);
         }
-        else {
-            
-        }
 
         return result;
     }
@@ -97,10 +96,14 @@ impl World {
             normalv = -normalv;
         }
 
+        // Used to bump slightly in the direction of the surface normal to help prevent self shadowing
+        let over_point = point + (normalv * EPSILON);
+
         return Computations::new(
             time, 
             object,
             point,
+            over_point,
             eyev,
             normalv,
             inside
@@ -114,10 +117,31 @@ impl World {
 
         for i in 0..self.lights.len() {
             let light = self.lights[i].as_ref();
+            let in_shadow = self.is_shadowed(comps.over_point); // Using bumped point instead which'll help prevent floating point mismatches
 
-            result = result + material.lighting(&comps.point, light, &comps.eyev, &comps.normalv);
+            result = result + material.lighting(&comps.over_point, light, &comps.eyev, &comps.normalv, in_shadow);
         }
 
         return result;
+    }
+
+    pub fn is_shadowed(&self, point: Point) -> bool {
+        let vec = self.lights[0].position - point; // TODO: support multiple light sources
+        
+        let distance = vec.magnitude(); // Measure the distance from the point to the light source
+        let direction = vec.normalize(); // Create a ray pointing towards the light source
+        
+        let ray = Ray::new(point, direction);
+        let intersections = self.intersect(&ray); // Intersect the world with that ray 
+    
+        let hit = Intersection::hit(&intersections);
+        // Check to see if there was a hit, and if so did it occur before the ray reached the light source
+        if hit.is_some() {
+            let intersect = hit.unwrap();
+            
+            return intersect.time < distance;
+        }
+        
+        return false;
     }
 }

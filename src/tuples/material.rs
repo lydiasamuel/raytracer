@@ -27,7 +27,7 @@ impl Phong {
         return Phong::new(Color::new(1.0, 1.0, 1.0), 0.1, 0.9, 0.9, 200.0);
     }
 
-    pub fn lighting(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector) -> Color {
+    pub fn lighting(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
         // Combine the surface color with the light's color/intensity
         let effective_color = self.color * light.intensity;
 
@@ -36,6 +36,12 @@ impl Phong {
 
         // Compute the ambient contribution
         let ambient = effective_color * self.ambient;
+
+        // Diffuse and specular both have a dependency on the light source
+        // so if the point is in shadow only use the ambient component.
+        if in_shadow {
+            return ambient;
+        }
 
         let mut diffuse: Color = Color::new(0.0, 0.0, 0.0);
         let mut specular: Color = Color::new(0.0, 0.0, 0.0);
