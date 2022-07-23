@@ -1,9 +1,11 @@
 mod window;
 mod tuples;
 mod matrices;
+mod materials;
 mod geoentity;
 mod universe;
 
+use crate::materials::phong::Phong;
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::error::Error;
@@ -16,9 +18,8 @@ use crate::tuples::ray::Ray;
 use crate::matrices::matrix::Matrix;
 use crate::geoentity::sphere::Sphere;
 use crate::tuples::light::PointLight;
-use crate::tuples::material::Phong;
 use crate::tuples::intersection::Intersection;
-use crate::geoentity::intersectable::Intersectable;
+use crate::geoentity::shape::Shape;
 use crate::universe::world::World;
 use crate::universe::camera::Camera;
 
@@ -92,46 +93,55 @@ pub fn build_camera() -> Camera {
 }
 
 pub fn build_world(id_creator: &IdentityCreator) -> World {
-    let mut floor = Sphere::unit(id_creator.get());
-    let floor_material = Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0);
-    floor = floor.set_transform(Matrix::scaling(10.0, 0.01, 10.0));
-    floor = floor.set_material(floor_material);
+    let floor = Sphere::unit(
+        id_creator.get(),
+        Matrix::scaling(10.0, 0.01, 10.0),
+        Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
+    );
 
-    let mut left_wall = Sphere::unit(id_creator.get());
-    let mut left_wall_transform = Matrix::translation(0.0, 0.0, 5.0);
-    left_wall_transform = (left_wall_transform * Matrix::rotation_y(-(std::f64::consts::PI / 4.0))).unwrap();
-    left_wall_transform = (left_wall_transform * Matrix::rotation_x(std::f64::consts::PI / 2.0)).unwrap();
-    left_wall_transform = (left_wall_transform * Matrix::scaling(10.0, 0.01, 10.0)).unwrap();
-    left_wall = left_wall.set_transform(left_wall_transform);
-    left_wall = left_wall.set_material(floor_material);
+    let left_wall_transform = (((Matrix::translation(0.0, 0.0, 5.0) 
+        * Matrix::rotation_y(-(std::f64::consts::PI / 4.0))).unwrap()
+        * Matrix::rotation_x(std::f64::consts::PI / 2.0)).unwrap()
+        * Matrix::scaling(10.0, 0.01, 10.0)).unwrap();
 
-    let mut right_wall = Sphere::unit(id_creator.get());
-    let mut right_wall_transform = Matrix::translation(0.0, 0.0, 5.0);
-    right_wall_transform  = (right_wall_transform  * Matrix::rotation_y(std::f64::consts::PI / 4.0)).unwrap();
-    right_wall_transform  = (right_wall_transform * Matrix::rotation_x(std::f64::consts::PI / 2.0)).unwrap();
-    right_wall_transform  = (right_wall_transform * Matrix::scaling(10.0, 0.01, 10.0)).unwrap();
-    right_wall = right_wall.set_transform(right_wall_transform);
-    right_wall = right_wall.set_material(floor_material);
+    let left_wall = Sphere::unit(
+        id_creator.get(),
+        left_wall_transform,
+        Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
+    );
 
-    let mut middle = Sphere::unit(id_creator.get());
-    middle = middle.set_transform(Matrix::translation(-0.5, 1.0, 0.5));
-    middle = middle.set_material(Phong::new(Color::new(0.1, 1.0, 0.5), 0.1, 0.7, 0.3, 200.0));
+    let right_wall_transform = (((Matrix::translation(0.0, 0.0, 5.0) 
+        * Matrix::rotation_y(std::f64::consts::PI / 4.0)).unwrap()
+        * Matrix::rotation_x(std::f64::consts::PI / 2.0)).unwrap()
+        * Matrix::scaling(10.0, 0.01, 10.0)).unwrap();
 
-    let mut right = Sphere::unit(id_creator.get());
-    let mut right_transform = Matrix::translation(1.5, 0.5, -0.5);
-    right_transform = (right_transform * Matrix::scaling(0.5, 0.5, 0.5)).unwrap();
-    right = right.set_transform(right_transform);
-    right = right.set_material(Phong::new(Color::new(0.5, 1.0, 0.1), 0.1, 0.7, 0.3, 200.0));
+    let right_wall = Sphere::unit(
+        id_creator.get(),
+        right_wall_transform,
+        Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
+    );
 
-    let mut left = Sphere::unit(id_creator.get());
-    let mut left_transform = Matrix::translation(-1.5, 0.33, -0.75);
-    left_transform = (left_transform * Matrix::scaling(0.33, 0.33, 0.33)).unwrap();
-    left = left.set_transform(left_transform);
-    left = left.set_material(Phong::new(Color::new(1.0, 0.8, 0.1), 0.1, 0.7, 0.3, 200.0));
+    let middle = Sphere::unit(
+        id_creator.get(),
+        Matrix::translation(-0.5, 1.0, 0.5),
+        Box::new(Phong::new(Color::new(0.1, 1.0, 0.5), 0.1, 0.7, 0.3, 200.0))
+    );
 
+    let right = Sphere::unit(
+        id_creator.get(),
+        (Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
+        Box::new(Phong::new(Color::new(0.5, 1.0, 0.1), 0.1, 0.7, 0.3, 200.0))
+    );
+
+    let left = Sphere::unit(
+        id_creator.get(),
+        (Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
+        Box::new(Phong::new(Color::new(1.0, 0.8, 0.1), 0.1, 0.7, 0.3, 200.0))
+    );
+   
     let light_source = PointLight::new(Color::new(1.0, 1.0, 1.0), Point::new(-10.0, 10.0, -10.0));
 
-    let objects: Vec<Rc<dyn Intersectable>> = 
+    let objects: Vec<Rc<dyn Shape>> = 
         vec![
             Rc::new(floor), 
             Rc::new(left_wall), 

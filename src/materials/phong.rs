@@ -1,3 +1,4 @@
+use crate::materials::material::Material;
 use crate::tuples::light::PointLight;
 use crate::Vector;
 use crate::Point;
@@ -26,8 +27,10 @@ impl Phong {
     pub fn default() -> Phong {
         return Phong::new(Color::new(1.0, 1.0, 1.0), 0.1, 0.9, 0.9, 200.0);
     }
+}
 
-    pub fn lighting(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
+impl Material for Phong {
+    fn lighting(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
         // Combine the surface color with the light's color/intensity
         let effective_color = self.color * light.intensity;
 
@@ -69,5 +72,9 @@ impl Phong {
         }
 
         return ambient + diffuse + specular;
+    }
+
+    fn box_clone(&self) -> Box<dyn Material> { 
+        return Box::new((*self).clone());
     }
 }

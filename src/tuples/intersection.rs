@@ -1,14 +1,13 @@
+use crate::Shape;
 use std::rc::Rc;
-
-use crate::geoentity::intersectable::Intersectable;
 
 pub struct Intersection {
     pub time: f64,
-    pub entity: Rc<dyn Intersectable>
+    pub entity: Rc<dyn Shape>
 }
 
 impl Intersection{
-    pub fn new(time: f64, entity: Rc<dyn Intersectable>) -> Intersection {
+    pub fn new(time: f64, entity: Rc<dyn Shape>) -> Intersection {
         return Intersection {
             time,
             entity

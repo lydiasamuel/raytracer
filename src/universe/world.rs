@@ -1,14 +1,14 @@
+use crate::materials::phong::Phong;
 use crate::Vector;
 use std::rc::Rc;
 
 use crate::Matrix;
-use crate::Phong;
 use crate::Sphere;
 use crate::IdentityCreator;
 use crate::Point;
 use crate::Color;
 use crate::PointLight;
-use crate::geoentity::intersectable::Intersectable;
+use crate::geoentity::shape::Shape;
 use crate::Intersection;
 use crate::Ray;
 use crate::universe::computations::Computations;
@@ -16,12 +16,12 @@ use crate::universe::computations::Computations;
 const EPSILON: f64 = 0.00001;
 
 pub struct World {
-    objects: Vec<Rc<dyn Intersectable>>,
+    objects: Vec<Rc<dyn Shape>>,
     lights: Vec<Rc<PointLight>>
 }
 
 impl World {
-    pub fn new(objects: Vec<Rc<dyn Intersectable>>, lights: Vec<Rc<PointLight>>) -> World {
+    pub fn new(objects: Vec<Rc<dyn Shape>>, lights: Vec<Rc<PointLight>>) -> World {
         return World {
             objects,
             lights
@@ -31,13 +31,19 @@ impl World {
     pub fn default(id_creator: &IdentityCreator) -> World {
         let light = PointLight::new(Color::new(1.0, 1.0, 1.0), Point::new(-10.0, 10.0, -10.0));
 
-        let mut outer = Sphere::unit(id_creator.get());
-        outer = outer.set_material(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0));
+        let outer = Sphere::unit(
+            id_creator.get(),
+            Matrix::identity(4), 
+            Box::new(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0))
+        );
         
-        let mut inner = Sphere::unit(id_creator.get());
-        inner = inner.set_transform(Matrix::scaling(0.5, 0.5, 0.5));
+        let inner = Sphere::unit(
+            id_creator.get(),
+            Matrix::scaling(0.5, 0.5, 0.5),
+            Box::new(Phong::default())
+        );
 
-        let objects: Vec<Rc<dyn Intersectable>> = vec![Rc::new(outer), Rc::new(inner)];
+        let objects: Vec<Rc<dyn Shape>> = vec![Rc::new(outer), Rc::new(inner)];
         let lights = vec![Rc::new(light)];
 
         return World {

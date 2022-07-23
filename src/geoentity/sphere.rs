@@ -1,24 +1,23 @@
 use std::rc::Rc;
 
 use crate::Matrix;
-use crate::geoentity::intersectable::Intersectable;
+use crate::geoentity::shape::Shape;
 use crate::tuples::intersection::Intersection;
-use crate::tuples::material::Phong;
+use crate::materials::material::Material;
 use crate::Vector;
 use crate::Point;
 use crate::Ray;
 
-#[derive(Debug, Clone)]
 pub struct Sphere {
     id: u64,
     center: Point,
     radius: f64,
     transform: Matrix, // Used to translate a point from object space to world space
-    material: Phong
+    material: Box<dyn Material>
 }
 
 impl Sphere {
-    pub fn new(id: u64, center: Point, radius: f64, transform: Matrix, material: Phong) -> Sphere {
+    pub fn new(id: u64, center: Point, radius: f64, transform: Matrix, material: Box<dyn Material>) -> Sphere {
         return Sphere {
             id,
             center,
@@ -28,37 +27,26 @@ impl Sphere {
         }
     }
 
-    pub fn unit(id: u64) -> Sphere {
-        return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0, Matrix::identity(4), Phong::default());
-    }
-
-    pub fn set_transform(self, transform: Matrix) -> Sphere {
-        return Sphere {
-            id: self.id,
-            center: self.center,
-            radius: self.radius,
-            transform,
-            material: self.material
-        }
-    }
-
-    pub fn set_material(self, material: Phong) -> Sphere {
-        return Sphere {
-            id: self.id,
-            center: self.center,
-            radius: self.radius,
-            transform: self.transform,
-            material
-        }
+    pub fn unit(id: u64, transform: Matrix, material: Box<dyn Material>) -> Sphere {
+        return Sphere::new(id, Point::new(0.0, 0.0, 0.0), 1.0, transform, material);
     }
 }
 
-impl Intersectable for Sphere {
+impl Shape for Sphere {
     fn get_id(&self) -> u64 {
         return self.id;
     }
 
+    fn transform_ray_to_obj_space(&self, ray: &Ray) -> Ray {
+        // Convert the ray which is in world space, into object space i.e. relative to the object itself.
+        let transform = self.transform.inverse();
+
+        return ray.transform(transform);
+    }
+
     fn intersect(self: Rc<Self>, ray: &Ray) -> Vec<Intersection> {
+        let ray = self.transform_ray_to_obj_space(ray);
+
         // (p - c) . (p - c) = r^2  Eq.1 of a Circle i.e. all points p equal distance from the center c
         // p = o + (t * d)  Eq.2 for a ray i.e. all points starting from the origin in that direction
 
@@ -71,11 +59,6 @@ impl Intersectable for Sphere {
         // A = d . d
         // B = 2(o - c) . d
         // Y = (o - c) . (o - c) - r^2
-
-        // These two lines convert the ray which is in world space, into object space i.e. relative to the object itself.
-        let transform = self.transform.inverse();
-        let ray = ray.transform(transform);
-
         let dist = ray.origin - self.center;
 
         let alpha = Vector::dot(ray.direction, ray.direction);
@@ -111,7 +94,7 @@ impl Intersectable for Sphere {
         return world_normal_vector.normalize();
     }
 
-    fn material(&self) -> Phong {
-        return self.material;
+    fn material(&self) -> Box<dyn Material> { 
+        return self.material.box_clone();
     }
 }

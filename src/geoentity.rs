@@ -1,2 +1,2 @@
 pub mod sphere;
-pub mod intersectable;
+pub mod shape;
