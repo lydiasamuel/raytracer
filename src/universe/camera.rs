@@ -48,7 +48,9 @@ impl Camera {
         return Camera::new(250, 250, std::f64::consts::PI / 2.0, Matrix::identity(4));
     }
 
-    // Generate a matrix that moves the camera around the scene
+    // Generate a matrix that moves the camera around the scene, so instead of a fixed screen you cast
+    // rays at (and the objects appear as coloured shadows). Now you can move that around and take 
+    // pictures from different points.
     // from: Where the camera is in the scene
     // to: The point at which the camera is looking in the scene
     // up: Which direction is up

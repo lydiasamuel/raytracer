@@ -5,7 +5,6 @@ mod materials;
 mod geoentity;
 mod universe;
 
-use crate::materials::phong::Phong;
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::error::Error;
@@ -18,6 +17,8 @@ use crate::tuples::ray::Ray;
 use crate::matrices::matrix::Matrix;
 use crate::geoentity::sphere::Sphere;
 use crate::tuples::light::PointLight;
+use crate::geoentity::plane::Plane;
+use crate::materials::phong::Phong;
 use crate::tuples::intersection::Intersection;
 use crate::geoentity::shape::Shape;
 use crate::universe::world::World;
@@ -93,31 +94,9 @@ pub fn build_camera() -> Camera {
 }
 
 pub fn build_world(id_creator: &IdentityCreator) -> World {
-    let floor = Sphere::unit(
+    let floor = Plane::new(
         id_creator.get(),
-        Matrix::scaling(10.0, 0.01, 10.0),
-        Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
-    );
-
-    let left_wall_transform = (((Matrix::translation(0.0, 0.0, 5.0) 
-        * Matrix::rotation_y(-(std::f64::consts::PI / 4.0))).unwrap()
-        * Matrix::rotation_x(std::f64::consts::PI / 2.0)).unwrap()
-        * Matrix::scaling(10.0, 0.01, 10.0)).unwrap();
-
-    let left_wall = Sphere::unit(
-        id_creator.get(),
-        left_wall_transform,
-        Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
-    );
-
-    let right_wall_transform = (((Matrix::translation(0.0, 0.0, 5.0) 
-        * Matrix::rotation_y(std::f64::consts::PI / 4.0)).unwrap()
-        * Matrix::rotation_x(std::f64::consts::PI / 2.0)).unwrap()
-        * Matrix::scaling(10.0, 0.01, 10.0)).unwrap();
-
-    let right_wall = Sphere::unit(
-        id_creator.get(),
-        right_wall_transform,
+        Matrix::identity(4),
         Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
     );
 
@@ -144,8 +123,6 @@ pub fn build_world(id_creator: &IdentityCreator) -> World {
     let objects: Vec<Rc<dyn Shape>> = 
         vec![
             Rc::new(floor), 
-            Rc::new(left_wall), 
-            Rc::new(right_wall), 
             Rc::new(middle), 
             Rc::new(right), 
             Rc::new(left)
