@@ -12,7 +12,6 @@ pub struct Matrix {
     pub width: usize,
     pub height: usize,
     pub grid: Box<Array2D<f64>>,
-    pub transform_type: Option<MatrixTransform>
 }
 
 pub struct MatrixOperationDimensionError;
@@ -29,24 +28,12 @@ impl fmt::Debug for MatrixOperationDimensionError{
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum MatrixTransform {
-    Translation,
-    Scaling,
-    XRotation,
-    YRotation,
-    ZRotation,
-    Shearing,
-    Identity
-}
-
 impl Matrix {
     pub fn new(num_rows: usize, num_cols: usize) -> Matrix {
         return Matrix {
             width: num_cols,
             height: num_rows,
             grid: Box::new(Array2D::filled_with(0.0, num_rows, num_cols)),
-            transform_type: None
         };
     }
 
@@ -57,12 +44,11 @@ impl Matrix {
             width: tmp.num_columns(),
             height: tmp.num_rows(),
             grid: Box::new(tmp),
-            transform_type: None
         };
     }
 
     pub fn translation(x: f64, y: f64, z: f64) -> Matrix {
-        let mut transform = Matrix::from_rows(
+        let transform = Matrix::from_rows(
             &vec![
                 vec![1.0, 0.0, 0.0, x],
                 vec![0.0, 1.0, 0.0, y],
@@ -70,15 +56,13 @@ impl Matrix {
                 vec![0.0, 0.0, 0.0, 1.0],
             ]
         );
-        
-        transform.transform_type = Some(MatrixTransform::Translation);
 
         return transform;
     }
 
     // Reflection is just scaling by a negative -1 along a certain axis
     pub fn scaling(x: f64, y: f64, z: f64) -> Matrix {
-        let mut transform = Matrix::from_rows(
+        let transform = Matrix::from_rows(
             &vec![
                 vec![x, 0.0, 0.0, 0.0],
                 vec![0.0, y, 0.0, 0.0],
@@ -87,13 +71,11 @@ impl Matrix {
             ]
         );
 
-        transform.transform_type = Some(MatrixTransform::Scaling);
-
         return transform;
     }
     
     pub fn rotation_x(radians: f64) -> Matrix {
-        let mut transform = Matrix::from_rows(
+        let transform = Matrix::from_rows(
             &vec![
                 vec![1.0, 0.0, 0.0, 0.0],
                 vec![0.0, radians.cos(), -radians.sin(), 0.0], 
@@ -101,14 +83,12 @@ impl Matrix {
                 vec![0.0, 0.0, 0.0, 1.0],
             ]
         );
-        
-        transform.transform_type = Some(MatrixTransform::XRotation);
 
         return transform;
     }
 
     pub fn rotation_y(radians: f64) -> Matrix {
-        let mut transform = Matrix::from_rows(
+        let transform = Matrix::from_rows(
             &vec![
                 vec![radians.cos(), 0.0, radians.sin(), 0.0],
                 vec![0.0, 1.0, 0.0, 0.0],
@@ -117,13 +97,11 @@ impl Matrix {
             ]
         );
 
-        transform.transform_type = Some(MatrixTransform::YRotation);
-
         return transform;
     } 
 
     pub fn rotation_z(radians: f64) -> Matrix {
-        let mut transform = Matrix::from_rows(
+        let transform = Matrix::from_rows(
             &vec![
                 vec![radians.cos(), -radians.sin(), 0.0, 0.0],
                 vec![radians.sin(), radians.cos(), 0.0, 0.0],
@@ -132,13 +110,11 @@ impl Matrix {
             ]
         );
 
-        transform.transform_type = Some(MatrixTransform::ZRotation);
-        
         return transform;
     }
 
     pub fn shearing(x2y: f64, x2z: f64, y2x: f64, y2z: f64, z2x: f64, z2y: f64) -> Matrix {
-        let mut transform = Matrix::from_rows(
+        let transform = Matrix::from_rows(
             &vec![
                 vec![1.0, x2y, x2z, 0.0],
                 vec![y2x, 1.0, y2z, 0.0],
@@ -146,8 +122,6 @@ impl Matrix {
                 vec![0.0, 0.0, 0.0, 1.0],
             ]
         );
-
-        transform.transform_type = Some(MatrixTransform::Shearing);
 
         return transform;
     }
@@ -168,7 +142,6 @@ impl Matrix {
             width: id.num_columns(),
             height: id.num_rows(),
             grid: Box::new(id),
-            transform_type: Some(MatrixTransform::Identity)
         };
     }
 
@@ -187,8 +160,6 @@ impl Matrix {
                 }
             }
         }
-
-        result.transform_type = self.transform_type;
 
         return result;
     }
@@ -222,8 +193,6 @@ impl Matrix {
                 }
             }
         }
-
-        result.transform_type = self.transform_type;
         
         return result;
     }
@@ -312,8 +281,6 @@ impl Matrix {
                 new_row = new_row + 1;
             }
         }
-
-        result.transform_type = self.transform_type;
 
         return result;
     }

@@ -1,12 +1,13 @@
+use crate::patterns::pattern::Pattern;
 use crate::materials::material::Material;
 use crate::tuples::light::PointLight;
 use crate::Vector;
 use crate::Point;
 use crate::Color;
 
-#[derive(Debug, Copy, Clone)]
 pub struct Phong {
     color: Color,
+    pattern: Option<Box<dyn Pattern>>,
     ambient: f64,
     diffuse: f64,
     specular: f64,
@@ -14,9 +15,10 @@ pub struct Phong {
 }
 
 impl Phong {
-    pub fn new(color: Color, ambient: f64, diffuse: f64, specular: f64, shininess: f64) -> Phong {
+    pub fn new(color: Color, pattern: Option<Box<dyn Pattern>>, ambient: f64, diffuse: f64, specular: f64, shininess: f64) -> Phong {
         return Phong {
             color,
+            pattern,
             ambient, // Light reflected from other objects in the scene
             diffuse, // Light reflected from a matte surface
             specular, // Relection of the light source itself
@@ -25,17 +27,28 @@ impl Phong {
     }
 
     pub fn default() -> Phong {
-        return Phong::new(Color::new(1.0, 1.0, 1.0), 0.1, 0.9, 0.9, 200.0);
+        return Phong::new(
+            Color::new(1.0, 1.0, 1.0),
+            Option::None, 
+            0.1, 
+            0.9, 
+            0.9, 
+            200.0);
     }
 }
 
 impl Material for Phong {
-    fn lighting(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
+    fn lighting(&self, world_point: &Point, object_point: Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
+        let color = match &self.pattern {
+            None => self.color,
+            Some(p) => p.pattern_at(&object_point)
+        };
+
         // Combine the surface color with the light's color/intensity
-        let effective_color = self.color * light.intensity;
+        let effective_color = color * light.intensity;
 
         // Find the direction to the light source
-        let light_vector = (light.position - *point).normalize();
+        let light_vector = (light.position - *world_point).normalize();
 
         // Compute the ambient contribution
         let ambient = effective_color * self.ambient;

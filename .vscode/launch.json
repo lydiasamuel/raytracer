@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Debug",
             "program": "/home/lydia/source/raytracer/target/debug/whitted",
-            "args": ["/home/lydia/Downloads"],
+            "args": ["/home/lydia/Downloads/tmp.ppm"],
             "cwd": "/home/lydia/source/raytracer/target"
         }
     ]

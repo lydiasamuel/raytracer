@@ -34,7 +34,14 @@ impl World {
         let outer = Sphere::unit(
             id_creator.get(),
             Matrix::identity(4), 
-            Box::new(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0))
+            Box::new(
+                Phong::new(
+                    Color::new(0.8, 1.0, 0.6), 
+                    None,
+                    0.1, 
+                    0.7, 
+                    0.2, 
+                    200.0))
         );
         
         let inner = Sphere::unit(
@@ -121,7 +128,7 @@ impl World {
 
         for i in 0..self.lights.len() {
             let light = self.lights[i].as_ref();
-            let in_shadow = self.is_shadowed(comps.over_point); // Using bumped point instead which'll help prevent floating point mismatches
+            let in_shadow = self.is_shadowed(comps.over_point, light); // Using bumped point instead which'll help prevent floating point mismatches
 
             let shape = comps.object.as_ref();
 
@@ -131,8 +138,8 @@ impl World {
         return result;
     }
 
-    pub fn is_shadowed(&self, point: Point) -> bool {
-        let vec = self.lights[0].position - point; // TODO: support multiple light sources
+    fn is_shadowed(&self, point: Point, light: &PointLight) -> bool {
+        let vec = light.position - point;
         
         let distance = vec.magnitude(); // Measure the distance from the point to the light source
         let direction = vec.normalize(); // Create a ray pointing towards the light source

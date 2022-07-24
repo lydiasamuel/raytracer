@@ -1,3 +1,4 @@
+use crate::Matrix;
 use std::ops::{Add, Sub, Mul, Div, Neg};
 use std::fmt;
 use crate::tuples::vector::Vector;
@@ -30,6 +31,10 @@ impl Point {
             z,
             w
         };
+    }
+
+    pub fn transform(&self, matrix: Matrix) -> Point {
+        return (matrix * self.clone()).unwrap();
     }
 }
 

@@ -33,15 +33,16 @@ impl Shape for Plane {
         return self.id;
     }
 
-    
-    fn transform_ray_to_obj_space(&self, ray: &Ray) -> Ray {
-        let transform = self.transform.inverse();
-
-        return ray.transform(transform);
+    fn transform_ray_to_obj_space(&self, world_ray: &Ray) -> Ray {
+        return world_ray.transform(self.transform.inverse());
     }
 
-    fn intersect(self: Rc<Self>, ray: &Ray) -> Vec<Intersection> {
-        let ray = self.transform_ray_to_obj_space(ray);
+    fn transform_point_to_obj_space(&self, world_point: &Point) -> Point {
+        return world_point.transform(self.transform.inverse());
+    }
+
+    fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection> {
+        let ray = self.transform_ray_to_obj_space(world_ray);
 
         /*
             Four cases to consider
@@ -63,11 +64,19 @@ impl Shape for Plane {
         return vec![Intersection::new(time, self.clone())];
     }
 
-    fn normal_at(&self, point: &Point) -> Vector {
-        return Vector::new(0.0, 1.0, 0.0);
+    fn normal_at(&self, world_point: &Point) -> Vector {
+        return (self.transform.inverse() * Vector::new(0.0, 1.0, 0.0)).unwrap();
     }
 
-    fn light_material(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
-        return self.material.lighting(point, light, eyev, normalv, in_shadow);
+    fn light_material(&self, world_point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
+        let object_point = self.transform_point_to_obj_space(world_point);
+
+        return self.material.lighting(
+            world_point, 
+            object_point, 
+            light,
+            eyev,
+            normalv,
+            in_shadow);
     }
 }

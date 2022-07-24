@@ -39,15 +39,16 @@ impl Shape for Sphere {
         return self.id;
     }
 
-    fn transform_ray_to_obj_space(&self, ray: &Ray) -> Ray {
-        // Convert the ray which is in world space, into object space i.e. relative to the object itself.
-        let transform = self.transform.inverse();
-
-        return ray.transform(transform);
+    fn transform_ray_to_obj_space(&self, world_ray: &Ray) -> Ray {
+        return world_ray.transform(self.transform.inverse());
     }
 
-    fn intersect(self: Rc<Self>, ray: &Ray) -> Vec<Intersection> {
-        let ray = self.transform_ray_to_obj_space(ray);
+    fn transform_point_to_obj_space(&self, world_point: &Point) -> Point {
+        return world_point.transform(self.transform.inverse());
+    }
+
+    fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection> {
+        let object_ray = self.transform_ray_to_obj_space(world_ray);
 
         // (p - c) . (p - c) = r^2  Eq.1 of a Circle i.e. all points p equal distance from the center c
         // p = o + (t * d)  Eq.2 for a ray i.e. all points starting from the origin in that direction
@@ -61,10 +62,10 @@ impl Shape for Sphere {
         // A = d . d
         // B = 2(o - c) . d
         // Y = (o - c) . (o - c) - r^2
-        let dist = ray.origin - self.center;
+        let dist = object_ray.origin - self.center;
 
-        let alpha = Vector::dot(ray.direction, ray.direction);
-        let beta = Vector::dot(dist * 2.0, ray.direction);
+        let alpha = Vector::dot(object_ray.direction, object_ray.direction);
+        let beta = Vector::dot(dist * 2.0, object_ray.direction);
         let gamma = Vector::dot(dist, dist) - (self.radius * self.radius);
 
         let discriminant = (beta * beta) - ((alpha *  gamma) * 4.0);
@@ -83,9 +84,9 @@ impl Shape for Sphere {
         return vec![i1, i2];
     }
 
-    fn normal_at(&self, point: &Point) -> Vector {
+    fn normal_at(&self, world_point: &Point) -> Vector {
         let origin = Point::new(0.0, 0.0, 0.0);
-        let object_point = (self.transform.inverse() * (*point)).unwrap();
+        let object_point = self.transform_point_to_obj_space(world_point);
 
         let object_normal_vector = (object_point - origin).normalize();
         let world_vector_transform = self.transform/*.submatrix(3, 3)*/.inverse().transpose();
@@ -96,7 +97,15 @@ impl Shape for Sphere {
         return world_normal_vector.normalize();
     }
 
-    fn light_material(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
-        return self.material.lighting(point, light, eyev, normalv, in_shadow);
+    fn light_material(&self, world_point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
+        let object_point = self.transform_point_to_obj_space(world_point);
+
+        return self.material.lighting(
+            world_point, 
+            object_point, 
+            light,
+            eyev,
+            normalv,
+            in_shadow);
     }
 }

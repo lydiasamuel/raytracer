@@ -4,6 +4,7 @@ mod matrices;
 mod materials;
 mod geoentity;
 mod universe;
+mod patterns;
 
 use std::rc::Rc;
 use std::sync::Mutex;
@@ -23,6 +24,10 @@ use crate::tuples::intersection::Intersection;
 use crate::geoentity::shape::Shape;
 use crate::universe::world::World;
 use crate::universe::camera::Camera;
+use crate::patterns::striped::Striped;
+use crate::patterns::checker::Checker;
+use crate::patterns::gradient::Gradient;
+use crate::patterns::ring::Ring;
 
 pub struct Config {
     pub filename: String,
@@ -83,8 +88,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
 pub fn build_camera() -> Camera {
     return Camera::new(
-        1920, 
-        1080, 
+        1280, 
+        720, 
         std::f64::consts::PI / 3.0,
         Camera::view_transform(
             Point::new(0.0, 1.5, -5.0),
@@ -97,25 +102,86 @@ pub fn build_world(id_creator: &IdentityCreator) -> World {
     let floor = Plane::new(
         id_creator.get(),
         Matrix::identity(4),
-        Box::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0))
+        Box::new
+        (
+            Phong::new
+            (
+                Color::new(1.0, 0.9, 0.9), 
+                Option::Some
+                (
+                    Box::new
+                    (
+                        Ring::default()
+                    )
+                ),
+                0.1, 
+                0.9, 
+                0.0, 
+                200.0
+            )
+        )
     );
 
     let middle = Sphere::unit(
         id_creator.get(),
         Matrix::translation(-0.5, 1.0, 0.5),
-        Box::new(Phong::new(Color::new(0.1, 1.0, 0.5), 0.1, 0.7, 0.3, 200.0))
+        Box::new
+        (
+            Phong::new
+            (
+                Color::new(0.1, 1.0, 0.5),
+                Option::Some
+                (
+                    Box::new
+                    (
+                        Checker::new
+                        (
+                            Color::new(0.1, 1.0, 0.5),
+                            Color::new(1.0, 1.0, 1.0), 
+                            Matrix::scaling(0.4, 0.4, 0.4)
+                        )
+                    )
+                ),
+                0.1, 
+                0.7, 
+                0.3,
+                200.0
+            )
+        )
     );
 
     let right = Sphere::unit(
         id_creator.get(),
         (Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
-        Box::new(Phong::new(Color::new(0.5, 1.0, 0.1), 0.1, 0.7, 0.3, 200.0))
+        Box::new
+        (
+            Phong::new
+            (
+                Color::new(0.5, 1.0, 0.1),
+                None,
+                0.1, 
+                0.7, 
+                0.3, 
+                200.0
+            )
+        )
     );
 
     let left = Sphere::unit(
         id_creator.get(),
         (Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
-        Box::new(Phong::new(Color::new(1.0, 0.8, 0.1), 0.1, 0.7, 0.3, 200.0))
+        Box::new
+        (
+            Phong::new
+            (
+                Color::new(1.0, 0.8, 0.1), 
+                None,
+                0.1, 
+                0.7,
+                0.3, 
+                200.0
+            )
+        )
     );
    
     let light_source = PointLight::new(Color::new(1.0, 1.0, 1.0), Point::new(-10.0, 10.0, -10.0));
