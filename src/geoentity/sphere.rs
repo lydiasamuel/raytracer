@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use crate::Color;
+use crate::PointLight;
 use crate::Matrix;
 use crate::geoentity::shape::Shape;
 use crate::tuples::intersection::Intersection;
@@ -94,7 +96,7 @@ impl Shape for Sphere {
         return world_normal_vector.normalize();
     }
 
-    fn material(&self) -> Box<dyn Material> { 
-        return self.material.box_clone();
+    fn light_material(&self, point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
+        return self.material.lighting(point, light, eyev, normalv, in_shadow);
     }
 }

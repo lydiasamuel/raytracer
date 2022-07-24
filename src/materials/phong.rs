@@ -73,8 +73,4 @@ impl Material for Phong {
 
         return ambient + diffuse + specular;
     }
-
-    fn box_clone(&self) -> Box<dyn Material> { 
-        return Box::new((*self).clone());
-    }
 }

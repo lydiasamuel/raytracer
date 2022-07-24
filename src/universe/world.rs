@@ -119,13 +119,13 @@ impl World {
     pub fn shade_hit(&self, comps: &Computations) -> Color {
         let mut result = Color::new(0.0, 0.0, 0.0);
 
-        let material = comps.object.as_ref().material();
-
         for i in 0..self.lights.len() {
             let light = self.lights[i].as_ref();
             let in_shadow = self.is_shadowed(comps.over_point); // Using bumped point instead which'll help prevent floating point mismatches
 
-            result = result + material.lighting(&comps.over_point, light, &comps.eyev, &comps.normalv, in_shadow);
+            let shape = comps.object.as_ref();
+
+            result = result + shape.light_material(&comps.over_point, light, &comps.eyev, &comps.normalv, in_shadow);
         }
 
         return result;
