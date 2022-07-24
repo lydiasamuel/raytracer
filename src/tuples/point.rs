@@ -32,10 +32,6 @@ impl Point {
             w
         };
     }
-
-    pub fn transform(&self, matrix: Matrix) -> Point {
-        return (matrix * self.clone()).unwrap();
-    }
 }
 
 impl PartialEq for Point {

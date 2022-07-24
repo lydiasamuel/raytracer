@@ -33,16 +33,8 @@ impl Shape for Plane {
         return self.id;
     }
 
-    fn transform_ray_to_obj_space(&self, world_ray: &Ray) -> Ray {
-        return world_ray.transform(self.transform.inverse());
-    }
-
-    fn transform_point_to_obj_space(&self, world_point: &Point) -> Point {
-        return world_point.transform(self.transform.inverse());
-    }
-
     fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection> {
-        let ray = self.transform_ray_to_obj_space(world_ray);
+        let ray = world_ray.transform(self.transform.inverse());
 
         /*
             Four cases to consider
@@ -69,7 +61,7 @@ impl Shape for Plane {
     }
 
     fn light_material(&self, world_point: &Point, light: &PointLight, eyev: &Vector, normalv: &Vector, in_shadow: bool) -> Color {
-        let object_point = self.transform_point_to_obj_space(world_point);
+        let object_point = (self.transform.inverse() * (*world_point)).unwrap();
 
         return self.material.lighting(
             world_point, 

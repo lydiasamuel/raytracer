@@ -29,7 +29,7 @@ impl Checker {
 
 impl Pattern for Checker {
     fn pattern_at(&self, object_point: &Point) -> Color {
-        let pattern_point = object_point.transform(self.transform.inverse());
+        let pattern_point = (self.transform.inverse() * (*object_point)).unwrap();
         
         let x_floor = pattern_point.x.floor();
         let y_floor = pattern_point.y.floor();

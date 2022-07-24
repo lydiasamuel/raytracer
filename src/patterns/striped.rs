@@ -29,7 +29,7 @@ impl Striped {
 
 impl Pattern for Striped {
     fn pattern_at(&self, object_point: &Point) -> Color {
-        let pattern_point = object_point.transform(self.transform.inverse());
+        let pattern_point = (self.transform.inverse() * (*object_point)).unwrap();
         
         if (pattern_point.x.floor() as i64) % 2 == 0 {
             return self.former;

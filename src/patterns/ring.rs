@@ -29,7 +29,7 @@ impl Ring {
 
 impl Pattern for Ring {
     fn pattern_at(&self, object_point: &Point) -> Color {
-        let pattern_point = object_point.transform(self.transform.inverse());
+        let pattern_point = (self.transform.inverse() * (*object_point)).unwrap();
         
         let x_sq = pattern_point.x * pattern_point.x;
         let z_sq = pattern_point.z * pattern_point.z;

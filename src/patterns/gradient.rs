@@ -29,7 +29,7 @@ impl Gradient {
 
 impl Pattern for Gradient {
     fn pattern_at(&self, object_point: &Point) -> Color {
-        let pattern_point = object_point.transform(self.transform.inverse());
+        let pattern_point = (self.transform.inverse() * (*object_point)).unwrap();
         
         let distance = self.latter - self.former;
         let fraction = pattern_point.x - pattern_point.x.floor();
