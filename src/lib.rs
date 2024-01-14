@@ -1,6 +1,6 @@
 use tuples::tuple::Tuple;
 
-use crate::{window::canvas::{self, Canvas}, tuples::color::Color};
+use crate::{window::canvas::Canvas, tuples::color::Color};
 
 static EPSILON: f64 = 0.00001;
 
