@@ -13,12 +13,20 @@ pub struct Matrix {
 
 impl Matrix {
     pub fn new(num_rows: usize, num_columns: usize) -> Matrix {
+        if num_rows == 0 || num_columns == 0 {
+            panic!("Error: Unable to make matrix with zero sized dimensions")
+        }
+
         return Matrix {
             grid: Array2D::filled_with(0.0, num_rows, num_columns)
         };
     }
 
     pub fn identity(size: usize) -> Matrix {
+        if size == 0 {
+            panic!("Error: Unable to make zero sized identity matrix")
+        }
+
         let mut grid = Array2D::filled_with(0.0, size, size);
 
         for i in 0..size {
@@ -49,6 +57,104 @@ impl Matrix {
         return Ok(Matrix {
             grid
         });
+    }
+
+    pub fn transpose(&self) -> Matrix {
+        let mut result = Matrix::new(self.num_columns(), self.num_rows());
+
+        for row in 0..self.num_rows() {
+            for column in 0..self.num_columns() {
+                let value = *self.get(row, column).unwrap();
+                let fill = result.set(column, row, value);
+
+                match fill {
+                    Ok(()) => {},
+                    _ => panic!("Error: Unable to write to result of matrix transposition during construction")
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /* The determinant is a number that is derived from the elements of a matrix. 
+     * The name comes from the use of matrices to solve systems of equations, where it's used to
+     * determine whether or not the system has a solution. If the determinant is zero, then the
+     * corresponding system of equations has no solution.
+     */
+    pub fn determinant(&self) -> f64 {
+        if self.num_rows() == 2 && self.num_columns() == 2 {
+            let a = *self.get(0, 0).unwrap();
+            let b = *self.get(0, 1).unwrap();
+            let c = *self.get(1, 0).unwrap();
+            let d = *self.get(1, 1).unwrap();
+    
+            return a * d - b * c;
+        }
+        /*else {
+            let mut determinant = 0.0;
+
+            for column in 0..self.num_columns() {
+                let cofactor = self.cofactor(0, col);
+
+                let cofactor = match cofactor {
+                    Ok(result) => result,
+                    _ => panic!("Error: Cofactor for determinant could not be calculated")
+                };
+
+                determinant += *self.get(0, column).unwrap() * cofactor;
+            }
+
+            return determinant;
+        }*/
+
+        return 0.0;
+    }
+
+    pub fn submatrix(&self, row: usize, column: usize) -> Result<Matrix, &'static str> {
+        if self.num_rows() == 1 || self.num_columns() == 1 {
+            return Err("Error: Unable to take submatrix since both dimensions are not greater than one");
+        }
+
+        let mut result = Matrix::new(self.num_rows() - 1, self.num_columns() - 1);
+        let mut result_y = 0;
+        let mut result_x = 0;
+
+        for y in 0..self.num_rows() {
+
+            if y != row {
+                for x in 0..self.num_columns() {
+
+                    if x != column {
+                        let value = *self.get(y, x).unwrap();
+
+                        let fill = result.set(result_y, result_x, value);
+
+                        match fill {
+                            Ok(()) => {},
+                            _ => panic!("Error: Unable to write to resulting submatrix during construction")
+                        }
+                        
+                        result_x += 1;
+                    }
+                }
+
+                result_x = 0;
+                result_y += 1;
+            }  
+        }
+
+        return Ok(result);
+    }
+
+    fn minor(&self, row: usize, col: usize) -> Result<f64, &'static str>  {     
+        if self.num_rows() != 3 || self.num_columns() != 3 {
+            return Err("Error: Unable to take minor since both dimensions are not equal to three");
+        }
+
+        let sub = self.submatrix(row, col)?;
+
+        return Ok(sub.determinant());
     }
 
     pub fn get(&self, row: usize, column: usize) -> Option<&f64> {
@@ -314,5 +420,129 @@ mod tests {
         let result = matrix * tuple;
 
         assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_matrix_and_the_identity_when_multiplying_them_should_just_return_the_former() {
+        let rows = vec![
+            vec![0.0, 1.0, 2.0, 4.0], 
+            vec![1.0, 2.0, 4.0, 8.0],
+            vec![2.0, 4.0, 8.0, 16.0],
+            vec![4.0, 8.0, 16.0, 32.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+        let identity = Matrix::identity(4);
+
+        let expected = Matrix::from_rows(&rows).unwrap();
+        let result = matrix * identity;
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_matrix_when_transposing_it_should_correctly_return_result() {
+        let rows = vec![
+            vec![0.0, 9.0, 3.0, 0.0], 
+            vec![9.0, 8.0, 0.0, 8.0],
+            vec![1.0, 8.0, 5.0, 3.0],
+            vec![0.0, 0.0, 5.0, 8.0]
+        ];
+        
+        let expected_rows = vec![
+            vec![0.0, 9.0, 1.0, 0.0], 
+            vec![9.0, 8.0, 8.0, 0.0],
+            vec![3.0, 0.0, 5.0, 5.0],
+            vec![0.0, 8.0, 3.0, 8.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+        let expected = Matrix::from_rows(&expected_rows).unwrap();
+
+        let result = matrix.transpose();
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_the_identity_matrix_when_transposing_it_should_return_itself() {
+        let matrix = Matrix::identity(4);
+
+        let result = matrix.transpose();
+
+        assert_eq!(matrix, result);
+    }
+
+    #[test]
+    fn given_a_2_by_2_matrix_when_taking_the_determinant_should_correctly_calculate_result() {
+        let rows = vec![
+            vec![1.0, 5.0], 
+            vec![-3.0, 2.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let result = matrix.determinant();
+
+        assert_eq!(17.0, result);
+    }
+
+    #[test]
+    fn given_a_3_by_3_matrix_when_taking_a_submatrix_should_output_a_2_by_2_matrix() {
+        let rows = vec![
+            vec![1.0, 5.0, 0.0], 
+            vec![-3.0, 2.0, 7.0],
+            vec![0.0, 6.0, -3.0]
+        ];
+
+        let expected_rows = vec![
+            vec![-3.0, 2.0], 
+            vec![0.0, 6.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+        let expected = Matrix::from_rows(&expected_rows).unwrap();
+
+        let result = matrix.submatrix(0, 2).unwrap();
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_a_4_by_4_matrix_when_taking_a_submatrix_should_output_a_3_by_3_matrix() {
+        let rows = vec![
+            vec![-6.0, 1.0, 1.0, 6.0], 
+            vec![-8.0, 5.0, 8.0, 6.0],
+            vec![-1.0, 0.0, 8.0, 2.0],
+            vec![-7.0, 1.0, -1.0, 1.0]
+        ];
+
+        let expected_rows = vec![
+            vec![-6.0, 1.0, 6.0], 
+            vec![-8.0, 8.0, 6.0],
+            vec![-7.0, -1.0, 1.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+        let expected = Matrix::from_rows(&expected_rows).unwrap();
+
+        let result = matrix.submatrix(2, 1).unwrap();
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_a_3_by_3_matrix_when_taking_a_minor_should_output_determinant_of_the_2_by_2_matrix() {
+        let rows = vec![
+            vec![3.0, 5.0, 0.0], 
+            vec![2.0, -1.0, -7.0],
+            vec![6.0, -1.0, 5.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let result = matrix.minor(1, 0).unwrap();
+
+        assert_eq!(25.0, result);
     }
 }
