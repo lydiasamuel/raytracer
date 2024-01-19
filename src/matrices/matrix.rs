@@ -82,33 +82,25 @@ impl Matrix {
      * determine whether or not the system has a solution. If the determinant is zero, then the
      * corresponding system of equations has no solution.
      */
-    pub fn determinant(&self) -> f64 {
+    pub fn determinant(&self) -> Result<f64, &'static str> {
         if self.num_rows() == 2 && self.num_columns() == 2 {
             let a = *self.get(0, 0).unwrap();
             let b = *self.get(0, 1).unwrap();
             let c = *self.get(1, 0).unwrap();
             let d = *self.get(1, 1).unwrap();
     
-            return a * d - b * c;
+            return Ok(a * d - b * c);
         }
-        /*else {
+        else {
             let mut determinant = 0.0;
 
             for column in 0..self.num_columns() {
-                let cofactor = self.cofactor(0, col);
-
-                let cofactor = match cofactor {
-                    Ok(result) => result,
-                    _ => panic!("Error: Cofactor for determinant could not be calculated")
-                };
-
+                let cofactor = self.cofactor(0, column)?;
                 determinant += *self.get(0, column).unwrap() * cofactor;
             }
 
-            return determinant;
-        }*/
-
-        return 0.0;
+            return Ok(determinant);
+        }
     }
 
     pub fn submatrix(&self, row: usize, column: usize) -> Result<Matrix, &'static str> {
@@ -147,14 +139,44 @@ impl Matrix {
         return Ok(result);
     }
 
-    fn minor(&self, row: usize, col: usize) -> Result<f64, &'static str>  {     
-        if self.num_rows() != 3 || self.num_columns() != 3 {
+    // A minor of an element at row i and column j is the determinant of the submatrix at (i, j)
+    fn minor(&self, row: usize, column: usize) -> Result<f64, &'static str> {     
+        if self.num_rows() == 3 && self.num_columns() == 3 {
+            let submatrix = self.submatrix(row, column)?;
+
+            let determinant = submatrix.determinant()?;
+
+            return Ok(determinant);
+        }
+        else {
             return Err("Error: Unable to take minor since both dimensions are not equal to three");
         }
+    }
 
-        let sub = self.submatrix(row, col)?;
+    // A cofactor is a minor that possibly has their sign changed 
+    fn cofactor(&self, row: usize, column: usize) -> Result<f64, &'static str> {
+        if self.num_rows() == 4 && self.num_columns() == 4 {
+            let base: f64 = -1.0;
+            let exp: f64 = (row + column) as f64;
 
-        return Ok(sub.determinant());
+            let sub = self.submatrix(row, column).unwrap();
+            let det = sub.determinant()?;
+
+            return Ok(base.powf(exp) * det);
+        } 
+        else if self.num_rows() == 3 && self.num_columns() == 3 {
+            let result = self.minor(row, column)?;
+
+            if (row + column) % 2 != 0 {
+                return Ok(-result);
+            }
+            else {
+                return Ok(result);
+            }
+        }
+        else {
+            return Err("Error: This function can only take cofactor of a 4x4 or a 3x3 matrix");
+        }
     }
 
     pub fn get(&self, row: usize, column: usize) -> Option<&f64> {
@@ -482,9 +504,59 @@ mod tests {
 
         let matrix = Matrix::from_rows(&rows).unwrap();
 
-        let result = matrix.determinant();
+        let result = matrix.determinant().unwrap();
 
         assert_eq!(17.0, result);
+    }
+
+    #[test]
+    fn given_a_3_by_3_matrix_when_taking_the_determinant_should_correctly_calculate_result() {
+        let rows = vec![
+            vec![1.0, 2.0, 6.0], 
+            vec![-5.0, 8.0, -4.0],
+            vec![2.0, 6.0, 4.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let result = matrix.cofactor(0, 0).unwrap();
+        assert_eq!(56.0, result);
+
+        let result = matrix.cofactor(0, 1).unwrap();
+        assert_eq!(12.0, result);
+
+        let result = matrix.cofactor(0, 2).unwrap();
+        assert_eq!(-46.0, result);
+
+        let result = matrix.determinant().unwrap();
+        assert_eq!(-196.0, result);
+    }
+
+    #[test]
+    fn given_a_4_by_4_matrix_when_taking_the_determinant_should_correctly_calculate_result() {
+        let rows = vec![
+            vec![-2.0, -8.0, 3.0, 5.0], 
+            vec![-3.0, 1.0, 7.0, 3.0],
+            vec![1.0, 2.0, -9.0, 6.0],
+            vec![-6.0, 7.0, 7.0, -9.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let result = matrix.cofactor(0, 0).unwrap();
+        assert_eq!(690.0, result);
+
+        let result = matrix.cofactor(0, 1).unwrap();
+        assert_eq!(447.0, result);
+
+        let result = matrix.cofactor(0, 2).unwrap();
+        assert_eq!(210.0, result);
+
+        let result = matrix.cofactor(0, 3).unwrap();
+        assert_eq!(51.0, result);
+
+        let result = matrix.determinant().unwrap();
+        assert_eq!(-4071.0, result);
     }
 
     #[test]
@@ -544,5 +616,28 @@ mod tests {
         let result = matrix.minor(1, 0).unwrap();
 
         assert_eq!(25.0, result);
+    }
+
+    #[test]
+    fn given_a_3_by_3_matrix_when_taking_a_cofactor_should_output_correctly_signed_minor() {
+        let rows = vec![
+            vec![3.0, 5.0, 0.0], 
+            vec![2.0, -1.0, -7.0],
+            vec![6.0, -1.0, 5.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let result = matrix.minor(0, 0).unwrap();
+        assert_eq!(-12.0, result);
+
+        let result = matrix.cofactor(0, 0).unwrap();
+        assert_eq!(-12.0, result);
+
+        let result = matrix.minor(1, 0).unwrap();
+        assert_eq!(25.0, result);
+
+        let result = matrix.cofactor(1, 0).unwrap();
+        assert_eq!(-25.0, result);
     }
 }
