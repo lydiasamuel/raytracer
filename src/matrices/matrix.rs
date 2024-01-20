@@ -65,6 +65,7 @@ impl Matrix {
         for row in 0..self.num_rows() {
             for column in 0..self.num_columns() {
                 let value = *self.get(row, column).unwrap();
+
                 let fill = result.set(column, row, value);
 
                 match fill {
@@ -75,6 +76,38 @@ impl Matrix {
         }
 
         return result;
+    }
+
+    /* Inversion is the operation that allows you to reverse the effect of multiplying by a matrix.
+     * Not every matrix is invertible, if the determinant of the matrix is 0 then there is no inverse.
+     * Method here is the matrix of cofactors
+     *   1. Create a matrix that that consists of the cofactors of each of the original elements
+     *   2. Transpose the cofactor matrix
+     *   3. Divide each of the resulting elements by the determinant of the original matrix
+     */
+    pub fn inverse(&self) -> Result<Matrix, &'static str> {
+        let determinant = self.determinant()?;
+
+        if (determinant.abs() - 0.0) < EPSILON {
+            return Err("Error: Matrix is not invertable due to a zero determinant");
+        }
+
+        let mut result = Matrix::new(self.num_rows(), self.num_columns());
+
+        for row in 0..self.num_rows() {
+            for column in 0..self.num_columns() {
+                let cofactor = self.cofactor(row, column)?;
+
+                let fill = result.set(column, row, cofactor / determinant);
+
+                match fill {
+                    Ok(()) => {},
+                    _ => panic!("Error: Unable to write to result of matrix inversion during construction")
+                }
+            }
+        }
+
+        return Ok(result);
     }
 
     /* The determinant is a number that is derived from the elements of a matrix. 
@@ -639,5 +672,136 @@ mod tests {
 
         let result = matrix.cofactor(1, 0).unwrap();
         assert_eq!(-25.0, result);
+    }
+
+    #[test]
+    fn given_a_non_invertible_4_by_4_matrix_when_taking_the_inversion_should_output_error_result() {
+        let rows = vec![
+            vec![-4.0, 2.0, -2.0, -3.0], 
+            vec![9.0, 6.0, 2.0, 6.0],
+            vec![0.0, -5.0, 1.0, -5.0],
+            vec![0.0, 0.0, 0.0, 0.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let result = matrix.inverse();
+
+        assert_eq!(true, result.is_err());
+    }
+
+    #[test]
+    fn given_an_invertible_4_by_4_matrix_when_taking_the_inversion_should_output_correct_result() {
+        let rows = vec![
+            vec![-5.0, 2.0, 6.0, -8.0], 
+            vec![1.0, -5.0, 1.0, 8.0],
+            vec![7.0, 7.0, -6.0, -7.0],
+            vec![1.0, -3.0, 7.0, 4.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+
+        let determinant = matrix.determinant().unwrap();
+        let inverse = matrix.inverse().unwrap();
+
+        assert_eq!(532.0, determinant);
+
+        let result = matrix.cofactor(2, 3).unwrap();
+        assert_eq!(-160.0, result);
+
+        let result = *inverse.get(3, 2).unwrap();
+        let expected = -160.0 / determinant;
+        assert_eq!(expected, result);
+
+        let result = matrix.cofactor(3, 2).unwrap();
+        assert_eq!(105.0, result);
+
+        let result = *inverse.get(2, 3).unwrap();
+        let expected = 105.0 / determinant;
+        assert_eq!(expected, result);
+
+        let expected_rows = vec![
+            vec![0.21805, 0.45113, 0.24060, -0.04511], 
+            vec![-0.80827, -1.45677, -0.44361, 0.52068],
+            vec![-0.07895, -0.22368, -0.05263, 0.19737],
+            vec![-0.52256, -0.81391, -0.30075, 0.30639]
+        ];
+
+        let expected_inverse = Matrix::from_rows(&expected_rows).unwrap();
+
+        assert_eq!(expected_inverse, inverse);
+    }
+
+    #[test]
+    fn given_a_couple_invertible_4_by_4_matrices_when_taking_the_inversion_should_output_correct_result() {
+        let rows = vec![
+            vec![8.0, -5.0, 9.0, 2.0], 
+            vec![7.0, 5.0, 6.0, 1.0],
+            vec![-6.0, 0.0, 9.0, 6.0],
+            vec![-3.0, 0.0, -9.0, -4.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+        let inverse = matrix.inverse().unwrap();
+
+        let expected_rows = vec![
+            vec![-0.15385, -0.15385, -0.28205, -0.53846], 
+            vec![-0.07692, 0.12308, 0.02564, 0.03077],
+            vec![0.35897, 0.35897, 0.43590, 0.92308],
+            vec![-0.69231, -0.69231, -0.76923, -1.92308]
+        ];
+
+        let expected_inverse = Matrix::from_rows(&expected_rows).unwrap();
+
+        assert_eq!(expected_inverse, inverse);
+
+        let rows = vec![
+            vec![9.0, 3.0, 0.0, 9.0], 
+            vec![-5.0, -2.0, -6.0, -3.0],
+            vec![-4.0, 9.0, 6.0, 4.0],
+            vec![-7.0, 6.0, 6.0, 2.0]
+        ];
+
+        let matrix = Matrix::from_rows(&rows).unwrap();
+        let inverse = matrix.inverse().unwrap();
+        
+        let expected_rows = vec![
+            vec![-0.04074, -0.07778, 0.14444, -0.22222], 
+            vec![-0.07778, 0.03333, 0.36667, -0.33333],
+            vec![-0.02901, -0.14630, -0.10926, 0.12963],
+            vec![0.17778, 0.06667, -0.26667, 0.33333]
+        ];
+
+        let expected_inverse = Matrix::from_rows(&expected_rows).unwrap();
+
+        assert_eq!(expected_inverse, inverse);
+    }
+
+    #[test]
+    fn given_two_4_by_4_matrices_when_multiplying_the_product_by_the_inverse_of_the_latter_should_output_the_former() {
+        let rows_a = vec![
+            vec![3.0, -9.0, 7.0, 3.0], 
+            vec![3.0, -8.0, 2.0, -9.0],
+            vec![-4.0, 4.0, 4.0, 1.0],
+            vec![-6.0, 5.0, -1.0, 1.0]
+        ];
+
+        let rows_b = vec![
+            vec![8.0, 2.0, 2.0, 2.0], 
+            vec![3.0, -1.0, 7.0, 0.0],
+            vec![7.0, 0.0, 5.0, 4.0],
+            vec![6.0, -2.0, 0.0, 5.0]
+        ];
+
+        let matrix_a = Matrix::from_rows(&rows_a).unwrap();
+        let matrix_b = Matrix::from_rows(&rows_b).unwrap();
+        let inverse = matrix_b.inverse().unwrap();
+
+        let product = matrix_a * matrix_b;
+        let result = product.unwrap() * inverse;
+
+        let expected = Matrix::from_rows(&rows_a).unwrap();
+
+        assert_eq!(expected, result.unwrap());
     }
 }
