@@ -59,6 +59,101 @@ impl Matrix {
         });
     }
 
+    pub fn translation(x: f64, y: f64, z: f64) -> Matrix {
+        let transform = Matrix::from_rows(
+            &vec![
+                vec![1.0, 0.0, 0.0, x],
+                vec![0.0, 1.0, 0.0, y],
+                vec![0.0, 0.0, 1.0, z],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
+
+        return transform.unwrap();
+    }
+
+    // Side note: Reflection is just scaling by a negative value along a certain axis
+    pub fn reflect_x() -> Matrix {
+        return Matrix::scaling(-1.0, 1.0, 1.0);
+    }
+
+    pub fn reflect_y() -> Matrix {
+        return Matrix::scaling(1.0, -1.0, 1.0);
+    }
+
+    pub fn reflect_z() -> Matrix {
+        return Matrix::scaling(1.0, 1.0, -1.0);
+    }
+
+    pub fn scaling(x: f64, y: f64, z: f64) -> Matrix {
+        let transform = Matrix::from_rows(
+            &vec![
+                vec![x, 0.0, 0.0, 0.0],
+                vec![0.0, y, 0.0, 0.0],
+                vec![0.0, 0.0, z, 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
+
+        return transform.unwrap();
+    }
+
+    pub fn rotation_x(radians: f64) -> Matrix {
+        let transform = Matrix::from_rows(
+            &vec![
+                vec![1.0, 0.0, 0.0, 0.0],
+                vec![0.0, radians.cos(), -radians.sin(), 0.0], 
+                vec![0.0, radians.sin(), radians.cos(), 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
+
+        return transform.unwrap();
+    }
+
+    pub fn rotation_y(radians: f64) -> Matrix {
+        let transform = Matrix::from_rows(
+            &vec![
+                vec![radians.cos(), 0.0, radians.sin(), 0.0],
+                vec![0.0, 1.0, 0.0, 0.0],
+                vec![-radians.sin(), 0.0, radians.cos(), 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
+
+        return transform.unwrap();
+    } 
+
+    pub fn rotation_z(radians: f64) -> Matrix {
+        let transform = Matrix::from_rows(
+            &vec![
+                vec![radians.cos(), -radians.sin(), 0.0, 0.0],
+                vec![radians.sin(), radians.cos(), 0.0, 0.0],
+                vec![0.0, 0.0, 1.0, 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
+
+        return transform.unwrap();
+    }
+
+    /* A shearing transformation changes each component of the tuple in proportion to the
+     * other two components. So the x component changes in proportion to the y and z, y changes
+     * in proportion to x and z, and z changes in proportion to x and y.
+     */
+    pub fn shearing(x2y: f64, x2z: f64, y2x: f64, y2z: f64, z2x: f64, z2y: f64) -> Matrix {
+        let transform = Matrix::from_rows(
+            &vec![
+                vec![1.0, x2y, x2z, 0.0],
+                vec![y2x, 1.0, y2z, 0.0],
+                vec![z2x, z2y, 1.0, 0.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ]
+        );
+
+        return transform.unwrap();
+    }
+
     pub fn transpose(&self) -> Matrix {
         let mut result = Matrix::new(self.num_columns(), self.num_rows());
 
@@ -317,6 +412,7 @@ impl PartialEq for Matrix {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts;
 
     #[test]
     fn given_normal_values_for_a_matrix_when_creating_a_4_by_4_should_instantiate_correctly() {
@@ -801,6 +897,239 @@ mod tests {
         let result = product.unwrap() * inverse;
 
         let expected = Matrix::from_rows(&rows_a).unwrap();
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_translation_matrix_when_multiplying_them_should_move_the_point_by_the_given_amount() {
+        let transform = Matrix::translation(5.0, -3.0, 2.0);
+        let point = Tuple::point(-3.0, 4.0, 5.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, 1.0, 7.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_an_inverse_translation_matrix_when_multiplying_them_should_move_the_point_by_the_given_amount_in_reverse() {
+        let transform = Matrix::translation(5.0, -3.0, 2.0);
+        let inverse = transform.inverse().unwrap();
+        let point = Tuple::point(-3.0, 4.0, 5.0);
+
+        let result = inverse * point;
+        let expected = Tuple::point(-8.0, 7.0, 3.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_vector_and_a_translation_matrix_when_multiplying_them_should_not_change_the_vector() {
+        let transform = Matrix::translation(5.0, -3.0, 2.0);
+        let vector = Tuple::vector(-3.0, 4.0, 5.0);
+
+        let result = transform * vector;
+
+        assert_eq!(vector, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_scaling_matrix_when_multiplying_them_should_scale_the_point_correctly() {
+        let transform = Matrix::scaling(2.0, 3.0, 4.0);
+        let point = Tuple::point(-4.0, 6.0, 8.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(-8.0, 18.0, 32.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_vector_and_a_scaling_matrix_when_multiplying_them_should_scale_the_vector_correctly() {
+        let transform = Matrix::scaling(2.0, 3.0, 4.0);
+        let vector = Tuple::vector(-4.0, 6.0, 8.0);
+
+        let result = transform * vector;
+        let expected = Tuple::vector(-8.0, 18.0, 32.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_vector_and_an_inverse_scaling_matrix_when_multiplying_them_should_scale_correctly_in_the_opposite_way() {
+        let transform = Matrix::scaling(2.0, 3.0, 4.0);
+        let inverse = transform.inverse().unwrap();
+        let vector = Tuple::vector(-4.0, 6.0, 8.0);
+
+        let result = inverse * vector;
+        let expected = Tuple::vector(-2.0, 2.0, 2.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_reflection_matrix_when_multiplying_them_should_reflect_the_point_correctly() {
+        let transform = Matrix::reflect_x();
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(-2.0, 3.0, 4.0);
+
+        assert_eq!(expected, result.unwrap());
+
+        let transform = Matrix::reflect_y();
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, -3.0, 4.0);
+
+        assert_eq!(expected, result.unwrap());
+
+        let transform = Matrix::reflect_z();
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, 3.0, -4.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_an_x_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly() {
+        let half_quarter = Matrix::rotation_x(consts::PI / 4.0);
+        let full_quarter = Matrix::rotation_x(consts::PI / 2.0);
+
+        let point = Tuple::point(0.0, 1.0, 0.0);
+
+        let result = half_quarter * point;
+        let expected = Tuple::point(0.0, consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0);
+
+        assert_eq!(expected, result.unwrap());
+
+        let result = full_quarter * point;
+        let expected = Tuple::point(0.0, 0.0, 1.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_an_inverse_x_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly() {
+        let half_quarter = Matrix::rotation_x(consts::PI / 4.0);
+        let inverse = half_quarter.inverse().unwrap();
+
+        let point = Tuple::point(0.0, 1.0, 0.0);
+
+        let result = inverse * point;
+        let expected = Tuple::point(0.0, consts::SQRT_2 / 2.0, -consts::SQRT_2 / 2.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_y_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly() {
+        let half_quarter = Matrix::rotation_y(consts::PI / 4.0);
+        let full_quarter = Matrix::rotation_y(consts::PI / 2.0);
+
+        let point = Tuple::point(0.0, 0.0, 1.0);
+
+        let result = half_quarter * point;
+        let expected = Tuple::point(consts::SQRT_2 / 2.0, 0.0, consts::SQRT_2 / 2.0);
+
+        assert_eq!(expected, result.unwrap());
+
+        let result = full_quarter * point;
+        let expected = Tuple::point(1.0, 0.0, 0.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_z_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly() {
+        let half_quarter = Matrix::rotation_z(consts::PI / 4.0);
+        let full_quarter = Matrix::rotation_z(consts::PI / 2.0);
+
+        let point = Tuple::point(0.0, 1.0, 0.0);
+
+        let result = half_quarter * point;
+        let expected = Tuple::point(-consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0, 0.0);
+
+        assert_eq!(expected, result.unwrap());
+
+        let result = full_quarter * point;
+        let expected = Tuple::point(-1.0, 0.0, 0.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+    
+    #[test]
+    fn given_a_point_and_a_x2y_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
+        // Moves x in proportion to y one time.
+        let transform = Matrix::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(5.0, 3.0, 4.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_x2z_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
+        // Moves x in proportion to y one time.
+        let transform = Matrix::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(6.0, 3.0, 4.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_y2x_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
+        // Moves x in proportion to y one time.
+        let transform = Matrix::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, 5.0, 4.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_y2z_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
+        // Moves x in proportion to y one time.
+        let transform = Matrix::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, 7.0, 4.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_z2x_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
+        // Moves x in proportion to y one time.
+        let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, 3.0, 6.0);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_a_point_and_a_z2y_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
+        // Moves x in proportion to y one time.
+        let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        let point = Tuple::point(2.0, 3.0, 4.0);
+
+        let result = transform * point;
+        let expected = Tuple::point(2.0, 3.0, 7.0);
 
         assert_eq!(expected, result.unwrap());
     }
