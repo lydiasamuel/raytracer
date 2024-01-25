@@ -345,6 +345,8 @@ impl Mul<Tuple> for Matrix {
     }
 }
 
+// Matrix multiplication is associative, but not commutative. A x B is not the same as B x A.
+// You must concatenate the transformations in the reverse order to have them applied in the order you want!
 impl Mul for Matrix {
     type Output = Result<Self, &'static str>;
 
@@ -1064,7 +1066,6 @@ mod tests {
     
     #[test]
     fn given_a_point_and_a_x2y_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
-        // Moves x in proportion to y one time.
         let transform = Matrix::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
@@ -1076,7 +1077,6 @@ mod tests {
 
     #[test]
     fn given_a_point_and_a_x2z_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
-        // Moves x in proportion to y one time.
         let transform = Matrix::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
@@ -1088,7 +1088,6 @@ mod tests {
 
     #[test]
     fn given_a_point_and_a_y2x_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
-        // Moves x in proportion to y one time.
         let transform = Matrix::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
@@ -1100,7 +1099,6 @@ mod tests {
 
     #[test]
     fn given_a_point_and_a_y2z_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
-        // Moves x in proportion to y one time.
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
@@ -1112,7 +1110,6 @@ mod tests {
 
     #[test]
     fn given_a_point_and_a_z2x_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
-        // Moves x in proportion to y one time.
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
@@ -1124,7 +1121,6 @@ mod tests {
 
     #[test]
     fn given_a_point_and_a_z2y_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly() {
-        // Moves x in proportion to y one time.
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
@@ -1132,5 +1128,43 @@ mod tests {
         let expected = Tuple::point(2.0, 3.0, 7.0);
 
         assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn given_several_transformation_matrices_when_applied_individualy_in_sequence_should_transform_point_correctly() {
+        let transform_a = Matrix::rotation_x(consts::PI / 2.0);
+        let transform_b = Matrix::scaling(5.0, 5.0, 5.0);
+        let transform_c = Matrix::translation(10.0, 5.0, 7.0);
+
+        let point = Tuple::point(1.0, 0.0, 1.0);
+
+        let result = (transform_a * point).unwrap();
+        let expected = Tuple::point(1.0, -1.0, 0.0);
+        
+        assert_eq!(expected, result);
+
+        let result = (transform_b * result).unwrap();
+        let expected = Tuple::point(5.0, -5.0, 0.0);
+        
+        assert_eq!(expected, result);
+
+        let result = (transform_c * result).unwrap();
+        let expected = Tuple::point(15.0, 0.0, 7.0);
+        
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_several_transformation_matrices_when_chained_in_reverse_order_should_transform_point_correctly() {
+        let transform_a = Matrix::rotation_x(consts::PI / 2.0);
+        let transform_b = Matrix::scaling(5.0, 5.0, 5.0);
+        let transform_c = Matrix::translation(10.0, 5.0, 7.0);
+
+        let point = Tuple::point(1.0, 0.0, 1.0);
+
+        let result = (((transform_c * transform_b).unwrap() * transform_a).unwrap() * point).unwrap();
+        let expected = Tuple::point(15.0, 0.0, 7.0);
+        
+        assert_eq!(expected, result);
     }
 }
