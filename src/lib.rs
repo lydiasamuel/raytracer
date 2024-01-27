@@ -4,8 +4,9 @@ use crate::{window::canvas::Canvas, tuples::color::Color};
 
 static EPSILON: f64 = 0.00001;
 
-pub mod tuples;
+pub mod geometry;
 pub mod matrices;
+pub mod tuples;
 pub mod window;
 
 pub struct Projectile {
