@@ -6,6 +6,7 @@ use crate::tuples::{intersection::Intersection, ray::Ray, tuple::Tuple};
 
 use super::shape::Shape;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Sphere {
     id: Uuid
 }
@@ -137,5 +138,25 @@ mod tests {
         assert_eq!(2, intersections.len());
         assert_eq!(-6.0, intersections[0].time);
         assert_eq!(-4.0, intersections[1].time);
+    }
+
+    #[test]
+    fn given_a_ray_and_a_sphere_when_calculating_the_intersections_should_expect_intersections_to_reference_the_sphere() {
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, -5.0), 
+            Tuple::vector(0.0, 0.0, 1.0));
+
+        let sphere = Sphere::unit();
+        
+        let shape: Rc<dyn Shape> = Rc::new(sphere);
+
+        let intersections = shape.clone().intersect(&ray);
+
+        assert_eq!(2, intersections.len());
+        assert_eq!(4.0, intersections[0].time);
+        assert_eq!(6.0, intersections[1].time);
+
+        assert!(Rc::ptr_eq(&shape, &intersections[0].shape));
+        assert!(Rc::ptr_eq(&shape, &intersections[1].shape));
     }
 }
