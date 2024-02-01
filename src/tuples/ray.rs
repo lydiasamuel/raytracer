@@ -28,6 +28,8 @@ impl Ray {
         return self.origin + (self.direction * time);
     }
 
+    // Ray's direction is left unnormalized so that when intersections are computed it represents
+    // a hit at the correct distance in world space from the ray's origin.
     pub fn transform(&self, transform: Matrix) -> Ray {
         let transformed_origin = transform.clone() * self.origin;
         let transformed_direction = transform * self.direction;
@@ -80,5 +82,41 @@ mod tests {
         let expected_position = Tuple::point(4.5, 3.0, 4.0);
         
         assert_eq!(expected_position, position);
+    }
+
+    #[test]
+    fn given_a_ray_a_translation_matrix_when_transforming_the_ray_should_return_correct_origin_and_direction() {
+        let transform = Matrix::translation(3.0, 4.0, 5.0);
+
+        let origin = Tuple::point(1.0, 2.0, 3.0);
+        let direction = Tuple::vector(0.0, 1.0, 0.0);
+
+        let ray = Ray::new(origin, direction);
+
+        let result = ray.transform(transform);
+
+        let expected_origin = Tuple::point(4.0, 6.0, 8.0);
+        let expected_direction = Tuple::vector(0.0, 1.0, 0.0);
+
+        assert_eq!(expected_origin, result.origin);
+        assert_eq!(expected_direction, result.direction);
+    }
+
+    #[test]
+    fn given_a_ray_a_scaling_matrix_when_transforming_the_ray_should_return_correct_origin_and_direction() {
+        let transform = Matrix::scaling(2.0, 3.0, 4.0);
+
+        let origin = Tuple::point(1.0, 2.0, 3.0);
+        let direction = Tuple::vector(0.0, 1.0, 0.0);
+
+        let ray = Ray::new(origin, direction);
+
+        let result = ray.transform(transform);
+
+        let expected_origin = Tuple::point(2.0, 6.0, 12.0);
+        let expected_direction = Tuple::vector(0.0, 3.0, 0.0);
+
+        assert_eq!(expected_origin, result.origin);
+        assert_eq!(expected_direction, result.direction);
     }
 }

@@ -2,19 +2,21 @@ use std::rc::Rc;
 
 use uuid::Uuid;
 
-use crate::tuples::{intersection::Intersection, ray::Ray, tuple::Tuple};
+use crate::{matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
 
 use super::shape::Shape;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Sphere {
-    id: Uuid
+    id: Uuid,
+    transform: Rc<Matrix>
 }
 
 impl Sphere {
     pub fn unit() -> Sphere {
         return Sphere {
-            id: Uuid::new_v4()
+            id: Uuid::new_v4(),
+            transform: Rc::new(Matrix::identity(4))
         }
     }
 }
@@ -24,9 +26,13 @@ impl Shape for Sphere {
         return self.id.clone();
     }
 
-    fn intersect(self: Rc<Self>, ray: &Ray) -> Vec<Intersection> {
-        let ray_direction = ray.direction();
-        let sphere_to_ray = ray.origin() - Tuple::point(0.0, 0.0, 0.0);
+    fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection> {
+        let inverse_transform = self.get_transform().inverse().unwrap();
+        let object_ray = world_ray.transform(inverse_transform);
+
+        let geometric_origin = Tuple::point(0.0, 0.0, 0.0);
+        let ray_direction = object_ray.direction();
+        let sphere_to_ray = object_ray.origin() - geometric_origin;
 
         let a = Tuple::dot(&ray_direction, &ray_direction);
         let b = 2.0 * Tuple::dot(&ray_direction, &sphere_to_ray);
@@ -51,11 +57,21 @@ impl Shape for Sphere {
             return vec![i2, i1];
         }
     }
+
+    fn get_transform(&self) -> Rc<Matrix> {
+        return self.transform.clone();
+    }
+
+    fn set_transform(&mut self, transform: Matrix) {
+        self.transform = Rc::new(transform);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::borrow::Borrow;
 
     #[test]
     fn given_a_ray_and_a_sphere_when_calculating_the_intersections_should_expect_two_points() {
@@ -158,5 +174,63 @@ mod tests {
 
         assert!(Rc::ptr_eq(&shape, &intersections[0].shape));
         assert!(Rc::ptr_eq(&shape, &intersections[1].shape));
+    }
+
+    #[test]
+    fn given_a_new_unit_sphere_when_constructing_it_should_expect_default_transformation_to_be_identity_matrix() {
+        let sphere = Sphere::unit();
+        
+        assert_eq!(Matrix::identity(4), *sphere.get_transform().borrow());
+    }
+
+    #[test]
+    fn given_a_new_unit_sphere_when_updating_the_transform_should_expect_transform_to_be_set() {
+        let transform = Matrix::translation(2.0, 3.0, 4.0);
+        
+        let mut sphere = Sphere::unit();
+
+        sphere.set_transform(transform.clone());
+        
+        assert_eq!(transform, *sphere.get_transform().borrow());
+    }
+
+    #[test]
+    fn given_a_ray_and_a_scaled_sphere_when_calculating_the_intersections_should_expect_correctly_scaled_points() {
+        let transform = Matrix::scaling(2.0, 2.0, 2.0);
+        
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, -5.0), 
+            Tuple::vector(0.0, 0.0, 1.0));
+
+        let mut sphere = Sphere::unit();
+        
+        sphere.set_transform(transform);
+
+        let shape: Rc<dyn Shape> = Rc::new(sphere);
+
+        let intersections = shape.clone().intersect(&ray);
+
+        assert_eq!(2, intersections.len());
+        assert_eq!(3.0, intersections[0].time);
+        assert_eq!(7.0, intersections[1].time);
+    }
+
+    #[test]
+    fn given_a_ray_and_a_translated_sphere_when_calculating_the_intersections_should_expect_correctly_translated_points() {
+        let transform = Matrix::translation(5.0, 0.0, 0.0);
+        
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, -5.0), 
+            Tuple::vector(0.0, 0.0, 1.0));
+
+        let mut sphere = Sphere::unit();
+        
+        sphere.set_transform(transform);
+
+        let shape: Rc<dyn Shape> = Rc::new(sphere);
+
+        let intersections = shape.clone().intersect(&ray);
+
+        assert_eq!(0, intersections.len());
     }
 }

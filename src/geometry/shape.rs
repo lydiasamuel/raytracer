@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::tuples::{intersection::Intersection, ray::Ray};
+use crate::{matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray}};
 
 use uuid::Uuid;
 
@@ -12,5 +12,9 @@ pub trait Shape {
      *
      * Note that: Intersections are returned in increasing order.
      */
-    fn intersect(self: Rc<Self>, ray: &Ray) -> Vec<Intersection>;
+    fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection>;
+
+    fn get_transform(&self) -> Rc<Matrix>;
+
+    fn set_transform(&mut self, transform: Matrix);
 }
