@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::{error::Error, fmt::Write, fs};
 
 use array2d::Array2D;
 
@@ -101,6 +101,14 @@ impl Canvas {
         }
 
         return Ok(())
+    }
+
+    pub fn write_to_file(&self, file_path: String) -> Result<(), Box<dyn Error>> {
+        let output = self.to_ppm()?;
+    
+        fs::write(file_path, output)?;
+    
+        return Ok(());
     }
 }
 

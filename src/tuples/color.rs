@@ -17,6 +17,18 @@ impl Color {
             blue
         };
     }
+
+    pub fn red() -> Color {
+        return Color::new(1.0, 0.0, 0.0);
+    }
+
+    pub fn green() -> Color {
+        return Color::new(0.0, 1.0, 0.0);
+    }
+
+    pub fn blue() -> Color {
+        return Color::new(0.0, 0.0, 1.0);
+    }
 }
 
 impl PartialEq for Color {
