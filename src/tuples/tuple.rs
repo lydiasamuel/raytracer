@@ -97,6 +97,13 @@ impl Tuple {
             lhs.x * rhs.y - lhs.y * rhs.x);
     }
 
+    pub fn reflect(incoming: &Tuple, normal: &Tuple) -> Tuple {
+        if !incoming.is_vector() || !normal.is_vector() {
+            panic!("Error: Can not reflect tuples because both are not vectors.");
+        }
+
+        return *incoming - (*normal * 2.0 * Tuple::dot(&incoming, &normal));
+    }
 }
 
 impl PartialEq for Tuple {
@@ -186,6 +193,8 @@ impl Sub for Tuple {
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts;
+
     use super::*;
 
     #[test]
@@ -389,6 +398,28 @@ mod tests {
 
         let expected = Tuple::vector(1.0, -2.0, 1.0);
         let result = Tuple::cross(&vector_b, &vector_a);
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_a_vector_and_a_normal_when_reflecting_across_the_normal_at_45_degrees_should_correctly_calculate_result() {
+        let incoming = Tuple::vector(1.0, -1.0, 0.0);
+        let normal = Tuple::vector(0.0, 1.0, 0.0);
+
+        let expected = Tuple::vector(1.0, 1.0, 0.0);
+        let result = Tuple::reflect(&incoming, &normal);
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_a_vector_and_a_normal_when_reflecting_across_a_slanted_surface_should_correctly_calculate_result() {
+        let incoming = Tuple::vector(0.0, -1.0, 0.0);
+        let normal = Tuple::vector(consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0, 0.0);
+
+        let expected = Tuple::vector(1.0, 0.0, 0.0);
+        let result = Tuple::reflect(&incoming, &normal);
 
         assert_eq!(expected, result);
     }
