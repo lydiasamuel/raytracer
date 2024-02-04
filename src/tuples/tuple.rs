@@ -22,6 +22,10 @@ impl Tuple {
         return Tuple::new(x, y, z, 0.0);
     }
     
+    pub fn origin() -> Tuple {
+        return Tuple::point(0.0, 0.0, 0.0);
+    }
+
     pub fn point(x: f64, y: f64, z: f64) -> Tuple {
         return Tuple::new(x, y, z, 1.0);
     }
@@ -186,16 +190,26 @@ mod tests {
 
     #[test]
     fn given_normal_values_for_a_tuple_when_creating_a_vector_should_expect_w_to_be_zero() {
-        let value = Tuple::vector(4.3, -4.2, 3.1);
+        let result = Tuple::vector(4.3, -4.2, 3.1);
 
-        assert_eq!(0.0, value.w);
+        assert_eq!(0.0, result.w);
     }
 
     #[test]
     fn given_normal_values_for_a_tuple_when_creating_a_point_should_expect_w_to_be_one() {
-        let value = Tuple::point(4.3, -4.2, 3.1);
+        let result = Tuple::point(4.3, -4.2, 3.1);
 
-        assert_eq!(1.0, value.w);
+        assert_eq!(1.0, result.w);
+    }
+
+    #[test]
+    fn given_no_values_when_getting_origin_point_should_expect_all_values_to_be_zero_and_w_to_be_one() {
+        let result = Tuple::origin();
+
+        assert_eq!(0.0, result.x);
+        assert_eq!(0.0, result.y);
+        assert_eq!(0.0, result.z);
+        assert_eq!(1.0, result.w);
     }
 
     #[test]

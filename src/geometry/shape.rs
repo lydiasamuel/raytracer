@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray}};
+use crate::{matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
 
 use uuid::Uuid;
 
@@ -14,7 +14,11 @@ pub trait Shape {
      */
     fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection>;
 
-    fn get_transform(&self) -> Rc<Matrix>;
+    // Transformation matrix transforms points from object space to world space, and the inverse goes the other way.
+    fn get_transform(&self) -> Matrix;
 
     fn set_transform(&mut self, transform: Matrix);
+
+    // Assumes that the point will always be on the shape
+    fn normal_at(&self, world_point: Tuple) -> Tuple;
 }

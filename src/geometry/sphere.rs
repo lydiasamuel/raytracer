@@ -9,14 +9,14 @@ use super::shape::Shape;
 #[derive(Debug, Clone)]
 pub struct Sphere {
     id: Uuid,
-    transform: Rc<Matrix>
+    transform: Box<Matrix>
 }
 
 impl Sphere {
     pub fn unit() -> Sphere {
         return Sphere {
             id: Uuid::new_v4(),
-            transform: Rc::new(Matrix::identity(4))
+            transform: Box::new(Matrix::identity(4))
         }
     }
 }
@@ -30,7 +30,7 @@ impl Shape for Sphere {
         let inverse_transform = self.get_transform().inverse().unwrap();
         let object_ray = world_ray.transform(inverse_transform);
 
-        let geometric_origin = Tuple::point(0.0, 0.0, 0.0);
+        let geometric_origin = Tuple::origin();
         let ray_direction = object_ray.direction();
         let sphere_to_ray = object_ray.origin() - geometric_origin;
 
@@ -58,20 +58,32 @@ impl Shape for Sphere {
         }
     }
 
-    fn get_transform(&self) -> Rc<Matrix> {
-        return self.transform.clone();
+    fn get_transform(&self) -> Matrix {
+        return *(self.transform).clone();
     }
 
     fn set_transform(&mut self, transform: Matrix) {
-        self.transform = Rc::new(transform);
+        self.transform = Box::new(transform);
+    }
+
+    fn normal_at(&self, world_point: Tuple) -> Tuple {
+        let inverse_transform = self.transform.inverse().unwrap();
+
+        let object_point = inverse_transform.clone() * world_point;
+        let object_normal = object_point.unwrap() - Tuple::origin();
+        
+        let mut world_normal = (inverse_transform.transpose() * object_normal).unwrap();
+        world_normal.w = 0.0;
+
+        return world_normal.normalize();
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::f64::consts;
 
-    use std::borrow::Borrow;
+    use super::*;
 
     #[test]
     fn given_a_ray_and_a_sphere_when_calculating_the_intersections_should_expect_two_points() {
@@ -125,7 +137,7 @@ mod tests {
     #[test]
     fn given_a_sphere_and_a_ray_that_is_inside_it_when_calculating_the_intersections_should_expect_two_points() {
         let ray = Ray::new(
-            Tuple::point(0.0, 0.0, 0.0), 
+            Tuple::origin(), 
             Tuple::vector(0.0, 0.0, 1.0));
 
         let sphere = Sphere::unit();
@@ -180,7 +192,7 @@ mod tests {
     fn given_a_new_unit_sphere_when_constructing_it_should_expect_default_transformation_to_be_identity_matrix() {
         let sphere = Sphere::unit();
         
-        assert_eq!(Matrix::identity(4), *sphere.get_transform().borrow());
+        assert_eq!(Matrix::identity(4), sphere.get_transform());
     }
 
     #[test]
@@ -191,7 +203,7 @@ mod tests {
 
         sphere.set_transform(transform.clone());
         
-        assert_eq!(transform, *sphere.get_transform().borrow());
+        assert_eq!(transform, sphere.get_transform());
     }
 
     #[test]
@@ -232,5 +244,89 @@ mod tests {
         let intersections = shape.clone().intersect(&ray);
 
         assert_eq!(0, intersections.len());
+    }
+
+    #[test]
+    fn given_a_point_on_the_x_axis_and_a_unit_sphere_when_calculating_the_normal_at_the_point_should_expect_normal_pointing_along_the_axis() {      
+        let point = Tuple::point(1.0, 0.0, 0.0);
+
+        let sphere = Sphere::unit();
+
+        let normal = sphere.normal_at(point);
+
+        let expected = Tuple::vector(1.0, 0.0, 0.0);
+
+        assert_eq!(expected, normal);
+    }
+
+    #[test]
+    fn given_a_point_on_the_y_axis_and_a_unit_sphere_when_calculating_the_normal_at_the_point_should_expect_normal_pointing_along_the_axis() {      
+        let point = Tuple::point(0.0, 1.0, 0.0);
+
+        let sphere = Sphere::unit();
+
+        let normal = sphere.normal_at(point);
+
+        let expected = Tuple::vector(0.0, 1.0, 0.0);
+
+        assert_eq!(expected, normal);
+    }
+
+    #[test]
+    fn given_a_point_on_the_z_axis_and_a_unit_sphere_when_calculating_the_normal_at_the_point_should_expect_normal_pointing_along_the_axis() {      
+        let point = Tuple::point(0.0, 0.0, 1.0);
+
+        let sphere = Sphere::unit();
+
+        let normal = sphere.normal_at(point);
+
+        let expected = Tuple::vector(0.0, 0.0, 1.0);
+
+        assert_eq!(expected, normal);
+    }
+
+    #[test]
+    fn given_a_nonaxial_point_and_a_unit_sphere_when_calculating_the_normal_at_the_point_should_expect_correct_normal() {   
+        let value = 3.0_f64.sqrt() / 3.0;
+
+        let point = Tuple::point(value, value, value);
+
+        let sphere = Sphere::unit();
+
+        let normal = sphere.normal_at(point);
+
+        let expected = Tuple::vector(value, value, value);
+
+        assert_eq!(expected, normal);
+    }
+
+    #[test]
+    fn given_an_axial_point_and_a_translated_sphere_when_calculating_the_normal_at_the_point_should_expect_correct_normal() {   
+        let point = Tuple::point(0.0, 1.0, 0.0);
+
+        let mut sphere = Sphere::unit();
+        sphere.set_transform(Matrix::translation(0.0, 1.0, 0.0));
+
+        let normal = sphere.normal_at(point);
+
+        let expected = Tuple::vector(0.0, 1.70711, -0.70711);
+
+        assert_eq!(expected, normal);
+    }
+
+    #[test]
+    fn given_a_nonaxial_point_and_a_transformed_sphere_when_calculating_the_normal_at_the_point_should_expect_correct_normal() {   
+        let point = Tuple::point(0.0, consts::SQRT_2 / 2.0, -consts::SQRT_2 / 2.0);
+
+        let transform = Matrix::scaling(1.0, 0.5, 1.0) * Matrix::rotation_z(consts::PI / 5.0);
+
+        let mut sphere = Sphere::unit();
+        sphere.set_transform(transform.unwrap());
+
+        let normal = sphere.normal_at(point);
+
+        let expected = Tuple::vector(0.0, 0.9701425, -0.2425356);
+
+        assert_eq!(expected, normal);
     }
 }
