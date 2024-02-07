@@ -2,21 +2,22 @@ use std::rc::Rc;
 
 use uuid::Uuid;
 
-use crate::{matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
+use crate::{materials::{material::Material, phong::Phong}, matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
 
 use super::shape::Shape;
 
-#[derive(Debug, Clone)]
 pub struct Sphere {
     id: Uuid,
-    transform: Box<Matrix>
+    transform: Matrix,
+    material: Rc<dyn Material>
 }
 
 impl Sphere {
     pub fn unit() -> Sphere {
         return Sphere {
             id: Uuid::new_v4(),
-            transform: Box::new(Matrix::identity(4))
+            transform: Matrix::identity(4),
+            material: Rc::new(Phong::default())
         }
     }
 }
@@ -59,11 +60,19 @@ impl Shape for Sphere {
     }
 
     fn get_transform(&self) -> Matrix {
-        return *(self.transform).clone();
+        return self.transform.clone();
     }
 
     fn set_transform(&mut self, transform: Matrix) {
-        self.transform = Box::new(transform);
+        self.transform = transform;
+    }
+
+    fn get_material(&self) -> Rc<dyn Material> {
+        return self.material.clone();
+    }
+
+    fn set_material(&mut self, material: &Rc<dyn Material>) {
+        self.material = material.clone();
     }
 
     fn normal_at(&self, world_point: Tuple) -> Tuple {
@@ -82,6 +91,8 @@ impl Shape for Sphere {
 #[cfg(test)]
 mod tests {
     use std::f64::consts;
+
+    use crate::tuples::color::Color;
 
     use super::*;
 
@@ -328,5 +339,17 @@ mod tests {
         let expected = Tuple::vector(0.0, 0.9701425, -0.2425356);
 
         assert_eq!(expected, normal);
+    }
+
+    #[test]
+    fn given_a_unit_sphere_when_assigning_material_to_it_should_expect_material_to_be_set() {   
+        let mut sphere = Sphere::unit();
+        let expected: Rc<dyn Material> = Rc::new(Phong::new(Color::red(), 0.2, 1.0, 0.9, 220.0)); 
+    
+        sphere.set_material(&expected);
+
+        let result = sphere.get_material();
+
+        assert!(Rc::ptr_eq(&expected, &result));
     }
 }

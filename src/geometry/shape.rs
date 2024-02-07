@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
+use crate::{materials::material::Material, matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
 
 use uuid::Uuid;
 
@@ -18,6 +18,10 @@ pub trait Shape {
     fn get_transform(&self) -> Matrix;
 
     fn set_transform(&mut self, transform: Matrix);
+
+    fn get_material(&self) -> Rc<dyn Material>;
+
+    fn set_material(&mut self, material: &Rc<dyn Material>);
 
     // Assumes that the point will always be on the shape
     fn normal_at(&self, world_point: Tuple) -> Tuple;
