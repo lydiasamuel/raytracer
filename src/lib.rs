@@ -4,20 +4,20 @@ use geometry::{shape::Shape, sphere::Sphere};
 use materials::{material::Material, phong::Phong};
 use tuples::{intersection::Intersection, light::Light, ray::Ray, tuple::Tuple};
 
-use crate::{window::canvas::Canvas, tuples::color::Color};
+use crate::{tuples::color::Color, window::canvas::Canvas};
 
 static EPSILON: f64 = 0.00001;
 
 pub mod geometry;
-pub mod matrices;
 pub mod materials;
+pub mod matrices;
 pub mod tuples;
 pub mod window;
 
 pub struct Config {
     pub file_path: String,
     pub width: usize,
-    pub height: usize
+    pub height: usize,
 }
 
 impl Config {
@@ -33,7 +33,7 @@ impl Config {
         return Ok(Config {
             file_path,
             width,
-            height
+            height,
         });
     }
 }
@@ -43,7 +43,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
     let color = Color::new(1.0, 0.2, 1.0);
-    
+
     let ray_origin = Tuple::point(0.0, 0.0, -5.0);
     let wall_z = 10.0;
     let wall_size = 7.0;
@@ -52,7 +52,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let half = wall_size / 2.0;
 
     let mut sphere = Sphere::unit();
-    let material: Rc<dyn Material> = Rc::new(Phong::new(color, 0.1, 0.9, 0.9, 200.0)); 
+    let material: Rc<dyn Material> = Rc::new(Phong::new(color, 0.1, 0.9, 0.9, 200.0));
     sphere.set_material(&material);
 
     let shape = Rc::new(sphere);
@@ -82,7 +82,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                 let normal = shape.normal_at(world_point);
                 let eye = -world_ray.direction();
 
-                let color = shape.get_material().lighting(&light, &world_point, &eye, &normal);
+                let color = shape
+                    .get_material()
+                    .lighting(&light, &world_point, &eye, &normal);
 
                 canvas.write_pixel(x, y, color)?;
             }

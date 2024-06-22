@@ -1,5 +1,5 @@
-use std::ops::{Neg, Mul, Div, Add, Sub};
 use std::fmt;
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use crate::EPSILON;
 
@@ -8,12 +8,16 @@ pub struct Tuple {
     pub x: f64,
     pub y: f64,
     pub z: f64,
-    pub w: f64
+    pub w: f64,
 }
 
 impl fmt::Display for Tuple {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "(x: {}, y: {}, z: {}, w: {})", self.x, self.y, self.z, self.w)
+        write!(
+            f,
+            "(x: {}, y: {}, z: {}, w: {})",
+            self.x, self.y, self.z, self.w
+        )
     }
 }
 
@@ -21,7 +25,7 @@ impl Tuple {
     pub fn vector(x: f64, y: f64, z: f64) -> Tuple {
         return Tuple::new(x, y, z, 0.0);
     }
-    
+
     pub fn origin() -> Tuple {
         return Tuple::point(0.0, 0.0, 0.0);
     }
@@ -31,12 +35,7 @@ impl Tuple {
     }
 
     pub fn new(x: f64, y: f64, z: f64, w: f64) -> Tuple {
-        return Tuple { 
-            x, 
-            y, 
-            z, 
-            w
-        };
+        return Tuple { x, y, z, w };
     }
 
     pub fn is_vector(&self) -> bool {
@@ -52,7 +51,8 @@ impl Tuple {
             panic!("Error: Can not calculate magnitude because tuple is not a vector.");
         }
 
-        return ((self.x * self.x) + (self.y * self.y) + (self.z * self.z) + (self.w * self.w)).sqrt();
+        return ((self.x * self.x) + (self.y * self.y) + (self.z * self.z) + (self.w * self.w))
+            .sqrt();
     }
 
     /* Normalization is the process of taking an arbitrary vector and converting it into a unit vector while preserving its direction.
@@ -70,10 +70,10 @@ impl Tuple {
         return Tuple::new(self.x / m, self.y / m, self.z / m, self.w / m);
     }
 
-    /* The dot product can feel pretty abstract, but here's one quick way to internalize it: 
-     * 
+    /* The dot product can feel pretty abstract, but here's one quick way to internalize it:
+     *
      * The smaller the dot product, the larger the angle between the vectors.
-     * 
+     *
      * A dot product of 1 means that the vectors are identical, and a dot product of -1 means they point in opposite directions.
      * More specifically, and again if the two vectors are unit vectors, the dot product is actually the cosine of the angle between them.
      */
@@ -88,13 +88,16 @@ impl Tuple {
     // The cross product calculates a new vector that is perpendicular to both of the original vectors.
     pub fn cross(lhs: &Tuple, rhs: &Tuple) -> Tuple {
         if !lhs.is_vector() || !rhs.is_vector() {
-            panic!("Error: Can not calculate the cross product because both tuples are not vectors.");
+            panic!(
+                "Error: Can not calculate the cross product because both tuples are not vectors."
+            );
         }
 
         return Tuple::vector(
-            lhs.y * rhs.z - lhs.z * rhs.y, 
-            lhs.z * rhs.x - lhs.x * rhs.z, 
-            lhs.x * rhs.y - lhs.y * rhs.x);
+            lhs.y * rhs.z - lhs.z * rhs.y,
+            lhs.z * rhs.x - lhs.x * rhs.z,
+            lhs.x * rhs.y - lhs.y * rhs.x,
+        );
     }
 
     pub fn reflect(incoming: &Tuple, normal: &Tuple) -> Tuple {
@@ -110,17 +113,13 @@ impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
         if (self.x - other.x).abs() > EPSILON {
             return false;
-        }
-        else if (self.y - other.y).abs() > EPSILON {
+        } else if (self.y - other.y).abs() > EPSILON {
             return false;
-        }
-        else if (self.z - other.z).abs() > EPSILON {
+        } else if (self.z - other.z).abs() > EPSILON {
             return false;
-        }
-        else if (self.w - other.w).abs() > EPSILON {
+        } else if (self.w - other.w).abs() > EPSILON {
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -134,7 +133,7 @@ impl Neg for Tuple {
             x: -self.x,
             y: -self.y,
             z: -self.z,
-            w: -self.w
+            w: -self.w,
         };
     }
 }
@@ -147,8 +146,8 @@ impl Mul<f64> for Tuple {
             x: self.x * rhs,
             y: self.y * rhs,
             z: self.z * rhs,
-            w: self.w * rhs
-        }
+            w: self.w * rhs,
+        };
     }
 }
 
@@ -160,8 +159,8 @@ impl Div<f64> for Tuple {
             x: self.x / rhs,
             y: self.y / rhs,
             z: self.z / rhs,
-            w: self.w / rhs
-        }
+            w: self.w / rhs,
+        };
     }
 }
 
@@ -173,7 +172,7 @@ impl Add for Tuple {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
             z: self.z + rhs.z,
-            w: self.w + rhs.w
+            w: self.w + rhs.w,
         };
     }
 }
@@ -186,7 +185,7 @@ impl Sub for Tuple {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
             z: self.z - rhs.z,
-            w: self.w - rhs.w
+            w: self.w - rhs.w,
         };
     }
 }
@@ -212,7 +211,8 @@ mod tests {
     }
 
     #[test]
-    fn given_no_values_when_getting_origin_point_should_expect_all_values_to_be_zero_and_w_to_be_one() {
+    fn given_no_values_when_getting_origin_point_should_expect_all_values_to_be_zero_and_w_to_be_one(
+    ) {
         let result = Tuple::origin();
 
         assert_eq!(0.0, result.x);
@@ -403,7 +403,8 @@ mod tests {
     }
 
     #[test]
-    fn given_a_vector_and_a_normal_when_reflecting_across_the_normal_at_45_degrees_should_correctly_calculate_result() {
+    fn given_a_vector_and_a_normal_when_reflecting_across_the_normal_at_45_degrees_should_correctly_calculate_result(
+    ) {
         let incoming = Tuple::vector(1.0, -1.0, 0.0);
         let normal = Tuple::vector(0.0, 1.0, 0.0);
 
@@ -414,7 +415,8 @@ mod tests {
     }
 
     #[test]
-    fn given_a_vector_and_a_normal_when_reflecting_across_a_slanted_surface_should_correctly_calculate_result() {
+    fn given_a_vector_and_a_normal_when_reflecting_across_a_slanted_surface_should_correctly_calculate_result(
+    ) {
         let incoming = Tuple::vector(0.0, -1.0, 0.0);
         let normal = Tuple::vector(consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0, 0.0);
 

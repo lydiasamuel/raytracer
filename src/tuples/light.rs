@@ -3,8 +3,7 @@ use super::{color::Color, tuple::Tuple};
 #[derive(Debug, Copy, Clone)]
 pub struct Light {
     pub position: Tuple,
-    pub intensity: Color
-    
+    pub intensity: Color,
 }
 
 impl Light {
@@ -15,7 +14,7 @@ impl Light {
 
         return Light {
             position,
-            intensity
+            intensity,
         };
     }
 }
@@ -25,7 +24,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn given_normal_values_for_a_light_source_when_creating_it_should_expect_values_to_be_set_correctly() {
+    fn given_normal_values_for_a_light_source_when_creating_it_should_expect_values_to_be_set_correctly(
+    ) {
         let intensity = Color::new(1.0, 1.0, 1.0);
         let position = Tuple::origin();
 

@@ -10,27 +10,22 @@ pub struct Phong {
     ambient: f64,
     diffuse: f64,
     specular: f64,
-    shininess: f64
+    shininess: f64,
 }
 
 impl Phong {
     pub fn new(color: Color, ambient: f64, diffuse: f64, specular: f64, shininess: f64) -> Phong {
         return Phong {
             color,
-            ambient, // Light reflected from other objects in the scene
-            diffuse, // Light reflected from a matte surface
+            ambient,  // Light reflected from other objects in the scene
+            diffuse,  // Light reflected from a matte surface
             specular, // Relection of the light source itself
-            shininess
+            shininess,
         };
     }
 
     pub fn default() -> Phong {
-        return Phong::new(
-            Color::white(),
-            0.1, 
-            0.9, 
-            0.9, 
-            200.0);
+        return Phong::new(Color::white(), 0.1, 0.9, 0.9, 200.0);
     }
 }
 
@@ -55,8 +50,7 @@ impl Material for Phong {
         if light_dot_normal < 0.0 {
             diffuse = Color::black();
             specular = Color::black();
-        }
-        else {
+        } else {
             // Compute the diffuse contribution
             diffuse = effective_color * self.diffuse * light_dot_normal;
 
@@ -68,14 +62,13 @@ impl Material for Phong {
 
             if reflect_dot_eye <= 0.0 {
                 specular = Color::black();
-            }
-            else {
+            } else {
                 // Compute the specular contribution
                 let factor = reflect_dot_eye.powf(self.shininess);
                 specular = light.intensity * self.specular * factor;
             }
         }
-        
+
         // Add the three contributions together to get the final shading
         return ambient + diffuse + specular;
     }
@@ -85,20 +78,15 @@ impl PartialEq for Phong {
     fn eq(&self, other: &Self) -> bool {
         if self.color != other.color {
             return false;
-        }
-        else if (self.ambient - other.ambient).abs() > EPSILON {
+        } else if (self.ambient - other.ambient).abs() > EPSILON {
             return false;
-        }
-        else if (self.diffuse - other.diffuse).abs() > EPSILON {
+        } else if (self.diffuse - other.diffuse).abs() > EPSILON {
             return false;
-        }
-        else if (self.specular - other.specular).abs() > EPSILON {
+        } else if (self.specular - other.specular).abs() > EPSILON {
             return false;
-        }
-        else if (self.shininess - other.shininess).abs() > EPSILON {
+        } else if (self.shininess - other.shininess).abs() > EPSILON {
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -128,7 +116,8 @@ mod tests {
     }
 
     #[test]
-    fn given_default_material_when_eye_between_light_and_surface_should_calculate_resulting_color_correctly() {
+    fn given_default_material_when_eye_between_light_and_surface_should_calculate_resulting_color_correctly(
+    ) {
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -143,7 +132,8 @@ mod tests {
     }
 
     #[test]
-    fn given_default_material_when_eye_between_light_and_surface_with_eye_offset_by_45_degrees_should_calculate_resulting_color_correctly() {
+    fn given_default_material_when_eye_between_light_and_surface_with_eye_offset_by_45_degrees_should_calculate_resulting_color_correctly(
+    ) {
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -158,7 +148,8 @@ mod tests {
     }
 
     #[test]
-    fn given_default_material_when_eye_opposite_surface_with_light_offset_by_45_degrees_should_calculate_resulting_color_correctly() {
+    fn given_default_material_when_eye_opposite_surface_with_light_offset_by_45_degrees_should_calculate_resulting_color_correctly(
+    ) {
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -173,7 +164,8 @@ mod tests {
     }
 
     #[test]
-    fn given_default_material_when_eye_in_path_of_reflection_vector_should_calculate_resulting_color_correctly() {
+    fn given_default_material_when_eye_in_path_of_reflection_vector_should_calculate_resulting_color_correctly(
+    ) {
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -188,7 +180,8 @@ mod tests {
     }
 
     #[test]
-    fn given_default_material_when_lighting_behind_the_surface_should_calculate_resulting_color_correctly() {
+    fn given_default_material_when_lighting_behind_the_surface_should_calculate_resulting_color_correctly(
+    ) {
         let default = Phong::default();
         let position = Tuple::origin();
 

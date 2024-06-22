@@ -7,15 +7,12 @@ use crate::EPSILON;
 #[derive(Clone)]
 pub struct Intersection {
     pub time: f64,
-    pub shape: Rc<dyn Shape>
+    pub shape: Rc<dyn Shape>,
 }
 
 impl Intersection {
     pub fn new(time: f64, shape: Rc<dyn Shape>) -> Intersection {
-        return Intersection {
-            time,
-            shape
-        }
+        return Intersection { time, shape };
     }
 
     // Assumes list of intersection is in ascending order by time
@@ -47,14 +44,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn given_a_list_of_all_postive_time_intersections_when_identifying_the_hit_should_expect_the_lowest_positive_time_intersection() {
+    fn given_a_list_of_all_postive_time_intersections_when_identifying_the_hit_should_expect_the_lowest_positive_time_intersection(
+    ) {
         let sphere = Sphere::unit();
-        
+
         let shape: Rc<dyn Shape> = Rc::new(sphere);
 
         let intersections = vec![
             Intersection::new(1.0, shape.clone()),
-            Intersection::new(2.0, shape.clone())];
+            Intersection::new(2.0, shape.clone()),
+        ];
 
         let hit = Intersection::hit(&intersections);
 
@@ -62,14 +61,16 @@ mod tests {
     }
 
     #[test]
-    fn given_a_list_intersections_with_some_negative_times_when_identifying_the_hit_should_expect_the_lowest_positive_time_intersection() {
+    fn given_a_list_intersections_with_some_negative_times_when_identifying_the_hit_should_expect_the_lowest_positive_time_intersection(
+    ) {
         let sphere = Sphere::unit();
-        
+
         let shape: Rc<dyn Shape> = Rc::new(sphere);
 
         let intersections = vec![
             Intersection::new(-1.0, shape.clone()),
-            Intersection::new(1.0, shape.clone())];
+            Intersection::new(1.0, shape.clone()),
+        ];
 
         let hit = Intersection::hit(&intersections);
 
@@ -77,14 +78,16 @@ mod tests {
     }
 
     #[test]
-    fn given_a_list_intersections_with_all_negative_times_when_identifying_the_hit_should_return_nothing() {
+    fn given_a_list_intersections_with_all_negative_times_when_identifying_the_hit_should_return_nothing(
+    ) {
         let sphere = Sphere::unit();
-        
+
         let shape: Rc<dyn Shape> = Rc::new(sphere);
 
         let intersections = vec![
             Intersection::new(-2.0, shape.clone()),
-            Intersection::new(-1.0, shape.clone())];
+            Intersection::new(-1.0, shape.clone()),
+        ];
 
         let hit = Intersection::hit(&intersections);
 

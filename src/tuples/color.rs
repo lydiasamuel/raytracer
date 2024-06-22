@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Div, Mul, Sub};
 
 use crate::EPSILON;
 
@@ -11,11 +11,7 @@ pub struct Color {
 
 impl Color {
     pub fn new(red: f64, green: f64, blue: f64) -> Color {
-        return Color {
-            red,
-            green,
-            blue
-        };
+        return Color { red, green, blue };
     }
 
     pub fn red() -> Color {
@@ -43,14 +39,11 @@ impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
         if (self.red - other.red).abs() > EPSILON {
             return false;
-        }
-        else if (self.green - other.green).abs() > EPSILON {
+        } else if (self.green - other.green).abs() > EPSILON {
             return false;
-        }
-        else if (self.blue - other.blue).abs() > EPSILON {
+        } else if (self.blue - other.blue).abs() > EPSILON {
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -63,7 +56,7 @@ impl Add for Color {
         return Self {
             red: self.red + rhs.red,
             green: self.green + rhs.green,
-            blue: self.blue + rhs.blue
+            blue: self.blue + rhs.blue,
         };
     }
 }
@@ -75,7 +68,7 @@ impl Sub for Color {
         return Self {
             red: self.red - rhs.red,
             green: self.green - rhs.green,
-            blue: self.blue - rhs.blue
+            blue: self.blue - rhs.blue,
         };
     }
 }
@@ -87,7 +80,7 @@ impl Mul for Color {
         return Self {
             red: self.red * rhs.red,
             green: self.green * rhs.green,
-            blue: self.blue * rhs.blue
+            blue: self.blue * rhs.blue,
         };
     }
 }
@@ -99,8 +92,8 @@ impl Mul<f64> for Color {
         return Self {
             red: self.red * rhs,
             blue: self.blue * rhs,
-            green: self.green * rhs
-        }
+            green: self.green * rhs,
+        };
     }
 }
 
@@ -111,7 +104,7 @@ impl Div for Color {
         return Self {
             red: self.red / rhs.red,
             green: self.green / rhs.green,
-            blue: self.blue / rhs.blue
+            blue: self.blue / rhs.blue,
         };
     }
 }
@@ -123,8 +116,8 @@ impl Div<f64> for Color {
         return Self {
             red: self.red / rhs,
             blue: self.blue / rhs,
-            green: self.green / rhs
-        }
+            green: self.green / rhs,
+        };
     }
 }
 

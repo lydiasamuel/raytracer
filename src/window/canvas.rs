@@ -5,30 +5,34 @@ use array2d::Array2D;
 use crate::tuples::color::Color;
 
 pub struct Canvas {
-    grid: Array2D<Color>
+    grid: Array2D<Color>,
 }
 
 impl Canvas {
     pub fn new(width: usize, height: usize) -> Canvas {
-        return Canvas::filled_with(Color::new(0.0, 0.0, 0.0), width, height)
+        return Canvas::filled_with(Color::new(0.0, 0.0, 0.0), width, height);
     }
 
     pub fn filled_with(color: Color, width: usize, height: usize) -> Canvas {
         return Canvas {
-            grid: Array2D::filled_with(color, height, width)
+            grid: Array2D::filled_with(color, height, width),
         };
     }
 
     pub fn write_pixel(&mut self, x: usize, y: usize, color: Color) -> Result<(), array2d::Error> {
         return self.grid.set(y, x, color);
     }
-    
+
     pub fn pixel_at(&self, x: usize, y: usize) -> Option<&Color> {
         return self.grid.get(y, x);
     }
 
     fn clamp_color(color: Color) -> (u8, u8, u8) {
-        return (Canvas::clamp(color.red), Canvas::clamp(color.green), Canvas::clamp(color.blue));
+        return (
+            Canvas::clamp(color.red),
+            Canvas::clamp(color.green),
+            Canvas::clamp(color.blue),
+        );
     }
 
     fn clamp(value: f64) -> u8 {
@@ -36,11 +40,9 @@ impl Canvas {
 
         if x > 255.0 {
             return 255;
-        }
-        else if x < 0.0 {
+        } else if x < 0.0 {
             return 0;
-        }
-        else {
+        } else {
             return x.ceil() as u8;
         }
     }
@@ -50,7 +52,11 @@ impl Canvas {
 
         // Write header information at the start of the file
         writeln!(output, "P3")?;
-        writeln!(output, "{}", format!("{} {}", self.grid.num_columns(), self.grid.num_rows()))?;
+        writeln!(
+            output,
+            "{}",
+            format!("{} {}", self.grid.num_columns(), self.grid.num_rows())
+        )?;
         writeln!(output, "255")?;
 
         for y in 0..self.grid.num_rows() {
@@ -75,15 +81,19 @@ impl Canvas {
         return Ok(output);
     }
 
-    fn write_color_value(value: u8, current_line_len: &mut usize, output: &mut String) -> Result<(), std::fmt::Error> {
+    fn write_color_value(
+        value: u8,
+        current_line_len: &mut usize,
+        output: &mut String,
+    ) -> Result<(), std::fmt::Error> {
         let s = format!("{}", value);
 
         // If current line length is going to hit 70 then just start a new one
         if *current_line_len + (s.len() + 1) >= 70 {
             write!(output, "\n")?;
             *current_line_len = 0;
-        } 
-        
+        }
+
         // Don't put a spacer if we've just started a new line
         if *current_line_len > 0 {
             write!(output, " ")?;
@@ -93,21 +103,21 @@ impl Canvas {
         // Write the actual string value
         write!(output, "{}", s)?;
         *current_line_len += s.len();
-        
+
         // If we only have one spot left at the end of the line use it to start a new one
         if *current_line_len + 1 == 70 {
             write!(output, "\n")?;
             *current_line_len = 0;
         }
 
-        return Ok(())
+        return Ok(());
     }
 
     pub fn write_to_file(&self, file_path: String) -> Result<(), Box<dyn Error>> {
         let output = self.to_ppm()?;
-    
+
         fs::write(file_path, output)?;
-    
+
         return Ok(());
     }
 }
@@ -147,7 +157,8 @@ mod tests {
     }
 
     #[test]
-    fn given_a_canvas_with_a_few_color_pixels_when_converting_to_ppm_should_output_file_correctly() {
+    fn given_a_canvas_with_a_few_color_pixels_when_converting_to_ppm_should_output_file_correctly()
+    {
         let width = 5;
         let height = 3;
         let mut canvas = Canvas::new(width, height);
@@ -160,8 +171,7 @@ mod tests {
         let _ = canvas.write_pixel(2, 1, c2);
         let _ = canvas.write_pixel(4, 2, c3);
 
-        let expected = 
-"P3
+        let expected = "P3
 5 3
 255
 255 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -175,13 +185,13 @@ mod tests {
     }
 
     #[test]
-    fn given_a_canvas_pixels_of_all_one_color_when_converting_to_ppm_should_output_file_correctly() {
+    fn given_a_canvas_pixels_of_all_one_color_when_converting_to_ppm_should_output_file_correctly()
+    {
         let width = 10;
         let height = 2;
         let canvas = Canvas::filled_with(Color::new(1.0, 0.8, 0.6), width, height);
 
-        let expected = 
-"P3
+        let expected = "P3
 10 2
 255
 255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204

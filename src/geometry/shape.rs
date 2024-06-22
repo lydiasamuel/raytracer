@@ -1,6 +1,10 @@
 use std::rc::Rc;
 
-use crate::{materials::material::Material, matrices::matrix::Matrix, tuples::{intersection::Intersection, ray::Ray, tuple::Tuple}};
+use crate::{
+    materials::material::Material,
+    matrices::matrix::Matrix,
+    tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
+};
 
 use uuid::Uuid;
 
