@@ -2,13 +2,13 @@ use std::rc::Rc;
 
 use uuid::Uuid;
 
+use crate::tuples::color::Color;
+use crate::tuples::pointlight::PointLight;
 use crate::{
     materials::{material::Material, phong::Phong},
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
-use crate::tuples::color::Color;
-use crate::tuples::pointlight::PointLight;
 
 use super::shape::Shape;
 
@@ -100,7 +100,13 @@ impl Shape for Sphere {
         return world_normal.normalize();
     }
 
-    fn light_material(&self, world_point: &Tuple, light: &PointLight, eyev: &Tuple, normalv: &Tuple) -> Color {
+    fn light_material(
+        &self,
+        world_point: &Tuple,
+        light: &PointLight,
+        eyev: &Tuple,
+        normalv: &Tuple,
+    ) -> Color {
         self.material.lighting(light, world_point, eyev, normalv)
     }
 }

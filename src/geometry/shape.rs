@@ -1,13 +1,13 @@
 use std::rc::Rc;
 use uuid::Uuid;
 
+use crate::tuples::color::Color;
+use crate::tuples::pointlight::PointLight;
 use crate::{
     materials::material::Material,
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
-use crate::tuples::color::Color;
-use crate::tuples::pointlight::PointLight;
 
 pub trait Shape {
     fn id(&self) -> Uuid;
@@ -31,5 +31,11 @@ pub trait Shape {
     // Assumes that the point will always be on the shape
     fn normal_at(&self, world_point: Tuple) -> Tuple;
 
-    fn light_material(&self, world_point: &Tuple, light: &PointLight, eyev: &Tuple, normalv: &Tuple) -> Color;
+    fn light_material(
+        &self,
+        world_point: &Tuple,
+        light: &PointLight,
+        eyev: &Tuple,
+        normalv: &Tuple,
+    ) -> Color;
 }

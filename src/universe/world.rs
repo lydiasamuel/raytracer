@@ -13,50 +13,28 @@ use crate::universe::computations::Computations;
 
 pub struct World {
     objects: Vec<Rc<dyn Shape>>,
-    lights: Vec<Rc<PointLight>>
+    lights: Vec<Rc<PointLight>>,
 }
 
 impl World {
     pub fn new(objects: Vec<Rc<dyn Shape>>, lights: Vec<Rc<PointLight>>) -> World {
-        return World {
-            objects,
-            lights
-        }
+        return World { objects, lights };
     }
 
     pub fn default() -> World {
-        let light = PointLight::new(
-            Tuple::point(-10.0, 10.0, -10.0),
-            Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 
         let outer = Sphere::new(
             Matrix::identity(4),
-            Rc::new
-                (
-                    Phong::new
-                        (
-                            Color::new(0.8, 1.0, 0.6),
-                            0.1,
-                            0.7,
-                            0.2,
-                            200.0
-                        )
-                )
+            Rc::new(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0)),
         );
 
-
-        let inner = Sphere::new(
-            Matrix::scaling(0.5, 0.5, 0.5),
-            Rc::new(Phong::default())
-        );
+        let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), Rc::new(Phong::default()));
 
         let objects: Vec<Rc<dyn Shape>> = vec![Rc::new(outer), Rc::new(inner)];
         let lights = vec![Rc::new(light)];
 
-        return World {
-            objects,
-            lights
-        }
+        return World { objects, lights };
     }
 
     pub fn intersect_world(&self, ray: &Ray) -> Vec<Intersection> {
@@ -89,14 +67,7 @@ impl World {
             normalv = -normalv;
         }
 
-        return Computations::new(
-            time,
-            object,
-            point,
-            eyev,
-            normalv,
-            inside
-        );
+        return Computations::new(time, object, point, eyev, normalv, inside);
     }
 
     pub fn shade_hit(&self, comps: &Computations) -> Color {
@@ -107,7 +78,8 @@ impl World {
 
             let shape = comps.object.as_ref();
 
-            result = result + shape.light_material(&comps.point, light, &comps.eyev, &comps.normalv);
+            result =
+                result + shape.light_material(&comps.point, light, &comps.eyev, &comps.normalv);
         }
 
         return result;
@@ -116,7 +88,6 @@ impl World {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
     use crate::tuples::color::Color;
@@ -125,9 +96,11 @@ mod tests {
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use crate::universe::world::World;
+    use std::rc::Rc;
 
     #[test]
-    fn given_default_world_when_calculating_intersects_with_ray_should_return_correct_intersections_sorted_by_time() {
+    fn given_default_world_when_calculating_intersects_with_ray_should_return_correct_intersections_sorted_by_time(
+    ) {
         // Arrange
         let world = World::default();
 
@@ -146,7 +119,8 @@ mod tests {
     }
 
     #[test]
-    fn given_standard_values_when_calling_prepare_computations_should_return_correct_values_for_lighting_function() {
+    fn given_standard_values_when_calling_prepare_computations_should_return_correct_values_for_lighting_function(
+    ) {
         // Arrange
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
@@ -166,7 +140,8 @@ mod tests {
     }
 
     #[test]
-    fn given_standard_values_when_the_intersect_occurs_on_the_outside_of_an_object_should_set_inside_to_false() {
+    fn given_standard_values_when_the_intersect_occurs_on_the_outside_of_an_object_should_set_inside_to_false(
+    ) {
         // Arrange
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
@@ -182,7 +157,8 @@ mod tests {
     }
 
     #[test]
-    fn given_standard_values_when_the_intersect_occurs_on_the_inside_of_an_object_should_set_inside_to_true() {
+    fn given_standard_values_when_the_intersect_occurs_on_the_inside_of_an_object_should_set_inside_to_true(
+    ) {
         // Arrange
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
 
@@ -220,12 +196,16 @@ mod tests {
     }
 
     #[test]
-    fn given_standard_values_when_shading_the_hits_from_the_inside_should_correctly_color_the_hit() {
+    fn given_standard_values_when_shading_the_hits_from_the_inside_should_correctly_color_the_hit()
+    {
         // Arrange
         let mut world = World::default();
 
         world.lights.pop();
-        world.lights.push(Rc::new(PointLight::new(Tuple::point(0.0, 0.25, 0.0), Color::white())));
+        world.lights.push(Rc::new(PointLight::new(
+            Tuple::point(0.0, 0.25, 0.0),
+            Color::white(),
+        )));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
 

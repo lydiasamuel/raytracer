@@ -1,6 +1,6 @@
-use std::rc::Rc;
 use crate::geometry::shape::Shape;
 use crate::tuples::tuple::Tuple;
+use std::rc::Rc;
 
 pub struct Computations {
     pub time: f64,
@@ -12,7 +12,14 @@ pub struct Computations {
 }
 
 impl Computations {
-    pub fn new(time: f64, object: Rc<dyn Shape>, point: Tuple, eyev: Tuple, normalv: Tuple, inside: bool) -> Computations {
+    pub fn new(
+        time: f64,
+        object: Rc<dyn Shape>,
+        point: Tuple,
+        eyev: Tuple,
+        normalv: Tuple,
+        inside: bool,
+    ) -> Computations {
         if !point.is_point() {
             panic!("Error: Tuple given for parameter 'point' is not a Point.")
         }
@@ -30,6 +37,6 @@ impl Computations {
             eyev,
             normalv,
             inside,
-        }
+        };
     }
 }
