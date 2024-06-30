@@ -1,18 +1,18 @@
 use super::{color::Color, tuple::Tuple};
 
 #[derive(Debug, Copy, Clone)]
-pub struct Light {
+pub struct PointLight {
     pub position: Tuple,
     pub intensity: Color,
 }
 
-impl Light {
-    pub fn new(position: Tuple, intensity: Color) -> Light {
+impl PointLight {
+    pub fn new(position: Tuple, intensity: Color) -> PointLight {
         if !position.is_point() {
             panic!("Error: Light must be created with a point tuple variant.");
         }
 
-        return Light {
+        return PointLight {
             position,
             intensity,
         };
@@ -29,7 +29,7 @@ mod tests {
         let intensity = Color::new(1.0, 1.0, 1.0);
         let position = Tuple::origin();
 
-        let result = Light::new(position, intensity);
+        let result = PointLight::new(position, intensity);
 
         assert_eq!(intensity, result.intensity);
         assert_eq!(position, result.position);

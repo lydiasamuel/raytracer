@@ -2,7 +2,7 @@ use std::{error::Error, rc::Rc};
 
 use geometry::{shape::Shape, sphere::Sphere};
 use materials::{material::Material, phong::Phong};
-use tuples::{intersection::Intersection, light::Light, ray::Ray, tuple::Tuple};
+use tuples::{intersection::Intersection, pointlight::PointLight, ray::Ray, tuple::Tuple};
 
 use crate::{tuples::color::Color, window::canvas::Canvas};
 
@@ -12,6 +12,7 @@ pub mod geometry;
 pub mod materials;
 pub mod matrices;
 pub mod tuples;
+pub mod universe;
 pub mod window;
 
 pub struct Config {
@@ -59,7 +60,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let light_position = Tuple::point(-10.0, 10.0, -10.0);
     let light_color = Color::white();
-    let light = Light::new(light_position, light_color);
+    let light = PointLight::new(light_position, light_color);
 
     for y in 0..canvas_pixels {
         // Compute the world y coordinate (top = +half, bottom = -half)

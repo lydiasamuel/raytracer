@@ -2,7 +2,7 @@ use super::material::Material;
 
 use crate::EPSILON;
 
-use crate::tuples::{color::Color, light::Light, tuple::Tuple};
+use crate::tuples::{color::Color, pointlight::PointLight, tuple::Tuple};
 
 #[derive(Debug, Clone)]
 pub struct Phong {
@@ -30,7 +30,7 @@ impl Phong {
 }
 
 impl Material for Phong {
-    fn lighting(&self, light: &Light, point: &Tuple, eyev: &Tuple, normalv: &Tuple) -> Color {
+    fn lighting(&self, light: &PointLight, point: &Tuple, eyev: &Tuple, normalv: &Tuple) -> Color {
         // Combine the surface color with the light's color/intensity
         let effective_color = self.color * light.intensity;
 
@@ -123,7 +123,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = Light::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
 
         let result = default.lighting(&light, &position, &eyev, &normalv);
         let expected = Color::new(1.9, 1.9, 1.9);
@@ -139,7 +139,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, consts::SQRT_2 / 2.0, -consts::SQRT_2 / 2.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = Light::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
 
         let result = default.lighting(&light, &position, &eyev, &normalv);
         let expected = Color::new(1.0, 1.0, 1.0);
@@ -155,7 +155,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = Light::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
+        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
 
         let result = default.lighting(&light, &position, &eyev, &normalv);
         let expected = Color::new(0.7364, 0.7364, 0.7364);
@@ -171,7 +171,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, -consts::SQRT_2 / 2.0, -consts::SQRT_2 / 2.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = Light::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
+        let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
 
         let result = default.lighting(&light, &position, &eyev, &normalv);
         let expected = Color::new(1.6364, 1.6364, 1.6364);
@@ -187,7 +187,7 @@ mod tests {
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
-        let light = Light::new(Tuple::point(0.0, 0.0, 10.0), Color::white());
+        let light = PointLight::new(Tuple::point(0.0, 0.0, 10.0), Color::white());
 
         let result = default.lighting(&light, &position, &eyev, &normalv);
         let expected = Color::new(0.1, 0.1, 0.1);

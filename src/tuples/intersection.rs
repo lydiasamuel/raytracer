@@ -7,12 +7,12 @@ use crate::EPSILON;
 #[derive(Clone)]
 pub struct Intersection {
     pub time: f64,
-    pub shape: Rc<dyn Shape>,
+    pub object: Rc<dyn Shape>,
 }
 
 impl Intersection {
-    pub fn new(time: f64, shape: Rc<dyn Shape>) -> Intersection {
-        return Intersection { time, shape };
+    pub fn new(time: f64, object: Rc<dyn Shape>) -> Intersection {
+        return Intersection { time, object };
     }
 
     // Assumes list of intersection is in ascending order by time
@@ -33,7 +33,7 @@ impl PartialEq for Intersection {
             return false;
         }
 
-        return Rc::ptr_eq(&self.shape, &other.shape);
+        return Rc::ptr_eq(&self.object, &other.object);
     }
 }
 

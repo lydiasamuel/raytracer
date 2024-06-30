@@ -7,6 +7,8 @@ use crate::{
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
+use crate::tuples::color::Color;
+use crate::tuples::pointlight::PointLight;
 
 use super::shape::Shape;
 
@@ -22,6 +24,14 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform: Matrix::identity(4),
             material: Rc::new(Phong::default()),
+        };
+    }
+
+    pub fn new(transform: Matrix, material: Rc<dyn Material>) -> Sphere {
+        return Sphere {
+            id: Uuid::new_v4(),
+            transform,
+            material,
         };
     }
 }
@@ -88,6 +98,10 @@ impl Shape for Sphere {
         world_normal.w = 0.0;
 
         return world_normal.normalize();
+    }
+
+    fn light_material(&self, world_point: &Tuple, light: &PointLight, eyev: &Tuple, normalv: &Tuple) -> Color {
+        self.material.lighting(light, world_point, eyev, normalv)
     }
 }
 
@@ -191,8 +205,8 @@ mod tests {
         assert_eq!(4.0, intersections[0].time);
         assert_eq!(6.0, intersections[1].time);
 
-        assert!(Rc::ptr_eq(&shape, &intersections[0].shape));
-        assert!(Rc::ptr_eq(&shape, &intersections[1].shape));
+        assert!(Rc::ptr_eq(&shape, &intersections[0].object));
+        assert!(Rc::ptr_eq(&shape, &intersections[1].object));
     }
 
     #[test]

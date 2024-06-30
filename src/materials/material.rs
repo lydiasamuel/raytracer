@@ -1,5 +1,5 @@
-use crate::tuples::{color::Color, light::Light, tuple::Tuple};
+use crate::tuples::{color::Color, pointlight::PointLight, tuple::Tuple};
 
 pub trait Material {
-    fn lighting(&self, light: &Light, point: &Tuple, eyev: &Tuple, normalv: &Tuple) -> Color;
+    fn lighting(&self, light: &PointLight, point: &Tuple, eyev: &Tuple, normalv: &Tuple) -> Color;
 }
