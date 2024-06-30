@@ -1,6 +1,7 @@
 use std::{error::Error, fmt::Write, fs};
 
 use array2d::Array2D;
+use crate::matrices::matrix::Matrix;
 
 use crate::tuples::color::Color;
 
@@ -11,6 +12,18 @@ pub struct Canvas {
 impl Canvas {
     pub fn new(width: usize, height: usize) -> Canvas {
         return Canvas::filled_with(Color::new(0.0, 0.0, 0.0), width, height);
+    }
+
+    pub fn from_columns(columns: &Vec<Vec<Color>>) -> Result<Canvas, array2d::Error> {
+        let grid = Array2D::from_columns(columns)?;
+
+        return Ok(Canvas { grid });
+    }
+
+    pub fn from_rows(rows: &Vec<Vec<Color>>) -> Result<Canvas, array2d::Error> {
+        let grid = Array2D::from_rows(rows)?;
+
+        return Ok(Canvas { grid });
     }
 
     pub fn filled_with(color: Color, width: usize, height: usize) -> Canvas {
