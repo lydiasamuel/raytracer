@@ -111,17 +111,17 @@ impl Tuple {
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
-        if (self.x - other.x).abs() > EPSILON {
-            return false;
+        return if (self.x - other.x).abs() > EPSILON {
+            false
         } else if (self.y - other.y).abs() > EPSILON {
-            return false;
+            false
         } else if (self.z - other.z).abs() > EPSILON {
-            return false;
+            false
         } else if (self.w - other.w).abs() > EPSILON {
-            return false;
+            false
         } else {
-            return true;
-        }
+            true
+        };
     }
 }
 

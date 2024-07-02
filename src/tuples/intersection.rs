@@ -12,7 +12,7 @@ pub struct Intersection {
 
 impl Intersection {
     pub fn new(time: f64, object: Rc<dyn Shape>) -> Intersection {
-        return Intersection { time, object };
+        Intersection { time, object }
     }
 
     // Assumes list of intersection is in ascending order by time
@@ -23,7 +23,7 @@ impl Intersection {
             }
         }
 
-        return None;
+        None
     }
 }
 
@@ -33,7 +33,7 @@ impl PartialEq for Intersection {
             return false;
         }
 
-        return Rc::ptr_eq(&self.object, &other.object);
+        Rc::ptr_eq(&self.object, &other.object)
     }
 }
 
@@ -44,7 +44,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn given_a_list_of_all_postive_time_intersections_when_identifying_the_hit_should_expect_the_lowest_positive_time_intersection(
+    fn given_a_list_of_all_positive_time_intersections_when_identifying_the_hit_should_expect_the_lowest_positive_time_intersection(
     ) {
         let sphere = Sphere::unit();
 

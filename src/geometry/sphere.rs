@@ -20,25 +20,25 @@ pub struct Sphere {
 
 impl Sphere {
     pub fn unit() -> Sphere {
-        return Sphere {
+        Sphere {
             id: Uuid::new_v4(),
             transform: Matrix::identity(4),
             material: Rc::new(Phong::default()),
-        };
+        }
     }
 
     pub fn new(transform: Matrix, material: Rc<dyn Material>) -> Sphere {
-        return Sphere {
+        Sphere {
             id: Uuid::new_v4(),
             transform,
             material,
-        };
+        }
     }
 }
 
 impl Shape for Sphere {
     fn id(&self) -> Uuid {
-        return self.id.clone();
+        self.id.clone()
     }
 
     fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection> {
@@ -66,14 +66,14 @@ impl Shape for Sphere {
         let i2 = Intersection::new(t2, self.clone());
 
         if t1 < t2 {
-            return vec![i1, i2];
+            vec![i1, i2]
         } else {
-            return vec![i2, i1];
+            vec![i2, i1]
         }
     }
 
     fn get_transform(&self) -> Matrix {
-        return self.transform.clone();
+        self.transform.clone()
     }
 
     fn set_transform(&mut self, transform: Matrix) {
@@ -81,7 +81,7 @@ impl Shape for Sphere {
     }
 
     fn get_material(&self) -> Rc<dyn Material> {
-        return self.material.clone();
+        self.material.clone()
     }
 
     fn set_material(&mut self, material: &Rc<dyn Material>) {
@@ -97,7 +97,7 @@ impl Shape for Sphere {
         let mut world_normal = (inverse_transform.transpose() * object_normal).unwrap();
         world_normal.w = 0.0;
 
-        return world_normal.normalize();
+        world_normal.normalize()
     }
 
     fn light_material(

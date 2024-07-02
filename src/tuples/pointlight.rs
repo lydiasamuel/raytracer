@@ -12,10 +12,10 @@ impl PointLight {
             panic!("Error: Light must be created with a point tuple variant.");
         }
 
-        return PointLight {
+        PointLight {
             position,
             intensity,
-        };
+        }
     }
 }
 

@@ -17,9 +17,9 @@ impl Matrix {
             panic!("Error: Unable to make matrix with zero sized dimensions")
         }
 
-        return Matrix {
+        Matrix {
             grid: Array2D::filled_with(0.0, num_rows, num_columns),
-        };
+        }
     }
 
     pub fn identity(size: usize) -> Matrix {
@@ -38,19 +38,19 @@ impl Matrix {
             }
         }
 
-        return Matrix { grid };
+        Matrix { grid }
     }
 
-    pub fn from_columns(columns: &Vec<Vec<f64>>) -> Result<Matrix, array2d::Error> {
+    pub fn from_columns(columns: &Vec<Vec<f64>>) -> Result<Matrix, Error> {
         let grid = Array2D::from_columns(columns)?;
 
-        return Ok(Matrix { grid });
+        Ok(Matrix { grid })
     }
 
-    pub fn from_rows(rows: &Vec<Vec<f64>>) -> Result<Matrix, array2d::Error> {
+    pub fn from_rows(rows: &Vec<Vec<f64>>) -> Result<Matrix, Error> {
         let grid = Array2D::from_rows(rows)?;
 
-        return Ok(Matrix { grid });
+        Ok(Matrix { grid })
     }
 
     pub fn translation(x: f64, y: f64, z: f64) -> Matrix {
@@ -61,20 +61,20 @@ impl Matrix {
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
 
-        return transform.unwrap();
+        transform.unwrap()
     }
 
     // Side note: Reflection is just scaling by a negative value along a certain axis
     pub fn reflect_x() -> Matrix {
-        return Matrix::scaling(-1.0, 1.0, 1.0);
+        Matrix::scaling(-1.0, 1.0, 1.0)
     }
 
     pub fn reflect_y() -> Matrix {
-        return Matrix::scaling(1.0, -1.0, 1.0);
+        Matrix::scaling(1.0, -1.0, 1.0)
     }
 
     pub fn reflect_z() -> Matrix {
-        return Matrix::scaling(1.0, 1.0, -1.0);
+        Matrix::scaling(1.0, 1.0, -1.0)
     }
 
     pub fn scaling(x: f64, y: f64, z: f64) -> Matrix {
@@ -85,7 +85,7 @@ impl Matrix {
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
 
-        return transform.unwrap();
+        transform.unwrap()
     }
 
     pub fn rotation_x(radians: f64) -> Matrix {
@@ -96,7 +96,7 @@ impl Matrix {
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
 
-        return transform.unwrap();
+        transform.unwrap()
     }
 
     pub fn rotation_y(radians: f64) -> Matrix {
@@ -107,7 +107,7 @@ impl Matrix {
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
 
-        return transform.unwrap();
+        transform.unwrap()
     }
 
     pub fn rotation_z(radians: f64) -> Matrix {
@@ -118,7 +118,7 @@ impl Matrix {
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
 
-        return transform.unwrap();
+        transform.unwrap()
     }
 
     /* A shearing transformation changes each component of the tuple in proportion to the
@@ -133,7 +133,49 @@ impl Matrix {
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
 
-        return transform.unwrap();
+        transform.unwrap()
+    }
+
+    // Generate a matrix that moves the camera around the scene, so instead of a fixed screen you cast
+    // rays at (and the objects appear as coloured shadows). Now you can move that around and take
+    // pictures from different points.
+    // from: Where the camera is in the scene
+    // to: The point at which the camera is looking in the scene
+    // up: Which direction is up
+    pub fn view_transform(from: Tuple, to: Tuple, up: Tuple) -> Matrix {
+        if !from.is_point() {
+            panic!("Error: Tuple given for parameter 'from' is not a Point.")
+        }
+        if !to.is_point() {
+            panic!("Error: Tuple given for parameter 'to' is not a Point.")
+        }
+        if !up.is_vector() {
+            panic!("Error: Tuple given for parameter 'up' is not a Vector.")
+        }
+
+        // Compute the forward vector by: to - from, then normalizing the result
+        let forward = (to - from).normalize();
+        let upn = up.normalize();
+
+        // Compute the left vector by: forward x (up normalized)
+        let left = Tuple::cross(&forward, &upn);
+
+        // Compute the true up by: left x forward. This allows the original up to be only approximately up
+        // which makes framing scenes a lot easier, since the precise calc isn't needed.
+        let true_up = Tuple::cross(&left, &forward);
+
+        let orientation = Matrix::from_rows(&vec![
+            vec![left.x, left.y, left.z, 0.0],
+            vec![true_up.x, true_up.y, true_up.z, 0.0],
+            vec![-forward.x, -forward.y, -forward.z, 0.0],
+            vec![0.0, 0.0, 0.0, 1.0],
+        ])
+        .unwrap();
+
+        // Append the translation that moves the scene into place before orienting it.
+        let result = orientation * Matrix::translation(-from.x, -from.y, -from.z);
+
+        result.unwrap()
     }
 
     pub fn transpose(&self) -> Matrix {
@@ -152,7 +194,7 @@ impl Matrix {
             }
         }
 
-        return result;
+        result
     }
 
     /* Inversion is the operation that allows you to reverse the effect of multiplying by a matrix.
@@ -166,7 +208,7 @@ impl Matrix {
         let determinant = self.determinant()?;
 
         if (determinant.abs() - 0.0) < EPSILON {
-            return Err("Error: Matrix is not invertable due to a zero determinant");
+            return Err("Error: Matrix is not invertible due to a zero determinant");
         }
 
         let mut result = Matrix::new(self.num_rows(), self.num_columns());
@@ -186,22 +228,22 @@ impl Matrix {
             }
         }
 
-        return Ok(result);
+        Ok(result)
     }
 
     /* The determinant is a number that is derived from the elements of a matrix.
      * The name comes from the use of matrices to solve systems of equations, where it's used to
-     * determine whether or not the system has a solution. If the determinant is zero, then the
+     * determine whether the system has a solution. If the determinant is zero, then the
      * corresponding system of equations has no solution.
      */
     pub fn determinant(&self) -> Result<f64, &'static str> {
-        if self.num_rows() == 2 && self.num_columns() == 2 {
+        return if self.num_rows() == 2 && self.num_columns() == 2 {
             let a = *self.get(0, 0).unwrap();
             let b = *self.get(0, 1).unwrap();
             let c = *self.get(1, 0).unwrap();
             let d = *self.get(1, 1).unwrap();
 
-            return Ok(a * d - b * c);
+            Ok(a * d - b * c)
         } else {
             let mut determinant = 0.0;
 
@@ -210,8 +252,8 @@ impl Matrix {
                 determinant += *self.get(0, column).unwrap() * cofactor;
             }
 
-            return Ok(determinant);
-        }
+            Ok(determinant)
+        };
     }
 
     pub fn submatrix(&self, row: usize, column: usize) -> Result<Matrix, &'static str> {
@@ -249,59 +291,59 @@ impl Matrix {
             }
         }
 
-        return Ok(result);
+        Ok(result)
     }
 
     // A minor of an element at row i and column j is the determinant of the submatrix at (i, j)
     fn minor(&self, row: usize, column: usize) -> Result<f64, &'static str> {
-        if self.num_rows() == 3 && self.num_columns() == 3 {
+        return if self.num_rows() == 3 && self.num_columns() == 3 {
             let submatrix = self.submatrix(row, column)?;
 
             let determinant = submatrix.determinant()?;
 
-            return Ok(determinant);
+            Ok(determinant)
         } else {
-            return Err("Error: Unable to take minor since both dimensions are not equal to three");
-        }
+            Err("Error: Unable to take minor since both dimensions are not equal to three")
+        };
     }
 
     // A cofactor is a minor that possibly has their sign changed
     fn cofactor(&self, row: usize, column: usize) -> Result<f64, &'static str> {
-        if self.num_rows() == 4 && self.num_columns() == 4 {
+        return if self.num_rows() == 4 && self.num_columns() == 4 {
             let base: f64 = -1.0;
             let exp: f64 = (row + column) as f64;
 
             let sub = self.submatrix(row, column).unwrap();
             let det = sub.determinant()?;
 
-            return Ok(base.powf(exp) * det);
+            Ok(base.powf(exp) * det)
         } else if self.num_rows() == 3 && self.num_columns() == 3 {
             let result = self.minor(row, column)?;
 
             if (row + column) % 2 != 0 {
-                return Ok(-result);
+                Ok(-result)
             } else {
-                return Ok(result);
+                Ok(result)
             }
         } else {
-            return Err("Error: This function can only take cofactor of a 4x4 or a 3x3 matrix");
-        }
+            Err("Error: This function can only take cofactor of a 4x4 or a 3x3 matrix")
+        };
     }
 
     pub fn get(&self, row: usize, column: usize) -> Option<&f64> {
-        return self.grid.get(row, column);
+        self.grid.get(row, column)
     }
 
     pub fn set(&mut self, row: usize, column: usize, element: f64) -> Result<(), Error> {
-        return self.grid.set(row, column, element);
+        self.grid.set(row, column, element)
     }
 
     pub fn num_rows(&self) -> usize {
-        return self.grid.num_rows();
+        self.grid.num_rows()
     }
 
     pub fn num_columns(&self) -> usize {
-        return self.grid.num_columns();
+        self.grid.num_columns()
     }
 }
 
@@ -322,7 +364,7 @@ impl Mul<Tuple> for Matrix {
                 + self.get(i, 3).unwrap() * rhs.w;
         }
 
-        return Ok(Tuple::new(result[0], result[1], result[2], result[3]));
+        Ok(Tuple::new(result[0], result[1], result[2], result[3]))
     }
 }
 
@@ -360,7 +402,7 @@ impl Mul for Matrix {
             }
         }
 
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -387,7 +429,7 @@ impl PartialEq for Matrix {
             }
         }
 
-        return true;
+        true
     }
 }
 
@@ -398,6 +440,7 @@ mod tests {
 
     #[test]
     fn given_normal_values_for_a_matrix_when_creating_a_4_by_4_should_instantiate_correctly() {
+        // Arrange
         let rows = vec![
             vec![1.0, 2.0, 3.0, 4.0],
             vec![5.5, 6.5, 7.5, 8.5],
@@ -405,8 +448,10 @@ mod tests {
             vec![13.5, 14.5, 15.5, 16.5],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
+        // Assert
         assert_eq!(1.0, *matrix.get(0, 0).unwrap());
         assert_eq!(4.0, *matrix.get(0, 3).unwrap());
         assert_eq!(5.5, *matrix.get(1, 0).unwrap());
@@ -418,14 +463,17 @@ mod tests {
 
     #[test]
     fn given_normal_values_for_a_matrix_when_creating_a_3_by_3_should_instantiate_correctly() {
+        // Arrange
         let rows = vec![
             vec![-3.0, 5.0, 0.0],
             vec![1.0, -2.0, -7.0],
             vec![0.0, 1.0, 1.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
+        // Assert
         assert_eq!(-3.0, *matrix.get(0, 0).unwrap());
         assert_eq!(-2.0, *matrix.get(1, 1).unwrap());
         assert_eq!(1.0, *matrix.get(2, 2).unwrap());
@@ -433,10 +481,13 @@ mod tests {
 
     #[test]
     fn given_normal_values_for_a_matrix_when_creating_a_2_by_2_should_instantiate_correctly() {
+        // Arrange
         let rows = vec![vec![-3.0, 5.0], vec![1.0, -2.0]];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
+        // Assert
         assert_eq!(-3.0, *matrix.get(0, 0).unwrap());
         assert_eq!(5.0, *matrix.get(0, 1).unwrap());
         assert_eq!(1.0, *matrix.get(1, 0).unwrap());
@@ -445,6 +496,7 @@ mod tests {
 
     #[test]
     fn given_two_equal_matrices_when_comparing_them_should_return_true() {
+        // Arrange
         let rows = vec![
             vec![1.0, 2.0, 3.0, 4.0],
             vec![5.5, 6.5, 7.5, 8.5],
@@ -452,14 +504,17 @@ mod tests {
             vec![13.5, 14.5, 15.5, 16.5],
         ];
 
+        // Act
         let matrix_a = Matrix::from_rows(&rows).unwrap();
         let matrix_b = Matrix::from_rows(&rows).unwrap();
 
+        // Assert
         assert_eq!(true, matrix_a == matrix_b);
     }
 
     #[test]
     fn given_two_unequal_matrices_when_comparing_them_should_return_false() {
+        // Arrange
         let rows_a = vec![
             vec![1.0, 2.0, 3.0, 4.0],
             vec![5.5, 6.5, 7.5, 8.5],
@@ -474,14 +529,17 @@ mod tests {
             vec![13.5, 14.5, 15.5, 16.5],
         ];
 
+        // Act
         let matrix_a = Matrix::from_rows(&rows_a).unwrap();
         let matrix_b = Matrix::from_rows(&rows_b).unwrap();
 
+        // Assert
         assert_eq!(false, matrix_a == matrix_b);
     }
 
     #[test]
     fn given_two_unequal_matrices_in_size_when_comparing_them_should_return_false() {
+        // Arrange
         let rows_a = vec![
             vec![1.0, 2.0, 3.0, 4.0],
             vec![5.5, 6.5, 7.5, 8.5],
@@ -495,14 +553,17 @@ mod tests {
             vec![13.5, 14.5, 15.5, 16.5],
         ];
 
+        // Act
         let matrix_a = Matrix::from_rows(&rows_a).unwrap();
         let matrix_b = Matrix::from_rows(&rows_b).unwrap();
 
+        // Assert
         assert_eq!(false, matrix_a == matrix_b);
     }
 
     #[test]
     fn given_two_matrices_when_multiplying_them_should_correctly_calculate_the_result() {
+        // Arrange
         let rows_a = vec![
             vec![1.0, 2.0, 3.0, 4.0],
             vec![5.0, 6.0, 7.0, 8.0],
@@ -524,9 +585,11 @@ mod tests {
             vec![16.0, 26.0, 46.0, 42.0],
         ];
 
+        // Act
         let matrix_a = Matrix::from_rows(&rows_a).unwrap();
         let matrix_b = Matrix::from_rows(&rows_b).unwrap();
 
+        // Assert
         let expected = Matrix::from_rows(&expected_rows).unwrap();
         let result = matrix_a * matrix_b;
 
@@ -554,6 +617,7 @@ mod tests {
 
     #[test]
     fn given_a_matrix_and_the_identity_when_multiplying_them_should_just_return_the_former() {
+        // Arrange
         let rows = vec![
             vec![0.0, 1.0, 2.0, 4.0],
             vec![1.0, 2.0, 4.0, 8.0],
@@ -561,9 +625,11 @@ mod tests {
             vec![4.0, 8.0, 16.0, 32.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
         let identity = Matrix::identity(4);
 
+        // Assert
         let expected = Matrix::from_rows(&rows).unwrap();
         let result = matrix * identity;
 
@@ -572,6 +638,7 @@ mod tests {
 
     #[test]
     fn given_a_matrix_when_transposing_it_should_correctly_return_result() {
+        // Arrange
         let rows = vec![
             vec![0.0, 9.0, 3.0, 0.0],
             vec![9.0, 8.0, 0.0, 8.0],
@@ -586,9 +653,11 @@ mod tests {
             vec![0.0, 8.0, 3.0, 8.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
         let expected = Matrix::from_rows(&expected_rows).unwrap();
 
+        // Assert
         let result = matrix.transpose();
 
         assert_eq!(expected, result);
@@ -596,19 +665,25 @@ mod tests {
 
     #[test]
     fn given_the_identity_matrix_when_transposing_it_should_return_itself() {
+        // Arrange
         let matrix = Matrix::identity(4);
 
+        // Act
         let result = matrix.transpose();
 
+        // Assert
         assert_eq!(matrix, result);
     }
 
     #[test]
     fn given_a_2_by_2_matrix_when_taking_the_determinant_should_correctly_calculate_result() {
+        // Arrange
         let rows = vec![vec![1.0, 5.0], vec![-3.0, 2.0]];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
+        // Assert
         let result = matrix.determinant().unwrap();
 
         assert_eq!(17.0, result);
@@ -616,15 +691,19 @@ mod tests {
 
     #[test]
     fn given_a_3_by_3_matrix_when_taking_the_determinant_should_correctly_calculate_result() {
+        // Arrange
         let rows = vec![
             vec![1.0, 2.0, 6.0],
             vec![-5.0, 8.0, -4.0],
             vec![2.0, 6.0, 4.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
         let result = matrix.cofactor(0, 0).unwrap();
+
+        // Assert
         assert_eq!(56.0, result);
 
         let result = matrix.cofactor(0, 1).unwrap();
@@ -639,6 +718,7 @@ mod tests {
 
     #[test]
     fn given_a_4_by_4_matrix_when_taking_the_determinant_should_correctly_calculate_result() {
+        // Arrange
         let rows = vec![
             vec![-2.0, -8.0, 3.0, 5.0],
             vec![-3.0, 1.0, 7.0, 3.0],
@@ -646,9 +726,12 @@ mod tests {
             vec![-6.0, 7.0, 7.0, -9.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
         let result = matrix.cofactor(0, 0).unwrap();
+
+        // Assert
         assert_eq!(690.0, result);
 
         let result = matrix.cofactor(0, 1).unwrap();
@@ -666,6 +749,7 @@ mod tests {
 
     #[test]
     fn given_a_3_by_3_matrix_when_taking_a_submatrix_should_output_a_2_by_2_matrix() {
+        // Arrange
         let rows = vec![
             vec![1.0, 5.0, 0.0],
             vec![-3.0, 2.0, 7.0],
@@ -674,16 +758,19 @@ mod tests {
 
         let expected_rows = vec![vec![-3.0, 2.0], vec![0.0, 6.0]];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
         let expected = Matrix::from_rows(&expected_rows).unwrap();
 
         let result = matrix.submatrix(0, 2).unwrap();
 
+        // Assert
         assert_eq!(expected, result);
     }
 
     #[test]
     fn given_a_4_by_4_matrix_when_taking_a_submatrix_should_output_a_3_by_3_matrix() {
+        // Arrange
         let rows = vec![
             vec![-6.0, 1.0, 1.0, 6.0],
             vec![-8.0, 5.0, 8.0, 6.0],
@@ -697,40 +784,49 @@ mod tests {
             vec![-7.0, -1.0, 1.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
         let expected = Matrix::from_rows(&expected_rows).unwrap();
 
         let result = matrix.submatrix(2, 1).unwrap();
 
+        // Assert
         assert_eq!(expected, result);
     }
 
     #[test]
     fn given_a_3_by_3_matrix_when_taking_a_minor_should_output_determinant_of_the_2_by_2_matrix() {
+        // Arrange
         let rows = vec![
             vec![3.0, 5.0, 0.0],
             vec![2.0, -1.0, -7.0],
             vec![6.0, -1.0, 5.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
         let result = matrix.minor(1, 0).unwrap();
 
+        // Assert
         assert_eq!(25.0, result);
     }
 
     #[test]
     fn given_a_3_by_3_matrix_when_taking_a_cofactor_should_output_correctly_signed_minor() {
+        // Arrange
         let rows = vec![
             vec![3.0, 5.0, 0.0],
             vec![2.0, -1.0, -7.0],
             vec![6.0, -1.0, 5.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
         let result = matrix.minor(0, 0).unwrap();
+
+        // Assert
         assert_eq!(-12.0, result);
 
         let result = matrix.cofactor(0, 0).unwrap();
@@ -745,6 +841,7 @@ mod tests {
 
     #[test]
     fn given_a_non_invertible_4_by_4_matrix_when_taking_the_inversion_should_output_error_result() {
+        // Arrange
         let rows = vec![
             vec![-4.0, 2.0, -2.0, -3.0],
             vec![9.0, 6.0, 2.0, 6.0],
@@ -752,15 +849,18 @@ mod tests {
             vec![0.0, 0.0, 0.0, 0.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
 
         let result = matrix.inverse();
 
+        // Assert
         assert_eq!(true, result.is_err());
     }
 
     #[test]
     fn given_an_invertible_4_by_4_matrix_when_taking_the_inversion_should_output_correct_result() {
+        // Arrange
         let rows = vec![
             vec![-5.0, 2.0, 6.0, -8.0],
             vec![1.0, -5.0, 1.0, 8.0],
@@ -770,9 +870,11 @@ mod tests {
 
         let matrix = Matrix::from_rows(&rows).unwrap();
 
+        // Act
         let determinant = matrix.determinant().unwrap();
         let inverse = matrix.inverse().unwrap();
 
+        // Assert
         assert_eq!(532.0, determinant);
 
         let result = matrix.cofactor(2, 3).unwrap();
@@ -804,6 +906,7 @@ mod tests {
     #[test]
     fn given_a_couple_invertible_4_by_4_matrices_when_taking_the_inversion_should_output_correct_result(
     ) {
+        // Arrange
         let rows = vec![
             vec![8.0, -5.0, 9.0, 2.0],
             vec![7.0, 5.0, 6.0, 1.0],
@@ -811,6 +914,7 @@ mod tests {
             vec![-3.0, 0.0, -9.0, -4.0],
         ];
 
+        // Act
         let matrix = Matrix::from_rows(&rows).unwrap();
         let inverse = matrix.inverse().unwrap();
 
@@ -823,6 +927,7 @@ mod tests {
 
         let expected_inverse = Matrix::from_rows(&expected_rows).unwrap();
 
+        // Assert
         assert_eq!(expected_inverse, inverse);
 
         let rows = vec![
@@ -850,6 +955,7 @@ mod tests {
     #[test]
     fn given_two_4_by_4_matrices_when_multiplying_the_product_by_the_inverse_of_the_latter_should_output_the_former(
     ) {
+        // Arrange
         let rows_a = vec![
             vec![3.0, -9.0, 7.0, 3.0],
             vec![3.0, -8.0, 2.0, -9.0],
@@ -864,6 +970,7 @@ mod tests {
             vec![6.0, -2.0, 0.0, 5.0],
         ];
 
+        // Act
         let matrix_a = Matrix::from_rows(&rows_a).unwrap();
         let matrix_b = Matrix::from_rows(&rows_b).unwrap();
         let inverse = matrix_b.inverse().unwrap();
@@ -873,120 +980,151 @@ mod tests {
 
         let expected = Matrix::from_rows(&rows_a).unwrap();
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_translation_matrix_when_multiplying_them_should_move_the_point_by_the_given_amount(
     ) {
+        // Arrange
         let transform = Matrix::translation(5.0, -3.0, 2.0);
         let point = Tuple::point(-3.0, 4.0, 5.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(2.0, 1.0, 7.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_an_inverse_translation_matrix_when_multiplying_them_should_move_the_point_by_the_given_amount_in_reverse(
     ) {
+        // Arrange
         let transform = Matrix::translation(5.0, -3.0, 2.0);
         let inverse = transform.inverse().unwrap();
         let point = Tuple::point(-3.0, 4.0, 5.0);
 
+        // Act
         let result = inverse * point;
         let expected = Tuple::point(-8.0, 7.0, 3.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_vector_and_a_translation_matrix_when_multiplying_them_should_not_change_the_vector()
     {
+        // Arrange
         let transform = Matrix::translation(5.0, -3.0, 2.0);
         let vector = Tuple::vector(-3.0, 4.0, 5.0);
 
+        // Act
         let result = transform * vector;
 
+        // Assert
         assert_eq!(vector, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_scaling_matrix_when_multiplying_them_should_scale_the_point_correctly() {
+        // Arrange
         let transform = Matrix::scaling(2.0, 3.0, 4.0);
         let point = Tuple::point(-4.0, 6.0, 8.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(-8.0, 18.0, 32.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_vector_and_a_scaling_matrix_when_multiplying_them_should_scale_the_vector_correctly()
     {
+        // Arrange
         let transform = Matrix::scaling(2.0, 3.0, 4.0);
         let vector = Tuple::vector(-4.0, 6.0, 8.0);
 
+        // Act
         let result = transform * vector;
         let expected = Tuple::vector(-8.0, 18.0, 32.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_vector_and_an_inverse_scaling_matrix_when_multiplying_them_should_scale_correctly_in_the_opposite_way(
     ) {
+        // Arrange
         let transform = Matrix::scaling(2.0, 3.0, 4.0);
         let inverse = transform.inverse().unwrap();
         let vector = Tuple::vector(-4.0, 6.0, 8.0);
 
+        // Act
         let result = inverse * vector;
         let expected = Tuple::vector(-2.0, 2.0, 2.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_reflection_matrix_when_multiplying_them_should_reflect_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::reflect_x();
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(-2.0, 3.0, 4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
 
+        // Arrange
         let transform = Matrix::reflect_y();
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(2.0, -3.0, 4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
 
+        // Arrange
         let transform = Matrix::reflect_z();
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(2.0, 3.0, -4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_an_x_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly(
     ) {
+        // Arrange
         let half_quarter = Matrix::rotation_x(consts::PI / 4.0);
         let full_quarter = Matrix::rotation_x(consts::PI / 2.0);
 
         let point = Tuple::point(0.0, 1.0, 0.0);
 
+        // Act
         let result = half_quarter * point;
         let expected = Tuple::point(0.0, consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
 
         let result = full_quarter * point;
@@ -998,28 +1136,34 @@ mod tests {
     #[test]
     fn given_a_point_and_an_inverse_x_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly(
     ) {
+        // Arrange
         let half_quarter = Matrix::rotation_x(consts::PI / 4.0);
         let inverse = half_quarter.inverse().unwrap();
 
         let point = Tuple::point(0.0, 1.0, 0.0);
 
+        // Act
         let result = inverse * point;
         let expected = Tuple::point(0.0, consts::SQRT_2 / 2.0, -consts::SQRT_2 / 2.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_y_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly(
     ) {
+        // Arrange
         let half_quarter = Matrix::rotation_y(consts::PI / 4.0);
         let full_quarter = Matrix::rotation_y(consts::PI / 2.0);
 
         let point = Tuple::point(0.0, 0.0, 1.0);
 
+        // Act
         let result = half_quarter * point;
         let expected = Tuple::point(consts::SQRT_2 / 2.0, 0.0, consts::SQRT_2 / 2.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
 
         let result = full_quarter * point;
@@ -1031,14 +1175,17 @@ mod tests {
     #[test]
     fn given_a_point_and_a_z_axis_rotation_matrix_when_multiplying_them_should_rotate_the_point_correctly(
     ) {
+        // Arrange
         let half_quarter = Matrix::rotation_z(consts::PI / 4.0);
         let full_quarter = Matrix::rotation_z(consts::PI / 2.0);
 
         let point = Tuple::point(0.0, 1.0, 0.0);
 
+        // Act
         let result = half_quarter * point;
         let expected = Tuple::point(-consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0, 0.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
 
         let result = full_quarter * point;
@@ -1050,87 +1197,107 @@ mod tests {
     #[test]
     fn given_a_point_and_a_x2y_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(5.0, 3.0, 4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_x2z_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(6.0, 3.0, 4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_y2x_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(2.0, 5.0, 4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_y2z_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
         let result = transform * point;
         let expected = Tuple::point(2.0, 7.0, 4.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_z2x_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(2.0, 3.0, 6.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
     fn given_a_point_and_a_z2y_only_shearing_matrix_when_multiplying_them_should_move_the_point_correctly(
     ) {
+        // Arrange
         let transform = Matrix::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         let point = Tuple::point(2.0, 3.0, 4.0);
 
+        // Act
         let result = transform * point;
         let expected = Tuple::point(2.0, 3.0, 7.0);
 
+        // Assert
         assert_eq!(expected, result.unwrap());
     }
 
     #[test]
-    fn given_several_transformation_matrices_when_applied_individualy_in_sequence_should_transform_point_correctly(
+    fn given_several_transformation_matrices_when_applied_individually_in_sequence_should_transform_point_correctly(
     ) {
+        // Arrange
         let transform_a = Matrix::rotation_x(consts::PI / 2.0);
         let transform_b = Matrix::scaling(5.0, 5.0, 5.0);
         let transform_c = Matrix::translation(10.0, 5.0, 7.0);
 
         let point = Tuple::point(1.0, 0.0, 1.0);
 
+        // Act
         let result = (transform_a * point).unwrap();
         let expected = Tuple::point(1.0, -1.0, 0.0);
 
+        // Assert
         assert_eq!(expected, result);
 
         let result = (transform_b * result).unwrap();
@@ -1147,16 +1314,34 @@ mod tests {
     #[test]
     fn given_several_transformation_matrices_when_chained_in_reverse_order_should_transform_point_correctly(
     ) {
+        // Arrange
         let transform_a = Matrix::rotation_x(consts::PI / 2.0);
         let transform_b = Matrix::scaling(5.0, 5.0, 5.0);
         let transform_c = Matrix::translation(10.0, 5.0, 7.0);
 
         let point = Tuple::point(1.0, 0.0, 1.0);
 
+        // Act
         let result =
             (((transform_c * transform_b).unwrap() * transform_a).unwrap() * point).unwrap();
         let expected = Tuple::point(15.0, 0.0, 7.0);
 
+        // Assert
         assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_a_default_orientation_when_calculating_the_view_transform_should_be_the_identity_matrix(
+    ) {
+        // Arrange
+        let from = Tuple::point(0.0, 0.0, 0.0);
+        let to = Tuple::point(0.0, 0.0, -1.0);
+        let up = Tuple::vector(0.0, 1.0, 0.0);
+
+        // Act
+        let result = Matrix::view_transform(from, to, up);
+
+        // Assert
+        assert_eq!(Matrix::identity(4), result);
     }
 }

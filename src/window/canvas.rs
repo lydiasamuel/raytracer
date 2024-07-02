@@ -1,7 +1,6 @@
 use std::{error::Error, fmt::Write, fs};
 
 use array2d::Array2D;
-use crate::matrices::matrix::Matrix;
 
 use crate::tuples::color::Color;
 
@@ -11,53 +10,53 @@ pub struct Canvas {
 
 impl Canvas {
     pub fn new(width: usize, height: usize) -> Canvas {
-        return Canvas::filled_with(Color::new(0.0, 0.0, 0.0), width, height);
+        Canvas::filled_with(Color::new(0.0, 0.0, 0.0), width, height)
     }
 
     pub fn from_columns(columns: &Vec<Vec<Color>>) -> Result<Canvas, array2d::Error> {
         let grid = Array2D::from_columns(columns)?;
 
-        return Ok(Canvas { grid });
+        Ok(Canvas { grid })
     }
 
     pub fn from_rows(rows: &Vec<Vec<Color>>) -> Result<Canvas, array2d::Error> {
         let grid = Array2D::from_rows(rows)?;
 
-        return Ok(Canvas { grid });
+        Ok(Canvas { grid })
     }
 
     pub fn filled_with(color: Color, width: usize, height: usize) -> Canvas {
-        return Canvas {
+        Canvas {
             grid: Array2D::filled_with(color, height, width),
-        };
+        }
     }
 
     pub fn write_pixel(&mut self, x: usize, y: usize, color: Color) -> Result<(), array2d::Error> {
-        return self.grid.set(y, x, color);
+        self.grid.set(y, x, color)
     }
 
     pub fn pixel_at(&self, x: usize, y: usize) -> Option<&Color> {
-        return self.grid.get(y, x);
+        self.grid.get(y, x)
     }
 
     fn clamp_color(color: Color) -> (u8, u8, u8) {
-        return (
+        (
             Canvas::clamp(color.red),
             Canvas::clamp(color.green),
             Canvas::clamp(color.blue),
-        );
+        )
     }
 
     fn clamp(value: f64) -> u8 {
         let x = 255.0 * value;
 
-        if x > 255.0 {
-            return 255;
+        return if x > 255.0 {
+            255
         } else if x < 0.0 {
-            return 0;
+            0
         } else {
-            return x.ceil() as u8;
-        }
+            x.ceil() as u8
+        };
     }
 
     pub fn to_ppm(&self) -> Result<String, std::fmt::Error> {
@@ -91,7 +90,7 @@ impl Canvas {
             }
         }
 
-        return Ok(output);
+        Ok(output)
     }
 
     fn write_color_value(
@@ -123,7 +122,7 @@ impl Canvas {
             *current_line_len = 0;
         }
 
-        return Ok(());
+        Ok(())
     }
 
     pub fn write_to_file(&self, file_path: String) -> Result<(), Box<dyn Error>> {
@@ -131,7 +130,7 @@ impl Canvas {
 
         fs::write(file_path, output)?;
 
-        return Ok(());
+        Ok(())
     }
 }
 

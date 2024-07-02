@@ -11,40 +11,40 @@ pub struct Color {
 
 impl Color {
     pub fn new(red: f64, green: f64, blue: f64) -> Color {
-        return Color { red, green, blue };
+        Color { red, green, blue }
     }
 
     pub fn red() -> Color {
-        return Color::new(1.0, 0.0, 0.0);
+        Color::new(1.0, 0.0, 0.0)
     }
 
     pub fn green() -> Color {
-        return Color::new(0.0, 1.0, 0.0);
+        Color::new(0.0, 1.0, 0.0)
     }
 
     pub fn blue() -> Color {
-        return Color::new(0.0, 0.0, 1.0);
+        Color::new(0.0, 0.0, 1.0)
     }
 
     pub fn white() -> Color {
-        return Color::new(1.0, 1.0, 1.0);
+        Color::new(1.0, 1.0, 1.0)
     }
 
     pub fn black() -> Color {
-        return Color::new(0.0, 0.0, 0.0);
+        Color::new(0.0, 0.0, 0.0)
     }
 }
 
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
         if (self.red - other.red).abs() > EPSILON {
-            return false;
+            false
         } else if (self.green - other.green).abs() > EPSILON {
-            return false;
+            false
         } else if (self.blue - other.blue).abs() > EPSILON {
-            return false;
+            false
         } else {
-            return true;
+            true
         }
     }
 }
@@ -53,11 +53,11 @@ impl Add for Color {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self {
-        return Self {
+        Self {
             red: self.red + rhs.red,
             green: self.green + rhs.green,
             blue: self.blue + rhs.blue,
-        };
+        }
     }
 }
 
@@ -65,11 +65,11 @@ impl Sub for Color {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self {
-        return Self {
+        Self {
             red: self.red - rhs.red,
             green: self.green - rhs.green,
             blue: self.blue - rhs.blue,
-        };
+        }
     }
 }
 
@@ -77,11 +77,11 @@ impl Mul for Color {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        return Self {
+        Self {
             red: self.red * rhs.red,
             green: self.green * rhs.green,
             blue: self.blue * rhs.blue,
-        };
+        }
     }
 }
 
@@ -89,11 +89,11 @@ impl Mul<f64> for Color {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self {
-        return Self {
+        Self {
             red: self.red * rhs,
             blue: self.blue * rhs,
             green: self.green * rhs,
-        };
+        }
     }
 }
 
@@ -101,11 +101,11 @@ impl Div for Color {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self {
-        return Self {
+        Self {
             red: self.red / rhs.red,
             green: self.green / rhs.green,
             blue: self.blue / rhs.blue,
-        };
+        }
     }
 }
 
@@ -113,11 +113,11 @@ impl Div<f64> for Color {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self {
-        return Self {
+        Self {
             red: self.red / rhs,
             blue: self.blue / rhs,
             green: self.green / rhs,
-        };
+        }
     }
 }
 

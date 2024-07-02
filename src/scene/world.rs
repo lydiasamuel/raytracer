@@ -4,12 +4,12 @@ use crate::geometry::shape::Shape;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
+use crate::scene::computations::Computations;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
 use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
-use crate::universe::computations::Computations;
 
 pub struct World {
     objects: Vec<Rc<dyn Shape>>,
@@ -22,7 +22,7 @@ impl World {
     }
 
     pub fn default() -> World {
-        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
         let outer = Sphere::new(
             Matrix::identity(4),
@@ -52,7 +52,7 @@ impl World {
         return result;
     }
 
-    pub fn prepare_computations(intersection: &Intersection, ray: &Ray) -> Computations {
+    fn prepare_computations(intersection: &Intersection, ray: &Ray) -> Computations {
         let time = intersection.time;
         let object = intersection.object.clone();
         let point = ray.position(time);
@@ -84,18 +84,37 @@ impl World {
 
         return result;
     }
+
+    pub fn color_at(&self, ray: &Ray) -> Color {
+        // Call intersect to find the intersections of the given ray in this world
+        let intersects = self.intersect_world(ray);
+
+        // Find the hit from the resulting intersects
+        let hit = Intersection::hit(&intersects);
+
+        if let Some(intersect) = hit {
+            let comps = World::prepare_computations(&intersect, ray);
+
+            return self.shade_hit(&comps);
+        }
+
+        Color::black()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
+    use crate::materials::material::Material;
+    use crate::materials::phong::Phong;
+    use crate::matrices::matrix::Matrix;
+    use crate::scene::world::World;
     use crate::tuples::color::Color;
     use crate::tuples::intersection::Intersection;
     use crate::tuples::pointlight::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
-    use crate::universe::world::World;
     use std::rc::Rc;
 
     #[test]
@@ -219,5 +238,58 @@ mod tests {
 
         // Assert
         assert_eq!(Color::new(0.90498, 0.90498, 0.90498), result);
+    }
+
+    #[test]
+    fn given_a_ray_that_misses_when_calling_color_at_should_return_black() {
+        // Arrange
+        let world = World::default();
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, 5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let result = world.color_at(&ray);
+
+        // Assert
+        assert_eq!(Color::black(), result);
+    }
+
+    #[test]
+    fn given_a_ray_that_hits_when_calling_color_at_should_return_correct_color_value() {
+        // Arrange
+        let world = World::default();
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let result = world.color_at(&ray);
+
+        // Assert
+        assert_eq!(Color::new(0.38066, 0.47583, 0.2855), result);
+    }
+
+    #[test]
+    fn given_default_world_when_ray_is_between_outer_and_inner_but_pointed_at_inner_should_color_inner(
+    ) {
+        // Arrange
+        let color = Color::white();
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+        let material: Rc<dyn Material> = Rc::new(Phong::new(color, 1.0, 0.9, 0.9, 200.0));
+
+        let outer = Sphere::new(Matrix::identity(4), material.clone());
+        let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), material.clone());
+
+        let objects: Vec<Rc<dyn Shape>> = vec![Rc::new(outer), Rc::new(inner)];
+        let lights = vec![Rc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, 0.75), Tuple::vector(0.0, 0.0, -1.0));
+
+        // Act
+        let result = world.color_at(&ray);
+
+        // Assert
+        assert_eq!(color, result);
     }
 }

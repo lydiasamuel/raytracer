@@ -11,8 +11,8 @@ static EPSILON: f64 = 0.00001;
 pub mod geometry;
 pub mod materials;
 pub mod matrices;
+pub mod scene;
 pub mod tuples;
-pub mod universe;
 pub mod window;
 
 pub struct Config {
@@ -31,11 +31,11 @@ impl Config {
         let width = args[2].clone().parse().unwrap();
         let height = args[3].clone().parse().unwrap();
 
-        return Ok(Config {
+        Ok(Config {
             file_path,
             width,
             height,
-        });
+        })
     }
 }
 
@@ -94,5 +94,5 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     canvas.write_to_file(config.file_path)?;
 
-    return Ok(());
+    Ok(())
 }

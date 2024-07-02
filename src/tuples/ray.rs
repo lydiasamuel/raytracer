@@ -10,28 +10,28 @@ pub struct Ray {
 
 impl Ray {
     pub fn new(origin: Tuple, direction: Tuple) -> Ray {
-        return Ray { origin, direction };
+        Ray { origin, direction }
     }
 
     pub fn origin(&self) -> Tuple {
-        return self.origin.clone();
+        self.origin.clone()
     }
 
     pub fn direction(&self) -> Tuple {
-        return self.direction.clone();
+        self.direction.clone()
     }
 
     pub fn position(&self, time: f64) -> Tuple {
-        return self.origin + (self.direction * time);
+        self.origin + (self.direction * time)
     }
 
-    // Ray's direction is left unnormalized so that when intersections are computed it represents
+    // Ray's direction is left normalised so that when intersections are computed it represents
     // a hit at the correct distance in world space from the ray's origin.
     pub fn transform(&self, transform: Matrix) -> Ray {
         let transformed_origin = transform.clone() * self.origin;
         let transformed_direction = transform * self.direction;
 
-        return Ray::new(transformed_origin.unwrap(), transformed_direction.unwrap());
+        Ray::new(transformed_origin.unwrap(), transformed_direction.unwrap())
     }
 }
 
