@@ -1344,4 +1344,58 @@ mod tests {
         // Assert
         assert_eq!(Matrix::identity(4), result);
     }
+
+    #[test]
+    fn given_a_default_orientation_looking_in_positive_z_direction_when_calculating_the_view_transform_should_be_the_reflection_matrix(
+    ) {
+        // Arrange
+        let from = Tuple::point(0.0, 0.0, 0.0);
+        let to = Tuple::point(0.0, 0.0, 1.0);
+        let up = Tuple::vector(0.0, 1.0, 0.0);
+
+        // Act
+        let result = Matrix::view_transform(from, to, up);
+
+        // Assert
+        assert_eq!(Matrix::scaling(-1.0, 1.0, -1.0), result);
+    }
+
+    #[test]
+    fn given_a_different_orientation_that_has_moved_when_calculating_the_view_transform_should_be_a_translation_matrix_which_moves_world(
+    ) {
+        // Arrange
+        let from = Tuple::point(0.0, 0.0, 8.0);
+        let to = Tuple::point(0.0, 0.0, 0.0);
+        let up = Tuple::vector(0.0, 1.0, 0.0);
+
+        // Act
+        let result = Matrix::view_transform(from, to, up);
+
+        // Assert
+        assert_eq!(Matrix::translation(0.0, 0.0, -8.0), result);
+    }
+
+    #[test]
+    fn given_a_arbitrary_orientation_when_calculating_the_view_transform_should_be_a_combination_of_transform_matrices(
+    ) {
+        // Arrange
+        let rows = vec![
+            vec![-0.50709, 0.50709, 0.67612, -2.36643],
+            vec![0.76772, 0.60609, 0.12122, -2.82843],
+            vec![-0.35857, 0.59761, -0.71714, 0.0],
+            vec![0.0, 0.0, 0.0, 1.0],
+        ];
+
+        let from = Tuple::point(1.0, 3.0, 2.0);
+        let to = Tuple::point(4.0, -2.0, 8.0);
+        let up = Tuple::vector(1.0, 1.0, 0.0);
+
+        // Act
+        let result = Matrix::view_transform(from, to, up);
+
+        // Assert
+        let expected = Matrix::from_rows(&rows).unwrap();
+
+        assert_eq!(expected, result);
+    }
 }
