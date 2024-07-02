@@ -1,12 +1,22 @@
-use std::{error::Error, rc::Rc};
+use std::error::Error;
+use std::f64::consts::PI;
+use std::sync::{mpsc, Arc};
+use std::thread;
 
-use geometry::{shape::Shape, sphere::Sphere};
-use materials::{material::Material, phong::Phong};
-use tuples::{intersection::Intersection, pointlight::PointLight, ray::Ray, tuple::Tuple};
+use crate::geometry::sphere::Sphere;
+use crate::materials::phong::Phong;
+use crate::matrices::matrix::Matrix;
+use materials::material::Material;
 
-use crate::{tuples::color::Color, window::canvas::Canvas};
+use crate::scene::camera::Camera;
+use crate::scene::world::World;
+use crate::tuples::color::Color;
+use crate::tuples::pointlight::PointLight;
+use crate::tuples::tuple::Tuple;
+use crate::window::canvas::Canvas;
 
 static EPSILON: f64 = 0.00001;
+static THREADS: usize = 8;
 
 pub mod geometry;
 pub mod materials;
@@ -40,59 +50,125 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let canvas_pixels = config.width;
+    let world = Arc::new(build_world());
+    let camera = Arc::new(Camera::new(
+        config.height,
+        config.width,
+        PI / 3.0,
+        Matrix::view_transform(
+            Tuple::point(0.0, 1.5, -5.0),
+            Tuple::point(0.0, 1.0, 0.0),
+            Tuple::vector(0.0, 1.0, 0.0),
+        ),
+    ));
 
-    let mut canvas = Canvas::new(canvas_pixels, canvas_pixels);
-    let color = Color::new(1.0, 0.2, 1.0);
+    // Initialise sending channels for producer consumer
+    let (send_channel, receive_channel) = mpsc::channel();
+    // Figure out chunk size using row-wise 1D partitioning
+    let chunk_size = camera.height() / THREADS;
+    // Account for case where image height isn't a perfect multiple of threads
+    let leftover_chunk_size = camera.height() % THREADS;
 
-    let ray_origin = Tuple::point(0.0, 0.0, -5.0);
-    let wall_z = 10.0;
-    let wall_size = 7.0;
+    let mut handles = Vec::new();
+    for i in 0..THREADS {
+        // Clone send channel and scene info across to thread
+        let thread_send_channel = send_channel.clone();
+        let thread_world = world.clone();
+        let thread_camera = camera.clone();
 
-    let pixel_size = wall_size / canvas_pixels as f64;
-    let half = wall_size / 2.0;
+        let handle = thread::spawn(move || {
+            let num_of_rows;
 
-    let mut sphere = Sphere::unit();
-    let material: Rc<dyn Material> = Rc::new(Phong::new(color, 0.1, 0.9, 0.9, 200.0));
-    sphere.set_material(&material);
-
-    let shape = Rc::new(sphere);
-
-    let light_position = Tuple::point(-10.0, 10.0, -10.0);
-    let light_color = Color::white();
-    let light = PointLight::new(light_position, light_color);
-
-    for y in 0..canvas_pixels {
-        // Compute the world y coordinate (top = +half, bottom = -half)
-        let world_y = half - pixel_size * y as f64;
-
-        for x in 0..canvas_pixels {
-            // Compute the world x coordinate (left = -half, right = half)
-            let world_x = -half + pixel_size * x as f64;
-
-            // Describe the point on the wall that the ray will target
-            let position = Tuple::point(world_x, world_y, wall_z);
-
-            let world_ray = Ray::new(ray_origin, (position - ray_origin).normalize());
-            let intersections = shape.clone().intersect(&world_ray);
-
-            let hit = Intersection::hit(&intersections);
-
-            if let Some(intersection) = hit {
-                let world_point = world_ray.position(intersection.time);
-                let normal = shape.normal_at(world_point);
-                let eye = -world_ray.direction();
-
-                let color = shape
-                    .get_material()
-                    .lighting(&light, &world_point, &eye, &normal);
-
-                canvas.write_pixel(x, y, color)?;
+            if i == THREADS - 1 {
+                num_of_rows = chunk_size + leftover_chunk_size;
+            } else {
+                num_of_rows = chunk_size;
             }
-        }
+
+            let row_start = i * chunk_size;
+            // Iterate over the partition of rows given to this thread
+            for y in row_start..(row_start + num_of_rows) {
+                for x in 0..thread_camera.width() {
+                    let ray = thread_camera.ray_for_pixel(x, y);
+                    // Send back color information to main thread to then write out to canvas
+                    thread_send_channel
+                        .send((x, y, thread_world.color_at(&ray)))
+                        .unwrap();
+                }
+            }
+        });
+
+        handles.push(handle);
+    }
+
+    let mut canvas = Canvas::new(camera.width(), camera.height());
+
+    // Expect width * height number of messages from threads
+    for _ in 0..(camera.width() * camera.height()) {
+        let received = receive_channel.recv().unwrap();
+        canvas
+            .write_pixel(received.0, received.1, received.2)
+            .unwrap();
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
     }
 
     canvas.write_to_file(config.file_path)?;
 
     Ok(())
+}
+
+pub fn build_world() -> World {
+    let floor_material = Arc::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0));
+
+    let floor = Sphere::new(Matrix::scaling(10.0, 0.01, 10.0), floor_material.clone());
+
+    let left_wall = Sphere::new(
+        (((Matrix::translation(0.0, 0.0, 5.0) * Matrix::rotation_y(-PI / 4.0)).unwrap()
+            * Matrix::rotation_x(PI / 2.0))
+        .unwrap()
+            * Matrix::scaling(10.0, 0.01, 10.0))
+        .unwrap(),
+        floor_material.clone(),
+    );
+
+    let right_wall = Sphere::new(
+        (((Matrix::translation(0.0, 0.0, 5.0) * Matrix::rotation_y(PI / 4.0)).unwrap()
+            * Matrix::rotation_x(PI / 2.0))
+        .unwrap()
+            * Matrix::scaling(10.0, 0.01, 10.0))
+        .unwrap(),
+        floor_material.clone(),
+    );
+
+    let middle = Sphere::new(
+        Matrix::translation(-0.5, 1.0, 0.5),
+        Arc::new(Phong::new(Color::new(0.1, 1.0, 0.5), 0.1, 0.7, 0.3, 200.0)),
+    );
+
+    let right = Sphere::new(
+        (Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
+        Arc::new(Phong::new(Color::new(0.5, 1.0, 0.1), 0.1, 0.7, 0.3, 200.0)),
+    );
+
+    let left = Sphere::new(
+        (Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
+        Arc::new(Phong::new(Color::new(1.0, 0.8, 0.1), 0.1, 0.7, 0.3, 200.0)),
+    );
+
+    let light_source = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+
+    World::new(
+        vec![
+            Arc::new(floor),
+            Arc::new(left_wall),
+            Arc::new(right_wall),
+            Arc::new(middle),
+            Arc::new(right),
+            Arc::new(left),
+        ],
+        vec![Arc::new(light_source)],
+    )
 }

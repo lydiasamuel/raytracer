@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::geometry::shape::Shape;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
@@ -10,14 +8,15 @@ use crate::tuples::intersection::Intersection;
 use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
+use std::sync::Arc;
 
 pub struct World {
-    objects: Vec<Rc<dyn Shape>>,
-    lights: Vec<Rc<PointLight>>,
+    objects: Vec<Arc<dyn Shape>>,
+    lights: Vec<Arc<PointLight>>,
 }
 
 impl World {
-    pub fn new(objects: Vec<Rc<dyn Shape>>, lights: Vec<Rc<PointLight>>) -> World {
+    pub fn new(objects: Vec<Arc<dyn Shape>>, lights: Vec<Arc<PointLight>>) -> World {
         return World { objects, lights };
     }
 
@@ -26,13 +25,13 @@ impl World {
 
         let outer = Sphere::new(
             Matrix::identity(4),
-            Rc::new(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0)),
+            Arc::new(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0)),
         );
 
-        let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), Rc::new(Phong::default()));
+        let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), Arc::new(Phong::default()));
 
-        let objects: Vec<Rc<dyn Shape>> = vec![Rc::new(outer), Rc::new(inner)];
-        let lights = vec![Rc::new(light)];
+        let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
+        let lights = vec![Arc::new(light)];
 
         return World { objects, lights };
     }
@@ -115,7 +114,7 @@ mod tests {
     use crate::tuples::pointlight::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
-    use std::rc::Rc;
+    use std::Arc::Arc;
 
     #[test]
     fn given_default_world_when_calculating_intersects_with_ray_should_return_correct_intersections_sorted_by_time(
@@ -143,7 +142,7 @@ mod tests {
         // Arrange
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Rc<dyn Shape> = Rc::new(Sphere::unit());
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 
         let intersection = Intersection::new(4.0, shape.clone());
 
@@ -152,7 +151,7 @@ mod tests {
 
         // Assert
         assert_eq!(intersection.time, result.time);
-        assert_eq!(true, Rc::ptr_eq(&intersection.object, &result.object));
+        assert_eq!(true, Arc::ptr_eq(&intersection.object, &result.object));
         assert_eq!(Tuple::point(0.0, 0.0, -1.0), result.point);
         assert_eq!(Tuple::vector(0.0, 0.0, -1.0), result.eyev);
         assert_eq!(Tuple::vector(0.0, 0.0, -1.0), result.normalv);
@@ -164,7 +163,7 @@ mod tests {
         // Arrange
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Rc<dyn Shape> = Rc::new(Sphere::unit());
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 
         let intersection = Intersection::new(4.0, shape.clone());
 
@@ -181,7 +180,7 @@ mod tests {
         // Arrange
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Rc<dyn Shape> = Rc::new(Sphere::unit());
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 
         let intersection = Intersection::new(1.0, shape.clone());
 
@@ -202,7 +201,7 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Rc<dyn Shape> = world.objects[0].clone();
+        let shape: Arc<dyn Shape> = world.objects[0].clone();
 
         let intersection = Intersection::new(4.0, shape.clone());
 
@@ -221,14 +220,14 @@ mod tests {
         let mut world = World::default();
 
         world.lights.pop();
-        world.lights.push(Rc::new(PointLight::new(
+        world.lights.push(Arc::new(PointLight::new(
             Tuple::point(0.0, 0.25, 0.0),
             Color::white(),
         )));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Rc<dyn Shape> = world.objects[1].clone();
+        let shape: Arc<dyn Shape> = world.objects[1].clone();
 
         let intersection = Intersection::new(0.5, shape.clone());
 
@@ -274,13 +273,13 @@ mod tests {
         // Arrange
         let color = Color::white();
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
-        let material: Rc<dyn Material> = Rc::new(Phong::new(color, 1.0, 0.9, 0.9, 200.0));
+        let material: Arc<dyn Material> = Arc::new(Phong::new(color, 1.0, 0.9, 0.9, 200.0));
 
         let outer = Sphere::new(Matrix::identity(4), material.clone());
         let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), material.clone());
 
-        let objects: Vec<Rc<dyn Shape>> = vec![Rc::new(outer), Rc::new(inner)];
-        let lights = vec![Rc::new(light)];
+        let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
+        let lights = vec![Arc::new(light)];
 
         let world = World::new(objects, lights);
 

@@ -41,13 +41,13 @@ impl Matrix {
         Matrix { grid }
     }
 
-    pub fn from_columns(columns: &Vec<Vec<f64>>) -> Result<Matrix, Error> {
+    pub fn from_columns(columns: &[Vec<f64>]) -> Result<Matrix, Error> {
         let grid = Array2D::from_columns(columns)?;
 
         Ok(Matrix { grid })
     }
 
-    pub fn from_rows(rows: &Vec<Vec<f64>>) -> Result<Matrix, Error> {
+    pub fn from_rows(rows: &[Vec<f64>]) -> Result<Matrix, Error> {
         let grid = Array2D::from_rows(rows)?;
 
         Ok(Matrix { grid })

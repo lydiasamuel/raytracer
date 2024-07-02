@@ -13,13 +13,13 @@ impl Canvas {
         Canvas::filled_with(Color::new(0.0, 0.0, 0.0), width, height)
     }
 
-    pub fn from_columns(columns: &Vec<Vec<Color>>) -> Result<Canvas, array2d::Error> {
+    pub fn from_columns(columns: &[Vec<Color>]) -> Result<Canvas, array2d::Error> {
         let grid = Array2D::from_columns(columns)?;
 
         Ok(Canvas { grid })
     }
 
-    pub fn from_rows(rows: &Vec<Vec<Color>>) -> Result<Canvas, array2d::Error> {
+    pub fn from_rows(rows: &[Vec<Color>]) -> Result<Canvas, array2d::Error> {
         let grid = Array2D::from_rows(rows)?;
 
         Ok(Canvas { grid })

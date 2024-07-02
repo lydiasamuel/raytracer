@@ -1,10 +1,11 @@
+use std::sync::Arc;
+
 use crate::geometry::shape::Shape;
 use crate::tuples::tuple::Tuple;
-use std::rc::Rc;
 
 pub struct Computations {
     pub time: f64,
-    pub object: Rc<dyn Shape>,
+    pub object: Arc<dyn Shape>,
     pub point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
@@ -14,7 +15,7 @@ pub struct Computations {
 impl Computations {
     pub fn new(
         time: f64,
-        object: Rc<dyn Shape>,
+        object: Arc<dyn Shape>,
         point: Tuple,
         eyev: Tuple,
         normalv: Tuple,

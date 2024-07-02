@@ -1,5 +1,4 @@
-use std::rc::Rc;
-
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::tuples::color::Color;
@@ -15,7 +14,7 @@ use super::shape::Shape;
 pub struct Sphere {
     id: Uuid,
     transform: Matrix,
-    material: Rc<dyn Material>,
+    material: Arc<dyn Material>,
 }
 
 impl Sphere {
@@ -23,11 +22,11 @@ impl Sphere {
         Sphere {
             id: Uuid::new_v4(),
             transform: Matrix::identity(4),
-            material: Rc::new(Phong::default()),
+            material: Arc::new(Phong::default()),
         }
     }
 
-    pub fn new(transform: Matrix, material: Rc<dyn Material>) -> Sphere {
+    pub fn new(transform: Matrix, material: Arc<dyn Material>) -> Sphere {
         Sphere {
             id: Uuid::new_v4(),
             transform,
@@ -41,7 +40,7 @@ impl Shape for Sphere {
         self.id.clone()
     }
 
-    fn intersect(self: Rc<Self>, world_ray: &Ray) -> Vec<Intersection> {
+    fn intersect(self: Arc<Self>, world_ray: &Ray) -> Vec<Intersection> {
         let inverse_transform = self.get_transform().inverse().unwrap();
         let object_ray = world_ray.transform(inverse_transform);
 
@@ -76,16 +75,8 @@ impl Shape for Sphere {
         self.transform.clone()
     }
 
-    fn set_transform(&mut self, transform: Matrix) {
-        self.transform = transform;
-    }
-
-    fn get_material(&self) -> Rc<dyn Material> {
+    fn get_material(&self) -> Arc<dyn Material> {
         self.material.clone()
-    }
-
-    fn set_material(&mut self, material: &Rc<dyn Material>) {
-        self.material = material.clone();
     }
 
     fn normal_at(&self, world_point: Tuple) -> Tuple {
@@ -125,7 +116,7 @@ mod tests {
 
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.intersect(&ray);
 
@@ -141,7 +132,7 @@ mod tests {
 
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.intersect(&ray);
 
@@ -157,7 +148,7 @@ mod tests {
 
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.intersect(&ray);
 
@@ -171,7 +162,7 @@ mod tests {
 
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.intersect(&ray);
 
@@ -187,7 +178,7 @@ mod tests {
 
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.intersect(&ray);
 
@@ -203,7 +194,7 @@ mod tests {
 
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.clone().intersect(&ray);
 
@@ -211,8 +202,8 @@ mod tests {
         assert_eq!(4.0, intersections[0].time);
         assert_eq!(6.0, intersections[1].time);
 
-        assert!(Rc::ptr_eq(&shape, &intersections[0].object));
-        assert!(Rc::ptr_eq(&shape, &intersections[1].object));
+        assert!(Arc::ptr_eq(&shape, &intersections[0].object));
+        assert!(Arc::ptr_eq(&shape, &intersections[1].object));
     }
 
     #[test]
@@ -245,7 +236,7 @@ mod tests {
 
         sphere.set_transform(transform);
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.clone().intersect(&ray);
 
@@ -265,7 +256,7 @@ mod tests {
 
         sphere.set_transform(transform);
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = shape.clone().intersect(&ray);
 
@@ -365,12 +356,12 @@ mod tests {
     #[test]
     fn given_a_unit_sphere_when_assigning_material_to_it_should_expect_material_to_be_set() {
         let mut sphere = Sphere::unit();
-        let expected: Rc<dyn Material> = Rc::new(Phong::new(Color::red(), 0.2, 1.0, 0.9, 220.0));
+        let expected: Arc<dyn Material> = Arc::new(Phong::new(Color::red(), 0.2, 1.0, 0.9, 220.0));
 
         sphere.set_material(&expected);
 
         let result = sphere.get_material();
 
-        assert!(Rc::ptr_eq(&expected, &result));
+        assert!(Arc::ptr_eq(&expected, &result));
     }
 }

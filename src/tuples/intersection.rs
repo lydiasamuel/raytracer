@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::geometry::shape::Shape;
 
@@ -7,11 +7,11 @@ use crate::EPSILON;
 #[derive(Clone)]
 pub struct Intersection {
     pub time: f64,
-    pub object: Rc<dyn Shape>,
+    pub object: Arc<dyn Shape>,
 }
 
 impl Intersection {
-    pub fn new(time: f64, object: Rc<dyn Shape>) -> Intersection {
+    pub fn new(time: f64, object: Arc<dyn Shape>) -> Intersection {
         Intersection { time, object }
     }
 
@@ -33,7 +33,7 @@ impl PartialEq for Intersection {
             return false;
         }
 
-        Rc::ptr_eq(&self.object, &other.object)
+        Arc::ptr_eq(&self.object, &other.object)
     }
 }
 
@@ -48,7 +48,7 @@ mod tests {
     ) {
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = vec![
             Intersection::new(1.0, shape.clone()),
@@ -65,7 +65,7 @@ mod tests {
     ) {
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = vec![
             Intersection::new(-1.0, shape.clone()),
@@ -82,7 +82,7 @@ mod tests {
     ) {
         let sphere = Sphere::unit();
 
-        let shape: Rc<dyn Shape> = Rc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(sphere);
 
         let intersections = vec![
             Intersection::new(-2.0, shape.clone()),
