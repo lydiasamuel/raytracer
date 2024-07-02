@@ -103,6 +103,7 @@ impl World {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
     use crate::materials::material::Material;
@@ -114,7 +115,6 @@ mod tests {
     use crate::tuples::pointlight::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
-    use std::Arc::Arc;
 
     #[test]
     fn given_default_world_when_calculating_intersects_with_ray_should_return_correct_intersections_sorted_by_time(
