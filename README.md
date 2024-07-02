@@ -6,4 +6,4 @@ Made the rendering loop parallel with simple 1D row-wise partitioning of the ima
 
 ## Example Output
 
-![alt text](https://github.com/lydiasamuel/raytracer/blob/main/example_output.png?raw=true)
+![alt text](https://raw.githubusercontent.com/lydiasamuel/raytracer/main/example_output.png)
