@@ -1,8 +1,8 @@
 # Raytracer
 
-Completed rust version of the first six chapters of "The Ray Tracer Challenge" by Jamis Buck.
+Completed rust version of the first seven chapters of "The Ray Tracer Challenge" by Jamis Buck.
 
-Got to the point of implementing enough to render my first 3d image of a sphere with a simple single color material. Ultimately I would like to finish the rest of the chapters in the book, and stripe the output canvas so that I can parallelise the rendering loop to speed things up.
+Made the rendering loop parallel with simple 1D row-wise partitioning of the image to improve render times.
 
 ## Example Output
 
