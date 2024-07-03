@@ -40,13 +40,10 @@ impl Shape for Sphere {
         self.id.clone()
     }
 
-    fn intersect(self: Arc<Self>, world_ray: &Ray) -> Vec<Intersection> {
-        let inverse_transform = self.get_transform().inverse().unwrap();
-        let object_ray = world_ray.transform(inverse_transform);
-
+    fn local_intersect(self: Arc<Self>, local_ray: &Ray) -> Vec<Intersection> {
         let geometric_origin = Tuple::origin();
-        let ray_direction = object_ray.direction();
-        let sphere_to_ray = object_ray.origin() - geometric_origin;
+        let ray_direction = local_ray.direction();
+        let sphere_to_ray = local_ray.origin() - geometric_origin;
 
         let a = Tuple::dot(&ray_direction, &ray_direction);
         let b = 2.0 * Tuple::dot(&ray_direction, &sphere_to_ray);
@@ -79,16 +76,8 @@ impl Shape for Sphere {
         self.material.clone()
     }
 
-    fn normal_at(&self, world_point: Tuple) -> Tuple {
-        let inverse_transform = self.transform.inverse().unwrap();
-
-        let object_point = inverse_transform.clone() * world_point;
-        let object_normal = object_point.unwrap() - Tuple::origin();
-
-        let mut world_normal = (inverse_transform.transpose() * object_normal).unwrap();
-        world_normal.w = 0.0;
-
-        world_normal.normalize()
+    fn local_normal_at(&self, local_point: Tuple) -> Tuple {
+        local_point - Tuple::origin()
     }
 
     fn light_material(

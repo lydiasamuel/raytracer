@@ -1,3 +1,4 @@
+use crate::geometry::plane::Plane;
 use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
@@ -128,25 +129,7 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
 pub fn build_world() -> World {
     let floor_material = Arc::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0));
 
-    let floor = Sphere::new(Matrix::scaling(10.0, 0.01, 10.0), floor_material.clone());
-
-    let left_wall = Sphere::new(
-        (((Matrix::translation(0.0, 0.0, 5.0) * Matrix::rotation_y(-PI / 4.0)).unwrap()
-            * Matrix::rotation_x(PI / 2.0))
-        .unwrap()
-            * Matrix::scaling(10.0, 0.01, 10.0))
-        .unwrap(),
-        floor_material.clone(),
-    );
-
-    let right_wall = Sphere::new(
-        (((Matrix::translation(0.0, 0.0, 5.0) * Matrix::rotation_y(PI / 4.0)).unwrap()
-            * Matrix::rotation_x(PI / 2.0))
-        .unwrap()
-            * Matrix::scaling(10.0, 0.01, 10.0))
-        .unwrap(),
-        floor_material.clone(),
-    );
+    let floor = Plane::new(Matrix::identity(4), floor_material.clone());
 
     let middle = Sphere::new(
         Matrix::translation(-0.5, 1.0, 0.5),
@@ -168,8 +151,6 @@ pub fn build_world() -> World {
     World::new(
         vec![
             Arc::new(floor),
-            Arc::new(left_wall),
-            Arc::new(right_wall),
             Arc::new(middle),
             Arc::new(right),
             Arc::new(left),

@@ -8,8 +8,8 @@ use crate::tuples::intersection::Intersection;
 use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
-use std::sync::Arc;
 use crate::EPSILON;
+use std::sync::Arc;
 
 pub struct World {
     objects: Vec<Arc<dyn Shape>>,
@@ -84,7 +84,13 @@ impl World {
             let shape = comps.object.as_ref();
 
             result = result
-                + shape.light_material(&comps.over_point, light, &comps.eyev, &comps.normalv, in_shadow);
+                + shape.light_material(
+                    &comps.over_point,
+                    light,
+                    &comps.eyev,
+                    &comps.normalv,
+                    in_shadow,
+                );
         }
 
         return result;
@@ -142,8 +148,8 @@ mod tests {
     use crate::tuples::pointlight::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
-    use std::sync::Arc;
     use crate::EPSILON;
+    use std::sync::Arc;
 
     #[test]
     fn given_default_world_when_calculating_intersects_with_ray_should_return_correct_intersections_sorted_by_time(
@@ -384,7 +390,10 @@ mod tests {
         let material: Arc<dyn Material> = Arc::new(Phong::default());
 
         let s1 = Arc::new(Sphere::unit());
-        let s2 = Arc::new(Sphere::new(Matrix::translation(0.0, 0.0, 10.0), material.clone()));
+        let s2 = Arc::new(Sphere::new(
+            Matrix::translation(0.0, 0.0, 10.0),
+            material.clone(),
+        ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![s1.clone(), s2.clone()];
         let lights = vec![Arc::new(light)];
@@ -406,18 +415,15 @@ mod tests {
     #[test]
     fn given_world_with_shadows_when_preparing_computations_should_slightly_offset_the_point() {
         // Arrange
-        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
         let material: Arc<dyn Material> = Arc::new(Phong::default());
 
-        let s1 = Arc::new(Sphere::new(Matrix::translation(0.0, 0.0, 1.0), material.clone()));
-
-        let objects: Vec<Arc<dyn Shape>> = vec![s1.clone()];
-        let lights = vec![Arc::new(light)];
-
-        let world = World::new(objects, lights);
+        let shape = Arc::new(Sphere::new(
+            Matrix::translation(0.0, 0.0, 1.0),
+            material.clone(),
+        ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
-        let intersection = Intersection::new(5.0, s1.clone());
+        let intersection = Intersection::new(5.0, shape.clone());
 
         // Act
         let comps = World::prepare_computations(&intersection, &ray);
