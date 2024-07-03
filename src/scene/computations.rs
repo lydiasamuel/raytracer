@@ -7,6 +7,7 @@ pub struct Computations {
     pub time: f64,
     pub object: Arc<dyn Shape>,
     pub point: Tuple,
+    pub over_point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
     pub inside: bool,
@@ -17,12 +18,16 @@ impl Computations {
         time: f64,
         object: Arc<dyn Shape>,
         point: Tuple,
+        over_point: Tuple,
         eyev: Tuple,
         normalv: Tuple,
         inside: bool,
     ) -> Computations {
         if !point.is_point() {
             panic!("Error: Tuple given for parameter 'point' is not a Point.")
+        }
+        if !over_point.is_point() {
+            panic!("Error: Tuple given for parameter 'over_point' is not a Point.")
         }
         if !eyev.is_vector() {
             panic!("Error: Tuple given for parameter 'eyev' is not a Vector.")
@@ -35,6 +40,7 @@ impl Computations {
             time,
             object,
             point,
+            over_point,
             eyev,
             normalv,
             inside,

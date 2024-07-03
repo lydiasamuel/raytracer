@@ -6,7 +6,6 @@ use std::thread;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
-use materials::material::Material;
 
 use crate::scene::camera::Camera;
 use crate::scene::world::World;
@@ -62,6 +61,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         ),
     ));
 
+    let canvas = render(world, camera);
+
+    canvas.write_to_file(config.file_path)?;
+
+    Ok(())
+}
+
+pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
     // Initialise sending channels for producer consumer
     let (send_channel, receive_channel) = mpsc::channel();
     // Figure out chunk size using row-wise 1D partitioning
@@ -115,9 +122,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         handle.join().unwrap();
     }
 
-    canvas.write_to_file(config.file_path)?;
-
-    Ok(())
+    canvas
 }
 
 pub fn build_world() -> World {

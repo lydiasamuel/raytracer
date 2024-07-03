@@ -30,7 +30,14 @@ impl Phong {
 }
 
 impl Material for Phong {
-    fn lighting(&self, light: &PointLight, point: &Tuple, eyev: &Tuple, normalv: &Tuple) -> Color {
+    fn lighting(
+        &self,
+        light: &PointLight,
+        point: &Tuple,
+        eyev: &Tuple,
+        normalv: &Tuple,
+        in_shadow: bool,
+    ) -> Color {
         // Combine the surface color with the light's color/intensity
         let effective_color = self.color * light.intensity;
 
@@ -39,6 +46,12 @@ impl Material for Phong {
 
         // Compute the ambient contribution
         let ambient = effective_color * self.ambient;
+
+        // Diffuse and specular both have a dependency on the light source
+        // so if the point is in shadow only use the ambient component.
+        if in_shadow {
+            return ambient;
+        }
 
         let diffuse: Color;
         let specular: Color;
@@ -100,14 +113,17 @@ mod tests {
 
     #[test]
     fn given_default_material_when_creating_it_should_expect_values_to_be_set_correctly() {
+        // Arrange
         let color = Color::white();
         let ambient = 0.1;
         let diffuse = 0.9;
         let specular = 0.9;
         let shininess = 200.0;
 
+        // Act
         let result = Phong::default();
 
+        // Assert
         assert_eq!(color, result.color);
         assert_eq!(ambient, result.ambient);
         assert_eq!(diffuse, result.diffuse);
@@ -118,6 +134,7 @@ mod tests {
     #[test]
     fn given_default_material_when_eye_between_light_and_surface_should_calculate_resulting_color_correctly(
     ) {
+        // Arrange
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -125,15 +142,18 @@ mod tests {
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
         let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
 
-        let result = default.lighting(&light, &position, &eyev, &normalv);
+        // Act
+        let result = default.lighting(&light, &position, &eyev, &normalv, false);
         let expected = Color::new(1.9, 1.9, 1.9);
 
+        // Assert
         assert_eq!(expected, result);
     }
 
     #[test]
     fn given_default_material_when_eye_between_light_and_surface_with_eye_offset_by_45_degrees_should_calculate_resulting_color_correctly(
     ) {
+        // Arrange
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -141,7 +161,10 @@ mod tests {
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
         let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
 
-        let result = default.lighting(&light, &position, &eyev, &normalv);
+        // Act
+        let result = default.lighting(&light, &position, &eyev, &normalv, false);
+
+        // Assert
         let expected = Color::new(1.0, 1.0, 1.0);
 
         assert_eq!(expected, result);
@@ -150,6 +173,7 @@ mod tests {
     #[test]
     fn given_default_material_when_eye_opposite_surface_with_light_offset_by_45_degrees_should_calculate_resulting_color_correctly(
     ) {
+        // Arrange
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -157,7 +181,10 @@ mod tests {
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
         let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
 
-        let result = default.lighting(&light, &position, &eyev, &normalv);
+        // Act
+        let result = default.lighting(&light, &position, &eyev, &normalv, false);
+
+        // Assert
         let expected = Color::new(0.7364, 0.7364, 0.7364);
 
         assert_eq!(expected, result);
@@ -166,6 +193,7 @@ mod tests {
     #[test]
     fn given_default_material_when_eye_in_path_of_reflection_vector_should_calculate_resulting_color_correctly(
     ) {
+        // Arrange
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -173,7 +201,10 @@ mod tests {
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
         let light = PointLight::new(Tuple::point(0.0, 10.0, -10.0), Color::white());
 
-        let result = default.lighting(&light, &position, &eyev, &normalv);
+        // Act
+        let result = default.lighting(&light, &position, &eyev, &normalv, false);
+
+        // Assert
         let expected = Color::new(1.6364, 1.6364, 1.6364);
 
         assert_eq!(expected, result);
@@ -182,6 +213,7 @@ mod tests {
     #[test]
     fn given_default_material_when_lighting_behind_the_surface_should_calculate_resulting_color_correctly(
     ) {
+        // Arrange
         let default = Phong::default();
         let position = Tuple::origin();
 
@@ -189,9 +221,30 @@ mod tests {
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
         let light = PointLight::new(Tuple::point(0.0, 0.0, 10.0), Color::white());
 
-        let result = default.lighting(&light, &position, &eyev, &normalv);
+        // Act
+        let result = default.lighting(&light, &position, &eyev, &normalv, false);
+
+        // Assert
         let expected = Color::new(0.1, 0.1, 0.1);
 
         assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn given_default_material_when_lighting_surface_in_shadow_should_calculate_resulting_color_correctly(
+    ) {
+        // Arrange
+        let default = Phong::new(Color::white(), 0.1, 0.9, 0.9, 200.0);
+        let position = Tuple::origin();
+
+        let eyev = Tuple::vector(0.0, 0.0, -1.0);
+        let normalv = Tuple::vector(0.0, 0.0, -1.0);
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
+
+        // Act
+        let result = default.lighting(&light, &position, &eyev, &normalv, true);
+
+        // Assert
+        assert_eq!(Color::new(0.1, 0.1, 0.1), result);
     }
 }

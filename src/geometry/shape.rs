@@ -33,5 +33,6 @@ pub trait Shape: Sync + Send {
         light: &PointLight,
         eyev: &Tuple,
         normalv: &Tuple,
+        in_shadow: bool,
     ) -> Color;
 }

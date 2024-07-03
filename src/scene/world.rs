@@ -9,6 +9,7 @@ use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use std::sync::Arc;
+use crate::EPSILON;
 
 pub struct World {
     objects: Vec<Arc<dyn Shape>>,
@@ -66,7 +67,11 @@ impl World {
             normalv = -normalv;
         }
 
-        return Computations::new(time, object, point, eyev, normalv, inside);
+        // EPSILON is used to bump the intersection point slightly in the direction of the surface
+        // normal to help prevent self shadowing
+        let over_point = point + (normalv * EPSILON);
+
+        return Computations::new(time, object, point, over_point, eyev, normalv, inside);
     }
 
     pub fn shade_hit(&self, comps: &Computations) -> Color {
@@ -74,11 +79,12 @@ impl World {
 
         for i in 0..self.lights.len() {
             let light = self.lights[i].as_ref();
+            let in_shadow = self.is_shadowed(comps.over_point, light);
 
             let shape = comps.object.as_ref();
 
-            result =
-                result + shape.light_material(&comps.point, light, &comps.eyev, &comps.normalv);
+            result = result
+                + shape.light_material(&comps.over_point, light, &comps.eyev, &comps.normalv, in_shadow);
         }
 
         return result;
@@ -99,11 +105,32 @@ impl World {
 
         Color::black()
     }
+
+    pub fn is_shadowed(&self, point: Tuple, light: &PointLight) -> bool {
+        if !point.is_point() {
+            panic!("Error: Tuple given for parameter 'point' is not a Point.")
+        }
+
+        let vec = light.position - point;
+
+        let distance = vec.magnitude(); // Measure the distance from the point to the light source
+        let direction = vec.normalize(); // Create a ray pointing towards the light source
+
+        let ray = Ray::new(point, direction);
+        let intersections = self.intersect_world(&ray); // Intersect the world with that ray
+
+        let hit = Intersection::hit(&intersections);
+        // Check to see if there was a hit, and if so did it occur before the ray reached the light source
+        if let Some(intersect) = hit {
+            intersect.time < distance
+        } else {
+            false
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
     use crate::materials::material::Material;
@@ -115,6 +142,7 @@ mod tests {
     use crate::tuples::pointlight::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
     fn given_default_world_when_calculating_intersects_with_ray_should_return_correct_intersections_sorted_by_time(
@@ -290,5 +318,87 @@ mod tests {
 
         // Assert
         assert_eq!(color, result);
+    }
+
+    #[test]
+    fn given_default_world_when_nothing_is_collinear_with_point_and_light_should_be_no_shadow() {
+        // Arrange
+        let world = World::default();
+
+        let point = Tuple::point(0.0, 10.0, 0.0);
+
+        // Act
+        let result = world.is_shadowed(point, &world.lights[0]);
+
+        // Assert
+        assert_eq!(false, result);
+    }
+
+    #[test]
+    fn given_default_world_when_object_is_between_point_and_light_should_be_a_shadow() {
+        // Arrange
+        let world = World::default();
+
+        let point = Tuple::point(10.0, -10.0, 10.0);
+
+        // Act
+        let result = world.is_shadowed(point, &world.lights[0]);
+
+        // Assert
+        assert_eq!(true, result);
+    }
+
+    #[test]
+    fn given_default_world_when_object_is_behind_the_light_should_be_no_shadow() {
+        // Arrange
+        let world = World::default();
+
+        let point = Tuple::point(-20.0, 20.0, -20.0);
+
+        // Act
+        let result = world.is_shadowed(point, &world.lights[0]);
+
+        // Assert
+        assert_eq!(false, result);
+    }
+
+    #[test]
+    fn given_default_world_when_object_is_behind_the_point_should_be_no_shadow() {
+        // Arrange
+        let world = World::default();
+
+        let point = Tuple::point(-2.0, 2.0, -2.0);
+
+        // Act
+        let result = world.is_shadowed(point, &world.lights[0]);
+
+        // Assert
+        assert_eq!(false, result);
+    }
+
+    #[test]
+    fn given_world_with_shadows_when_shading_hits_should_be_given_intersection_in_shadow() {
+        // Arrange
+        let light = PointLight::new(Tuple::point(0.0, 0.0, -10.0), Color::white());
+        let material: Arc<dyn Material> = Arc::new(Phong::default());
+
+        let s1 = Arc::new(Sphere::unit());
+        let s2 = Arc::new(Sphere::new(Matrix::translation(0.0, 0.0, 10.0), material.clone()));
+
+        let objects: Vec<Arc<dyn Shape>> = vec![s1.clone(), s2.clone()];
+        let lights = vec![Arc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, 5.0), Tuple::vector(0.0, 0.0, 1.0));
+        let intersection = Intersection::new(4.0, s2.clone());
+
+        let comps = World::prepare_computations(&intersection, &ray);
+
+        // Act
+        let result = world.shade_hit(&comps);
+
+        // Assert
+        assert_eq!(Color::new(0.1, 0.1, 0.1), result);
     }
 }

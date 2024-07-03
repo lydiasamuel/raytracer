@@ -97,8 +97,10 @@ impl Shape for Sphere {
         light: &PointLight,
         eyev: &Tuple,
         normalv: &Tuple,
+        in_shadow: bool,
     ) -> Color {
-        self.material.lighting(light, world_point, eyev, normalv)
+        self.material
+            .lighting(light, world_point, eyev, normalv, in_shadow)
     }
 }
 
@@ -218,9 +220,7 @@ mod tests {
     fn given_a_new_unit_sphere_when_updating_the_transform_should_expect_transform_to_be_set() {
         let transform = Matrix::translation(2.0, 3.0, 4.0);
 
-        let mut sphere = Sphere::unit();
-
-        sphere.set_transform(transform.clone());
+        let sphere = Sphere::new(transform.clone(), Arc::new(Phong::default()));
 
         assert_eq!(transform, sphere.get_transform());
     }
@@ -232,11 +232,7 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let mut sphere = Sphere::unit();
-
-        sphere.set_transform(transform);
-
-        let shape: Arc<dyn Shape> = Arc::new(sphere);
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(transform, Arc::new(Phong::default())));
 
         let intersections = shape.clone().intersect(&ray);
 
@@ -252,9 +248,7 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let mut sphere = Sphere::unit();
-
-        sphere.set_transform(transform);
+        let sphere = Sphere::new(transform, Arc::new(Phong::default()));
 
         let shape: Arc<dyn Shape> = Arc::new(sphere);
 
@@ -326,8 +320,9 @@ mod tests {
     ) {
         let point = Tuple::point(0.0, 1.0, 0.0);
 
-        let mut sphere = Sphere::unit();
-        sphere.set_transform(Matrix::translation(0.0, 1.0, 0.0));
+        let transform = Matrix::translation(0.0, 1.0, 0.0);
+
+        let sphere = Sphere::new(transform, Arc::new(Phong::default()));
 
         let normal = sphere.normal_at(point);
 
@@ -343,8 +338,7 @@ mod tests {
 
         let transform = Matrix::scaling(1.0, 0.5, 1.0) * Matrix::rotation_z(consts::PI / 5.0);
 
-        let mut sphere = Sphere::unit();
-        sphere.set_transform(transform.unwrap());
+        let sphere = Sphere::new(transform.unwrap(), Arc::new(Phong::default()));
 
         let normal = sphere.normal_at(point);
 
@@ -355,13 +349,12 @@ mod tests {
 
     #[test]
     fn given_a_unit_sphere_when_assigning_material_to_it_should_expect_material_to_be_set() {
-        let mut sphere = Sphere::unit();
-        let expected: Arc<dyn Material> = Arc::new(Phong::new(Color::red(), 0.2, 1.0, 0.9, 220.0));
+        let material: Arc<dyn Material> = Arc::new(Phong::new(Color::red(), 0.2, 1.0, 0.9, 220.0));
 
-        sphere.set_material(&expected);
+        let sphere = Sphere::new(Matrix::identity(4), material.clone());
 
         let result = sphere.get_material();
 
-        assert!(Arc::ptr_eq(&expected, &result));
+        assert!(Arc::ptr_eq(&material, &result));
     }
 }
