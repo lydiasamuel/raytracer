@@ -4,7 +4,8 @@ pub trait Material: Send + Sync {
     fn lighting(
         &self,
         light: &PointLight,
-        point: &Tuple,
+        world_point: &Tuple,
+        object_point: Tuple,
         eyev: &Tuple,
         normalv: &Tuple,
         in_shadow: bool,

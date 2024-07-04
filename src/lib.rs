@@ -21,6 +21,7 @@ static THREADS: usize = 8;
 pub mod geometry;
 pub mod materials;
 pub mod matrices;
+mod patterns;
 pub mod scene;
 pub mod tuples;
 pub mod window;
