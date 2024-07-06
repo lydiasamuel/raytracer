@@ -29,14 +29,16 @@ impl Ring {
 }
 
 impl Pattern for Ring {
-    fn local_pattern_at(&self, local_point: &Tuple) -> Color {
-        let x_sq = local_point.x * local_point.x;
-        let z_sq = local_point.z * local_point.z;
+    fn local_pattern_at(&self, pattern_point: Tuple) -> Color {
+        assert!(pattern_point.is_point());
+
+        let x_sq = pattern_point.x * pattern_point.x;
+        let z_sq = pattern_point.z * pattern_point.z;
 
         if ((x_sq + z_sq).sqrt() as i64) % 2 == 0 {
-            self.former.as_ref().pattern_at(&local_point)
+            self.former.as_ref().local_pattern_at(pattern_point)
         } else {
-            self.latter.as_ref().pattern_at(&local_point)
+            self.latter.as_ref().local_pattern_at(pattern_point)
         }
     }
 

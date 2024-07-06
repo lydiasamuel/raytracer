@@ -47,9 +47,7 @@ impl Tuple {
     }
 
     pub fn magnitude(&self) -> f64 {
-        if !self.is_vector() {
-            panic!("Error: Can not calculate magnitude because tuple is not a vector.");
-        }
+        assert!(self.is_vector());
 
         return ((self.x * self.x) + (self.y * self.y) + (self.z * self.z) + (self.w * self.w))
             .sqrt();
@@ -61,9 +59,7 @@ impl Tuple {
      * render correctly.
      */
     pub fn normalize(self) -> Tuple {
-        if !self.is_vector() {
-            panic!("Error: Can not normalize tuple because it is not a vector.");
-        }
+        assert!(self.is_vector());
 
         let m = self.magnitude();
 
@@ -77,21 +73,17 @@ impl Tuple {
      * A dot product of 1 means that the vectors are identical, and a dot product of -1 means they point in opposite directions.
      * More specifically, and again if the two vectors are unit vectors, the dot product is actually the cosine of the angle between them.
      */
-    pub fn dot(lhs: &Tuple, rhs: &Tuple) -> f64 {
-        if !lhs.is_vector() || !rhs.is_vector() {
-            panic!("Error: Can not calculate the dot product because both tuples are not vectors.");
-        }
+    pub fn dot(lhs: Tuple, rhs: Tuple) -> f64 {
+        assert!(lhs.is_vector());
+        assert!(rhs.is_vector());
 
         return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
     }
 
     // The cross product calculates a new vector that is perpendicular to both of the original vectors.
-    pub fn cross(lhs: &Tuple, rhs: &Tuple) -> Tuple {
-        if !lhs.is_vector() || !rhs.is_vector() {
-            panic!(
-                "Error: Can not calculate the cross product because both tuples are not vectors."
-            );
-        }
+    pub fn cross(lhs: Tuple, rhs: Tuple) -> Tuple {
+        assert!(lhs.is_vector());
+        assert!(rhs.is_vector());
 
         return Tuple::vector(
             lhs.y * rhs.z - lhs.z * rhs.y,
@@ -100,12 +92,11 @@ impl Tuple {
         );
     }
 
-    pub fn reflect(incoming: &Tuple, normal: &Tuple) -> Tuple {
-        if !incoming.is_vector() || !normal.is_vector() {
-            panic!("Error: Can not reflect tuples because both are not vectors.");
-        }
+    pub fn reflect(incoming: Tuple, normal: Tuple) -> Tuple {
+        assert!(incoming.is_vector());
+        assert!(normal.is_vector());
 
-        return *incoming - (*normal * 2.0 * Tuple::dot(&incoming, &normal));
+        return incoming - (normal * 2.0 * Tuple::dot(incoming, normal));
     }
 }
 
@@ -381,7 +372,7 @@ mod tests {
         let vector_a = Tuple::vector(1.0, 2.0, 3.0);
         let vector_b = Tuple::vector(2.0, 3.0, 4.0);
 
-        let result = Tuple::dot(&vector_a, &vector_b);
+        let result = Tuple::dot(vector_a, vector_b);
 
         assert_eq!(20.0, result)
     }
@@ -392,12 +383,12 @@ mod tests {
         let vector_b = Tuple::vector(2.0, 3.0, 4.0);
 
         let expected = Tuple::vector(-1.0, 2.0, -1.0);
-        let result = Tuple::cross(&vector_a, &vector_b);
+        let result = Tuple::cross(vector_a, vector_b);
 
         assert_eq!(expected, result);
 
         let expected = Tuple::vector(1.0, -2.0, 1.0);
-        let result = Tuple::cross(&vector_b, &vector_a);
+        let result = Tuple::cross(vector_b, vector_a);
 
         assert_eq!(expected, result);
     }
@@ -409,7 +400,7 @@ mod tests {
         let normal = Tuple::vector(0.0, 1.0, 0.0);
 
         let expected = Tuple::vector(1.0, 1.0, 0.0);
-        let result = Tuple::reflect(&incoming, &normal);
+        let result = Tuple::reflect(incoming, normal);
 
         assert_eq!(expected, result);
     }
@@ -421,7 +412,7 @@ mod tests {
         let normal = Tuple::vector(consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0, 0.0);
 
         let expected = Tuple::vector(1.0, 0.0, 0.0);
-        let result = Tuple::reflect(&incoming, &normal);
+        let result = Tuple::reflect(incoming, normal);
 
         assert_eq!(expected, result);
     }

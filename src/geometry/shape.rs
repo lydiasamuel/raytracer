@@ -36,6 +36,8 @@ pub trait Shape: Sync + Send {
 
     // Assumes that the point will always be on the shape
     fn normal_at(&self, world_point: Tuple) -> Tuple {
+        assert!(world_point.is_point());
+
         let inverse_transform = self.get_transform().inverse().unwrap();
 
         let local_point = (inverse_transform.clone() * world_point).unwrap();
@@ -50,11 +52,11 @@ pub trait Shape: Sync + Send {
     fn local_normal_at(&self, local_point: Tuple) -> Tuple;
 
     fn light_material(
-        &self,
-        world_point: &Tuple,
-        light: &PointLight,
-        eyev: &Tuple,
-        normalv: &Tuple,
+        self: Arc<Self>,
+        world_point: Tuple,
+        light: PointLight,
+        eyev: Tuple,
+        normalv: Tuple,
         in_shadow: bool,
     ) -> Color;
 }

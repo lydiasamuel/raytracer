@@ -18,7 +18,7 @@ impl Solid {
 }
 
 impl Pattern for Solid {
-    fn local_pattern_at(&self, _: &Tuple) -> Color {
+    fn local_pattern_at(&self, _: Tuple) -> Color {
         self.color
     }
 

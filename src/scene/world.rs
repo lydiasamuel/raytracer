@@ -2,6 +2,7 @@ use crate::geometry::shape::Shape;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
+use crate::patterns::solid::Solid;
 use crate::scene::computations::Computations;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
@@ -26,7 +27,13 @@ impl World {
 
         let outer = Sphere::new(
             Matrix::identity(4),
-            Arc::new(Phong::new(Color::new(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200.0)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::new(0.8, 1.0, 0.6))),
+                0.1,
+                0.7,
+                0.2,
+                200.0,
+            )),
         );
 
         let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), Arc::new(Phong::default()));
@@ -62,7 +69,7 @@ impl World {
 
         let mut inside = false;
 
-        if Tuple::dot(&normalv, &eyev) < 0.0 {
+        if Tuple::dot(normalv, eyev) < 0.0 {
             inside = true;
             normalv = -normalv;
         }
@@ -78,17 +85,17 @@ impl World {
         let mut result = Color::new(0.0, 0.0, 0.0);
 
         for i in 0..self.lights.len() {
-            let light = self.lights[i].as_ref();
+            let light = *self.lights[i];
             let in_shadow = self.is_shadowed(comps.over_point, light);
 
-            let shape = comps.object.as_ref();
+            let shape = comps.object.clone();
 
             result = result
                 + shape.light_material(
-                    &comps.over_point,
+                    comps.over_point,
                     light,
-                    &comps.eyev,
-                    &comps.normalv,
+                    comps.eyev,
+                    comps.normalv,
                     in_shadow,
                 );
         }
@@ -112,10 +119,8 @@ impl World {
         Color::black()
     }
 
-    pub fn is_shadowed(&self, point: Tuple, light: &PointLight) -> bool {
-        if !point.is_point() {
-            panic!("Error: Tuple given for parameter 'point' is not a Point.")
-        }
+    pub fn is_shadowed(&self, point: Tuple, light: PointLight) -> bool {
+        assert!(point.is_point());
 
         let vec = light.position - point;
 
@@ -142,6 +147,7 @@ mod tests {
     use crate::materials::material::Material;
     use crate::materials::phong::Phong;
     use crate::matrices::matrix::Matrix;
+    use crate::patterns::solid::Solid;
     use crate::scene::world::World;
     use crate::tuples::color::Color;
     use crate::tuples::intersection::Intersection;
@@ -308,7 +314,8 @@ mod tests {
         // Arrange
         let color = Color::white();
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
-        let material: Arc<dyn Material> = Arc::new(Phong::new(color, 1.0, 0.9, 0.9, 200.0));
+        let material: Arc<dyn Material> =
+            Arc::new(Phong::new(Box::new(Solid::default()), 1.0, 0.9, 0.9, 200.0));
 
         let outer = Sphere::new(Matrix::identity(4), material.clone());
         let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), material.clone());
@@ -335,7 +342,7 @@ mod tests {
         let point = Tuple::point(0.0, 10.0, 0.0);
 
         // Act
-        let result = world.is_shadowed(point, &world.lights[0]);
+        let result = world.is_shadowed(point, *world.lights[0]);
 
         // Assert
         assert_eq!(false, result);
@@ -349,7 +356,7 @@ mod tests {
         let point = Tuple::point(10.0, -10.0, 10.0);
 
         // Act
-        let result = world.is_shadowed(point, &world.lights[0]);
+        let result = world.is_shadowed(point, *world.lights[0]);
 
         // Assert
         assert_eq!(true, result);
@@ -363,7 +370,7 @@ mod tests {
         let point = Tuple::point(-20.0, 20.0, -20.0);
 
         // Act
-        let result = world.is_shadowed(point, &world.lights[0]);
+        let result = world.is_shadowed(point, *world.lights[0]);
 
         // Assert
         assert_eq!(false, result);
@@ -377,7 +384,7 @@ mod tests {
         let point = Tuple::point(-2.0, 2.0, -2.0);
 
         // Act
-        let result = world.is_shadowed(point, &world.lights[0]);
+        let result = world.is_shadowed(point, *world.lights[0]);
 
         // Assert
         assert_eq!(false, result);

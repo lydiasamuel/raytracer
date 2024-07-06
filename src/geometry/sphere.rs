@@ -45,9 +45,9 @@ impl Shape for Sphere {
         let ray_direction = local_ray.direction();
         let sphere_to_ray = local_ray.origin() - geometric_origin;
 
-        let a = Tuple::dot(&ray_direction, &ray_direction);
-        let b = 2.0 * Tuple::dot(&ray_direction, &sphere_to_ray);
-        let c = Tuple::dot(&sphere_to_ray, &sphere_to_ray) - 1.0;
+        let a = Tuple::dot(ray_direction, ray_direction);
+        let b = 2.0 * Tuple::dot(ray_direction, sphere_to_ray);
+        let c = Tuple::dot(sphere_to_ray, sphere_to_ray) - 1.0;
 
         let discriminant = (b * b) - (4.0 * a * c);
 
@@ -81,23 +81,23 @@ impl Shape for Sphere {
     }
 
     fn light_material(
-        &self,
-        world_point: &Tuple,
-        light: &PointLight,
-        eyev: &Tuple,
-        normalv: &Tuple,
+        self: Arc<Self>,
+        world_point: Tuple,
+        light: PointLight,
+        eyev: Tuple,
+        normalv: Tuple,
         in_shadow: bool,
     ) -> Color {
-        self.material
-            .lighting(light, world_point, eyev, normalv, in_shadow)
+        self.get_material()
+            .lighting(self, light, world_point, eyev, normalv, in_shadow)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts;
-
+    use crate::patterns::solid::Solid;
     use crate::tuples::color::Color;
+    use std::f64::consts;
 
     use super::*;
 
@@ -338,7 +338,13 @@ mod tests {
 
     #[test]
     fn given_a_unit_sphere_when_assigning_material_to_it_should_expect_material_to_be_set() {
-        let material: Arc<dyn Material> = Arc::new(Phong::new(Color::red(), 0.2, 1.0, 0.9, 220.0));
+        let material: Arc<dyn Material> = Arc::new(Phong::new(
+            Box::new(Solid::new(Color::red())),
+            0.2,
+            1.0,
+            0.9,
+            220.0,
+        ));
 
         let sphere = Sphere::new(Matrix::identity(4), material.clone());
 

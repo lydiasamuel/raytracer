@@ -29,9 +29,11 @@ impl Blended {
 }
 
 impl Pattern for Blended {
-    fn local_pattern_at(&self, local_point: &Tuple) -> Color {
-        let former_color = self.former.as_ref().pattern_at(&local_point);
-        let latter_color = self.latter.as_ref().pattern_at(&local_point);
+    fn local_pattern_at(&self, pattern_point: Tuple) -> Color {
+        assert!(pattern_point.is_point());
+
+        let former_color = self.former.as_ref().local_pattern_at(pattern_point);
+        let latter_color = self.latter.as_ref().local_pattern_at(pattern_point);
 
         (former_color + latter_color) / 2.0
     }

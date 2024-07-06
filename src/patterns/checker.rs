@@ -29,15 +29,17 @@ impl Checker {
 }
 
 impl Pattern for Checker {
-    fn local_pattern_at(&self, local_point: &Tuple) -> Color {
-        let x_floor = local_point.x.floor();
-        let y_floor = local_point.y.floor();
-        let z_floor = local_point.z.floor();
+    fn local_pattern_at(&self, pattern_point: Tuple) -> Color {
+        assert!(pattern_point.is_point());
+
+        let x_floor = pattern_point.x.floor();
+        let y_floor = pattern_point.y.floor();
+        let z_floor = pattern_point.z.floor();
 
         if ((x_floor + y_floor + z_floor) as i64) % 2 == 0 {
-            self.former.as_ref().pattern_at(&local_point)
+            self.former.as_ref().local_pattern_at(pattern_point)
         } else {
-            self.latter.as_ref().pattern_at(&local_point)
+            self.latter.as_ref().local_pattern_at(pattern_point)
         }
     }
 

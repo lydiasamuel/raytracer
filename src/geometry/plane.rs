@@ -76,15 +76,15 @@ impl Shape for Plane {
     }
 
     fn light_material(
-        &self,
-        world_point: &Tuple,
-        light: &PointLight,
-        eyev: &Tuple,
-        normalv: &Tuple,
+        self: Arc<Self>,
+        world_point: Tuple,
+        light: PointLight,
+        eyev: Tuple,
+        normalv: Tuple,
         in_shadow: bool,
     ) -> Color {
-        self.material
-            .lighting(light, world_point, eyev, normalv, in_shadow)
+        self.get_material()
+            .lighting(self, light, world_point, eyev, normalv, in_shadow)
     }
 }
 

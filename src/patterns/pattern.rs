@@ -1,15 +1,25 @@
+use crate::geometry::shape::Shape;
 use crate::matrices::matrix::Matrix;
 use crate::Color;
 use crate::Tuple;
+use std::sync::Arc;
 
 pub trait Pattern: Sync + Send {
-    fn pattern_at(&self, point: &Tuple) -> Color {
-        let local_point = self.get_transform().inverse().unwrap() * (*point);
+    fn pattern_at(&self, object: Arc<dyn Shape>, world_point: Tuple) -> Color {
+        assert!(world_point.is_point());
 
-        self.local_pattern_at(&local_point.unwrap())
+        let object_inverse_transform = object.get_transform().inverse().unwrap();
+
+        let object_point = (object_inverse_transform.clone() * world_point).unwrap();
+
+        let pattern_inverse_transform = self.get_transform().inverse().unwrap();
+
+        let pattern_point = (pattern_inverse_transform.clone() * object_point).unwrap();
+
+        self.local_pattern_at(pattern_point)
     }
 
-    fn local_pattern_at(&self, local_point: &Tuple) -> Color;
+    fn local_pattern_at(&self, pattern_point: Tuple) -> Color;
 
     fn get_transform(&self) -> Matrix;
 }

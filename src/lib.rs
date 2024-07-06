@@ -7,7 +7,7 @@ use std::thread;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
-
+use crate::patterns::solid::Solid;
 use crate::scene::camera::Camera;
 use crate::scene::world::World;
 use crate::tuples::color::Color;
@@ -128,23 +128,47 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
 }
 
 pub fn build_world() -> World {
-    let floor_material = Arc::new(Phong::new(Color::new(1.0, 0.9, 0.9), 0.1, 0.9, 0.0, 200.0));
+    let floor_material = Arc::new(Phong::new(
+        Box::new(Solid::new(Color::new(1.0, 0.9, 0.9))),
+        0.1,
+        0.9,
+        0.0,
+        200.0,
+    ));
 
     let floor = Plane::new(Matrix::identity(4), floor_material.clone());
 
     let middle = Sphere::new(
         Matrix::translation(-0.5, 1.0, 0.5),
-        Arc::new(Phong::new(Color::new(0.1, 1.0, 0.5), 0.1, 0.7, 0.3, 200.0)),
+        Arc::new(Phong::new(
+            Box::new(Solid::new(Color::new(0.1, 1.0, 0.5))),
+            0.1,
+            0.7,
+            0.3,
+            200.0,
+        )),
     );
 
     let right = Sphere::new(
         (Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
-        Arc::new(Phong::new(Color::new(0.5, 1.0, 0.1), 0.1, 0.7, 0.3, 200.0)),
+        Arc::new(Phong::new(
+            Box::new(Solid::new(Color::new(0.5, 1.0, 0.1))),
+            0.1,
+            0.7,
+            0.3,
+            200.0,
+        )),
     );
 
     let left = Sphere::new(
         (Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
-        Arc::new(Phong::new(Color::new(1.0, 0.8, 0.1), 0.1, 0.7, 0.3, 200.0)),
+        Arc::new(Phong::new(
+            Box::new(Solid::new(Color::new(1.0, 0.8, 0.1))),
+            0.1,
+            0.7,
+            0.3,
+            200.0,
+        )),
     );
 
     let light_source = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));

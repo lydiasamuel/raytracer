@@ -23,18 +23,10 @@ impl Computations {
         normalv: Tuple,
         inside: bool,
     ) -> Computations {
-        if !point.is_point() {
-            panic!("Error: Tuple given for parameter 'point' is not a Point.")
-        }
-        if !over_point.is_point() {
-            panic!("Error: Tuple given for parameter 'over_point' is not a Point.")
-        }
-        if !eyev.is_vector() {
-            panic!("Error: Tuple given for parameter 'eyev' is not a Vector.")
-        }
-        if !normalv.is_vector() {
-            panic!("Error: Tuple given for parameter 'normalv' is not a Vector.")
-        }
+        assert!(point.is_point());
+        assert!(over_point.is_point());
+        assert!(eyev.is_vector());
+        assert!(normalv.is_vector());
 
         return Computations {
             time,

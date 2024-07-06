@@ -53,7 +53,7 @@ impl Perturbed {
     }
 
     #[allow(non_snake_case)]
-    pub fn noise(point: &Tuple) -> f64 {
+    pub fn noise(point: Tuple) -> f64 {
         let p = Perturbed::permutation();
 
         // Find unit cube that contains point
@@ -146,19 +146,21 @@ impl Perturbed {
 }
 
 impl Pattern for Perturbed {
-    fn local_pattern_at(&self, local_point: &Tuple) -> Color {
+    fn local_pattern_at(&self, pattern_point: Tuple) -> Color {
+        assert!(pattern_point.is_point());
+
         // Jitter each point (i.e. move it a bit) before delegating it to the given pattern.
         // Generate 3 values from the perlin noise, scale each and add it to the corresponding point
 
-        let noise = Perturbed::noise(&local_point) * self.scale;
+        let noise = Perturbed::noise(pattern_point) * self.scale;
 
-        let a = local_point.x + noise;
-        let b = local_point.y + noise;
-        let c = local_point.z + noise;
+        let a = pattern_point.x + noise;
+        let b = pattern_point.y + noise;
+        let c = pattern_point.z + noise;
 
         let perturbed_point = Tuple::point(a, b, c);
 
-        self.delegate.pattern_at(&perturbed_point)
+        self.delegate.local_pattern_at(perturbed_point)
     }
 
     fn get_transform(&self) -> Matrix {

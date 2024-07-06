@@ -143,26 +143,20 @@ impl Matrix {
     // to: The point at which the camera is looking in the scene
     // up: Which direction is up
     pub fn view_transform(from: Tuple, to: Tuple, up: Tuple) -> Matrix {
-        if !from.is_point() {
-            panic!("Error: Tuple given for parameter 'from' is not a Point.")
-        }
-        if !to.is_point() {
-            panic!("Error: Tuple given for parameter 'to' is not a Point.")
-        }
-        if !up.is_vector() {
-            panic!("Error: Tuple given for parameter 'up' is not a Vector.")
-        }
+        assert!(from.is_point());
+        assert!(to.is_point());
+        assert!(up.is_vector());
 
         // Compute the forward vector by: to - from, then normalizing the result
         let forward = (to - from).normalize();
         let upn = up.normalize();
 
         // Compute the left vector by: forward x (up normalized)
-        let left = Tuple::cross(&forward, &upn);
+        let left = Tuple::cross(forward, upn);
 
         // Compute the true up by: left x forward. This allows the original up to be only approximately up
         // which makes framing scenes a lot easier, since the precise calc isn't needed.
-        let true_up = Tuple::cross(&left, &forward);
+        let true_up = Tuple::cross(left, forward);
 
         let orientation = Matrix::from_rows(&vec![
             vec![left.x, left.y, left.z, 0.0],
