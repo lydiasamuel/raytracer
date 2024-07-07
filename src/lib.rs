@@ -7,7 +7,10 @@ use std::thread;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
+use crate::patterns::blended::Blended;
+use crate::patterns::perturbed::Perturbed;
 use crate::patterns::solid::Solid;
+use crate::patterns::striped::Striped;
 use crate::scene::camera::Camera;
 use crate::scene::world::World;
 use crate::tuples::color::Color;
@@ -128,8 +131,31 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
 }
 
 pub fn build_world() -> World {
+    let floor_pattern =
+        Box::new(Blended::new(
+            Box::new(Perturbed::new(
+                    Box::new(Striped::new(
+                        Box::new(Solid::new(Color::white())),
+                        Box::new(Solid::new(Color::red())),
+                        Matrix::rotation_y(PI / 2.0)
+                    )),
+                    1.4,
+                    Matrix::identity(4)
+            )),
+            Box::new(Perturbed::new(
+                Box::new(Striped::new(
+                    Box::new(Solid::new(Color::white())),
+                    Box::new(Solid::new(Color::red())),
+                    Matrix::identity(4)
+                )),
+                1.4,
+                Matrix::scaling(2.0, 2.0, 2.0)
+            )),
+            Matrix::identity(4)
+        ));
+
     let floor_material = Arc::new(Phong::new(
-        Box::new(Solid::new(Color::new(1.0, 0.9, 0.9))),
+        floor_pattern,
         0.1,
         0.9,
         0.0,

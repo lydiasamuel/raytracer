@@ -21,15 +21,15 @@ impl Blended {
 
     pub fn default() -> Blended {
         Blended::new(
-            Box::new(Solid::new(Color::new(1.0, 0.0, 0.0))),
-            Box::new(Solid::new(Color::new(1.0, 1.0, 1.0))),
+            Box::new(Solid::new(Color::white())),
+            Box::new(Solid::new(Color::black())),
             Matrix::identity(4),
         )
     }
 }
 
 impl Pattern for Blended {
-    fn local_pattern_at(&self, pattern_point: Tuple) -> Color {
+    fn pattern_at(&self, pattern_point: Tuple) -> Color {
         assert!(pattern_point.is_point());
 
         let former_color = self.former.as_ref().local_pattern_at(pattern_point);

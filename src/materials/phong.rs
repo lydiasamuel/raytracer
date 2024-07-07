@@ -47,7 +47,7 @@ impl Material for Phong {
         normalv: Tuple,
         in_shadow: bool,
     ) -> Color {
-        let color = self.pattern.pattern_at(object, world_point);
+        let color = self.pattern.pattern_at_shape(object, world_point);
 
         // Combine the surface color with the light's color/intensity
         let effective_color = color * light.intensity;
@@ -107,7 +107,6 @@ mod tests {
     #[test]
     fn given_default_material_when_creating_it_should_expect_values_to_be_set_correctly() {
         // Arrange
-        let pattern = Solid::default();
         let ambient = 0.1;
         let diffuse = 0.9;
         let specular = 0.9;
