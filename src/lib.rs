@@ -131,36 +131,29 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
 }
 
 pub fn build_world() -> World {
-    let floor_pattern =
-        Box::new(Blended::new(
-            Box::new(Perturbed::new(
-                    Box::new(Striped::new(
-                        Box::new(Solid::new(Color::white())),
-                        Box::new(Solid::new(Color::red())),
-                        Matrix::rotation_y(PI / 2.0)
-                    )),
-                    1.4,
-                    Matrix::identity(4)
+    let floor_pattern = Box::new(Blended::new(
+        Box::new(Perturbed::new(
+            Box::new(Striped::new(
+                Box::new(Solid::new(Color::white())),
+                Box::new(Solid::new(Color::red())),
+                Matrix::rotation_y(PI / 2.0),
             )),
-            Box::new(Perturbed::new(
-                Box::new(Striped::new(
-                    Box::new(Solid::new(Color::white())),
-                    Box::new(Solid::new(Color::red())),
-                    Matrix::identity(4)
-                )),
-                1.4,
-                Matrix::scaling(2.0, 2.0, 2.0)
+            0.9,
+            Matrix::rotation_x(PI / 3.0),
+        )),
+        Box::new(Perturbed::new(
+            Box::new(Striped::new(
+                Box::new(Solid::new(Color::white())),
+                Box::new(Solid::new(Color::red())),
+                Matrix::identity(4),
             )),
-            Matrix::identity(4)
-        ));
-
-    let floor_material = Arc::new(Phong::new(
-        floor_pattern,
-        0.1,
-        0.9,
-        0.0,
-        200.0,
+            0.9,
+            Matrix::rotation_z(PI / 3.0),
+        )),
+        Matrix::identity(4),
     ));
+
+    let floor_material = Arc::new(Phong::new(floor_pattern, 0.1, 0.9, 0.0, 200.0));
 
     let floor = Plane::new(Matrix::identity(4), floor_material.clone());
 

@@ -50,13 +50,13 @@ impl Pattern for Checker {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
     use crate::patterns::checker::Checker;
     use crate::patterns::pattern::Pattern;
     use crate::tuples::color::Color;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
     fn given_default_checker_pattern_when_getting_color_should_repeat_in_x() {
@@ -87,9 +87,9 @@ mod tests {
 
         // Act
         let results = vec![
-            pattern.pattern_at_shape(shape.clone(), Tuple::point(0.0,0.0, 0.0)),
-            pattern.pattern_at_shape(shape.clone(), Tuple::point(0.0,0.99, 0.0)),
-            pattern.pattern_at_shape(shape.clone(), Tuple::point(0.0,1.01, 0.0)),
+            pattern.pattern_at_shape(shape.clone(), Tuple::point(0.0, 0.0, 0.0)),
+            pattern.pattern_at_shape(shape.clone(), Tuple::point(0.0, 0.99, 0.0)),
+            pattern.pattern_at_shape(shape.clone(), Tuple::point(0.0, 1.01, 0.0)),
         ];
 
         // Assert

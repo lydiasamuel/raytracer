@@ -48,16 +48,17 @@ impl Pattern for Gradient {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
     use crate::patterns::gradient::Gradient;
     use crate::patterns::pattern::Pattern;
     use crate::tuples::color::Color;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
-    fn given_default_gradient_pattern_when_getting_color_should_linearly_interpolate_between_colors() {
+    fn given_default_gradient_pattern_when_getting_color_should_linearly_interpolate_between_colors(
+    ) {
         // Arrange
         let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 

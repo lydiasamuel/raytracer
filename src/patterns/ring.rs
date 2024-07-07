@@ -49,13 +49,13 @@ impl Pattern for Ring {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
     use crate::patterns::pattern::Pattern;
     use crate::patterns::ring::Ring;
     use crate::tuples::color::Color;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
     fn given_default_ring_pattern_when_getting_color_should_extend_in_both_x_and_z() {
