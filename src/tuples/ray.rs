@@ -28,8 +28,8 @@ impl Ray {
     // Ray's direction is left normalised so that when intersections are computed it represents
     // a hit at the correct distance in world space from the ray's origin.
     pub fn transform(&self, transform: Matrix) -> Ray {
-        let transformed_origin = transform.clone() * self.origin;
-        let transformed_direction = transform * self.direction;
+        let transformed_origin = &transform * &self.origin;
+        let transformed_direction = &transform * &self.direction;
 
         Ray::new(transformed_origin.unwrap(), transformed_direction.unwrap())
     }

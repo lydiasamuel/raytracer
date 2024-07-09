@@ -72,7 +72,7 @@ impl Shape for Plane {
     }
 
     fn local_normal_at(&self, _: Tuple) -> Tuple {
-        (self.transform.inverse().unwrap() * Tuple::vector(0.0, 1.0, 0.0)).unwrap()
+        (&self.transform.inverse().unwrap() * &Tuple::vector(0.0, 1.0, 0.0)).unwrap()
     }
 
     fn light_material(

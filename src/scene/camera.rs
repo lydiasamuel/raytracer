@@ -58,8 +58,8 @@ impl Camera {
         // and then compute the ray's direction vector.
         // (remember that the canvas is at z = -1)
         let inverse = self.transform.inverse().unwrap();
-        let pixel = (inverse.clone() * Tuple::point(world_x, world_y, -1.0)).unwrap();
-        let origin = (inverse * Tuple::point(0.0, 0.0, 0.0)).unwrap();
+        let pixel = (&inverse * &Tuple::point(world_x, world_y, -1.0)).unwrap();
+        let origin = (&inverse * &Tuple::point(0.0, 0.0, 0.0)).unwrap();
         let direction = (pixel - origin).normalize();
 
         Ray::new(origin, direction)
@@ -136,7 +136,7 @@ mod tests {
     fn given_ray_values_and_a_transformed_camera_when_calling_ray_for_pixel_should_correctly_hit_canvas_transformed_location(
     ) {
         // Arrange
-        let transform = Matrix::rotation_y(PI / 4.0) * Matrix::translation(0.0, -2.0, 5.0);
+        let transform = &Matrix::rotation_y(PI / 4.0) * &Matrix::translation(0.0, -2.0, 5.0);
 
         let camera = Camera::new(201, 101, PI / 2.0, transform.unwrap());
 

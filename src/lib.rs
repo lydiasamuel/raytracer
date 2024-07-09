@@ -1,9 +1,9 @@
-use crate::geometry::plane::Plane;
 use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
 use std::thread;
 
+use crate::geometry::plane::Plane;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
@@ -169,7 +169,7 @@ pub fn build_world() -> World {
     );
 
     let right = Sphere::new(
-        (Matrix::translation(1.5, 0.5, -0.5) * Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
+        (&Matrix::translation(1.5, 0.5, -0.5) * &Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(0.5, 1.0, 0.1))),
             0.1,
@@ -180,7 +180,7 @@ pub fn build_world() -> World {
     );
 
     let left = Sphere::new(
-        (Matrix::translation(-1.5, 0.33, -0.75) * Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
+        (&Matrix::translation(-1.5, 0.33, -0.75) * &Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(1.0, 0.8, 0.1))),
             0.1,

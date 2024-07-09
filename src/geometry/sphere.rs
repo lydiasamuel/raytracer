@@ -325,7 +325,7 @@ mod tests {
     ) {
         let point = Tuple::point(0.0, consts::SQRT_2 / 2.0, -consts::SQRT_2 / 2.0);
 
-        let transform = Matrix::scaling(1.0, 0.5, 1.0) * Matrix::rotation_z(consts::PI / 5.0);
+        let transform = &Matrix::scaling(1.0, 0.5, 1.0) * &Matrix::rotation_z(consts::PI / 5.0);
 
         let sphere = Sphere::new(transform.unwrap(), Arc::new(Phong::default()));
 

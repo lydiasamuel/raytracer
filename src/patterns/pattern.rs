@@ -10,7 +10,7 @@ pub trait Pattern: Sync + Send {
 
         let object_inverse_transform = object.get_transform().inverse().unwrap();
 
-        let object_point = (object_inverse_transform.clone() * world_point).unwrap();
+        let object_point = (&object_inverse_transform * &world_point).unwrap();
 
         self.local_pattern_at(object_point)
     }
@@ -18,7 +18,7 @@ pub trait Pattern: Sync + Send {
     fn local_pattern_at(&self, object_point: Tuple) -> Color {
         let pattern_inverse_transform = self.get_transform().inverse().unwrap();
 
-        let pattern_point = (pattern_inverse_transform.clone() * object_point).unwrap();
+        let pattern_point = (&pattern_inverse_transform * &object_point).unwrap();
 
         self.pattern_at(pattern_point)
     }

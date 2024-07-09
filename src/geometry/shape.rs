@@ -40,10 +40,10 @@ pub trait Shape: Sync + Send {
 
         let inverse_transform = self.get_transform().inverse().unwrap();
 
-        let local_point = (inverse_transform.clone() * world_point).unwrap();
+        let local_point = (&inverse_transform * &world_point).unwrap();
         let local_normal = self.local_normal_at(local_point);
 
-        let mut world_normal = (inverse_transform.transpose() * local_normal).unwrap();
+        let mut world_normal = (&inverse_transform.transpose() * &local_normal).unwrap();
         world_normal.w = 0.0;
 
         world_normal.normalize()
