@@ -3,15 +3,20 @@ use crate::patterns::solid::Solid;
 use crate::Color;
 use crate::Matrix;
 use crate::Tuple;
+use std::sync::Arc;
 
 pub struct Blended {
     former: Box<dyn Pattern>,
     latter: Box<dyn Pattern>,
-    transform: Matrix,
+    transform: Arc<Matrix>,
 }
 
 impl Blended {
-    pub fn new(former: Box<dyn Pattern>, latter: Box<dyn Pattern>, transform: Matrix) -> Blended {
+    pub fn new(
+        former: Box<dyn Pattern>,
+        latter: Box<dyn Pattern>,
+        transform: Arc<Matrix>,
+    ) -> Blended {
         Blended {
             former,
             latter,
@@ -23,7 +28,7 @@ impl Blended {
         Blended::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
         )
     }
 }
@@ -38,7 +43,7 @@ impl Pattern for Blended {
         (former_color + latter_color) / 2.0
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 }

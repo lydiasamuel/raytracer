@@ -2,6 +2,7 @@ use crate::matrices::matrix::Matrix;
 use crate::patterns::pattern::Pattern;
 use crate::Color;
 use crate::Tuple;
+use std::sync::Arc;
 
 pub struct Solid {
     color: Color,
@@ -22,7 +23,7 @@ impl Pattern for Solid {
         self.color
     }
 
-    fn get_transform(&self) -> Matrix {
-        Matrix::identity(4)
+    fn get_transform(&self) -> Arc<Matrix> {
+        Arc::new(Matrix::identity(4))
     }
 }

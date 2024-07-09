@@ -3,15 +3,16 @@ use crate::patterns::solid::Solid;
 use crate::tuples::tuple::Tuple;
 use crate::Color;
 use crate::Matrix;
+use std::sync::Arc;
 
 pub struct Ring {
     former: Box<dyn Pattern>,
     latter: Box<dyn Pattern>,
-    transform: Matrix,
+    transform: Arc<Matrix>,
 }
 
 impl Ring {
-    pub fn new(former: Box<dyn Pattern>, latter: Box<dyn Pattern>, transform: Matrix) -> Ring {
+    pub fn new(former: Box<dyn Pattern>, latter: Box<dyn Pattern>, transform: Arc<Matrix>) -> Ring {
         Ring {
             former,
             latter,
@@ -23,7 +24,7 @@ impl Ring {
         Ring::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
         )
     }
 }
@@ -42,7 +43,7 @@ impl Pattern for Ring {
         }
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 }

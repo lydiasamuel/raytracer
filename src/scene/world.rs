@@ -26,7 +26,7 @@ impl World {
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
         let outer = Sphere::new(
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
             Arc::new(Phong::new(
                 Box::new(Solid::new(Color::new(0.8, 1.0, 0.6))),
                 0.1,
@@ -36,7 +36,10 @@ impl World {
             )),
         );
 
-        let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), Arc::new(Phong::default()));
+        let inner = Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            Arc::new(Phong::default()),
+        );
 
         let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
         let lights = vec![Arc::new(light)];
@@ -317,8 +320,8 @@ mod tests {
         let material: Arc<dyn Material> =
             Arc::new(Phong::new(Box::new(Solid::default()), 1.0, 0.9, 0.9, 200.0));
 
-        let outer = Sphere::new(Matrix::identity(4), material.clone());
-        let inner = Sphere::new(Matrix::scaling(0.5, 0.5, 0.5), material.clone());
+        let outer = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());
+        let inner = Sphere::new(Arc::new(Matrix::scaling(0.5, 0.5, 0.5)), material.clone());
 
         let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
         let lights = vec![Arc::new(light)];
@@ -398,7 +401,7 @@ mod tests {
 
         let s1 = Arc::new(Sphere::unit());
         let s2 = Arc::new(Sphere::new(
-            Matrix::translation(0.0, 0.0, 10.0),
+            Arc::new(Matrix::translation(0.0, 0.0, 10.0)),
             material.clone(),
         ));
 
@@ -425,7 +428,7 @@ mod tests {
         let material: Arc<dyn Material> = Arc::new(Phong::default());
 
         let shape = Arc::new(Sphere::new(
-            Matrix::translation(0.0, 0.0, 1.0),
+            Arc::new(Matrix::translation(0.0, 0.0, 1.0)),
             material.clone(),
         ));
 

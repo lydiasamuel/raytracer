@@ -14,12 +14,12 @@ use crate::tuples::tuple::Tuple;
 
 pub struct Plane {
     id: Uuid,
-    transform: Matrix, // Used to translate a point from object space to world space
+    transform: Arc<Matrix>, // Used to translate a point from object space to world space
     material: Arc<dyn Material>,
 }
 
 impl Plane {
-    pub fn new(transform: Matrix, material: Arc<dyn Material>) -> Plane {
+    pub fn new(transform: Arc<Matrix>, material: Arc<dyn Material>) -> Plane {
         Plane {
             id: Uuid::new_v4(),
             transform,
@@ -30,7 +30,7 @@ impl Plane {
     pub fn default() -> Plane {
         Plane {
             id: Uuid::new_v4(),
-            transform: Matrix::identity(4),
+            transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
         }
     }
@@ -63,7 +63,7 @@ impl Shape for Plane {
         vec![Intersection::new(time, self.clone())]
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 

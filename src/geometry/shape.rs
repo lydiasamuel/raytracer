@@ -30,7 +30,7 @@ pub trait Shape: Sync + Send {
     fn local_intersect(self: Arc<Self>, local_ray: &Ray) -> Vec<Intersection>;
 
     // Transformation matrix transforms points from object space to world space, and the inverse goes the other way.
-    fn get_transform(&self) -> Matrix;
+    fn get_transform(&self) -> Arc<Matrix>;
 
     fn get_material(&self) -> Arc<dyn Material>;
 

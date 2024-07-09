@@ -136,29 +136,29 @@ pub fn build_world() -> World {
             Box::new(Striped::new(
                 Box::new(Solid::new(Color::white())),
                 Box::new(Solid::new(Color::red())),
-                Matrix::rotation_y(PI / 2.0),
+                Arc::new(Matrix::rotation_y(PI / 2.0)),
             )),
             0.9,
-            Matrix::rotation_x(PI / 3.0),
+            Arc::new(Matrix::rotation_x(PI / 3.0)),
         )),
         Box::new(Perturbed::new(
             Box::new(Striped::new(
                 Box::new(Solid::new(Color::white())),
                 Box::new(Solid::new(Color::red())),
-                Matrix::identity(4),
+                Arc::new(Matrix::identity(4)),
             )),
             0.9,
-            Matrix::rotation_z(PI / 3.0),
+            Arc::new(Matrix::rotation_z(PI / 3.0)),
         )),
-        Matrix::identity(4),
+        Arc::new(Matrix::identity(4)),
     ));
 
     let floor_material = Arc::new(Phong::new(floor_pattern, 0.1, 0.9, 0.0, 200.0));
 
-    let floor = Plane::new(Matrix::identity(4), floor_material.clone());
+    let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone());
 
     let middle = Sphere::new(
-        Matrix::translation(-0.5, 1.0, 0.5),
+        Arc::new(Matrix::translation(-0.5, 1.0, 0.5)),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(0.1, 1.0, 0.5))),
             0.1,
@@ -169,7 +169,7 @@ pub fn build_world() -> World {
     );
 
     let right = Sphere::new(
-        (&Matrix::translation(1.5, 0.5, -0.5) * &Matrix::scaling(0.5, 0.5, 0.5)).unwrap(),
+        Arc::new((&Matrix::translation(1.5, 0.5, -0.5) * &Matrix::scaling(0.5, 0.5, 0.5)).unwrap()),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(0.5, 1.0, 0.1))),
             0.1,
@@ -180,7 +180,9 @@ pub fn build_world() -> World {
     );
 
     let left = Sphere::new(
-        (&Matrix::translation(-1.5, 0.33, -0.75) * &Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
+        Arc::new(
+            (&Matrix::translation(-1.5, 0.33, -0.75) * &Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
+        ),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(1.0, 0.8, 0.1))),
             0.1,

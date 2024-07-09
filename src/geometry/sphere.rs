@@ -13,7 +13,7 @@ use super::shape::Shape;
 
 pub struct Sphere {
     id: Uuid,
-    transform: Matrix,
+    transform: Arc<Matrix>,
     material: Arc<dyn Material>,
 }
 
@@ -21,12 +21,12 @@ impl Sphere {
     pub fn unit() -> Sphere {
         Sphere {
             id: Uuid::new_v4(),
-            transform: Matrix::identity(4),
+            transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
         }
     }
 
-    pub fn new(transform: Matrix, material: Arc<dyn Material>) -> Sphere {
+    pub fn new(transform: Arc<Matrix>, material: Arc<dyn Material>) -> Sphere {
         Sphere {
             id: Uuid::new_v4(),
             transform,
@@ -68,7 +68,7 @@ impl Shape for Sphere {
         }
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 
@@ -202,22 +202,22 @@ mod tests {
     ) {
         let sphere = Sphere::unit();
 
-        assert_eq!(Matrix::identity(4), sphere.get_transform());
+        assert_eq!(Matrix::identity(4), *sphere.get_transform());
     }
 
     #[test]
     fn given_a_new_unit_sphere_when_updating_the_transform_should_expect_transform_to_be_set() {
-        let transform = Matrix::translation(2.0, 3.0, 4.0);
+        let transform = Arc::new(Matrix::translation(2.0, 3.0, 4.0));
 
         let sphere = Sphere::new(transform.clone(), Arc::new(Phong::default()));
 
-        assert_eq!(transform, sphere.get_transform());
+        assert!(Arc::ptr_eq(&transform, &sphere.get_transform()));
     }
 
     #[test]
     fn given_a_ray_and_a_scaled_sphere_when_calculating_the_intersections_should_expect_correctly_scaled_points(
     ) {
-        let transform = Matrix::scaling(2.0, 2.0, 2.0);
+        let transform = Arc::new(Matrix::scaling(2.0, 2.0, 2.0));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn given_a_ray_and_a_translated_sphere_when_calculating_the_intersections_should_expect_correctly_translated_points(
     ) {
-        let transform = Matrix::translation(5.0, 0.0, 0.0);
+        let transform = Arc::new(Matrix::translation(5.0, 0.0, 0.0));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
@@ -309,7 +309,7 @@ mod tests {
     ) {
         let point = Tuple::point(0.0, 1.0, 0.0);
 
-        let transform = Matrix::translation(0.0, 1.0, 0.0);
+        let transform = Arc::new(Matrix::translation(0.0, 1.0, 0.0));
 
         let sphere = Sphere::new(transform, Arc::new(Phong::default()));
 
@@ -327,7 +327,7 @@ mod tests {
 
         let transform = &Matrix::scaling(1.0, 0.5, 1.0) * &Matrix::rotation_z(consts::PI / 5.0);
 
-        let sphere = Sphere::new(transform.unwrap(), Arc::new(Phong::default()));
+        let sphere = Sphere::new(Arc::new(transform.unwrap()), Arc::new(Phong::default()));
 
         let normal = sphere.normal_at(point);
 
@@ -346,7 +346,7 @@ mod tests {
             220.0,
         ));
 
-        let sphere = Sphere::new(Matrix::identity(4), material.clone());
+        let sphere = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());
 
         let result = sphere.get_material();
 

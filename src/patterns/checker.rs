@@ -3,15 +3,20 @@ use crate::patterns::solid::Solid;
 use crate::tuples::tuple::Tuple;
 use crate::Color;
 use crate::Matrix;
+use std::sync::Arc;
 
 pub struct Checker {
     former: Box<dyn Pattern>,
     latter: Box<dyn Pattern>,
-    transform: Matrix,
+    transform: Arc<Matrix>,
 }
 
 impl Checker {
-    pub fn new(former: Box<dyn Pattern>, latter: Box<dyn Pattern>, transform: Matrix) -> Checker {
+    pub fn new(
+        former: Box<dyn Pattern>,
+        latter: Box<dyn Pattern>,
+        transform: Arc<Matrix>,
+    ) -> Checker {
         Checker {
             former,
             latter,
@@ -23,7 +28,7 @@ impl Checker {
         Checker::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
         )
     }
 }
@@ -43,7 +48,7 @@ impl Pattern for Checker {
         }
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 }

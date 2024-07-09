@@ -3,15 +3,20 @@ use crate::patterns::solid::Solid;
 use crate::tuples::tuple::Tuple;
 use crate::Color;
 use crate::Matrix;
+use std::sync::Arc;
 
 pub struct Gradient {
     former: Box<dyn Pattern>,
     latter: Box<dyn Pattern>,
-    transform: Matrix,
+    transform: Arc<Matrix>,
 }
 
 impl Gradient {
-    pub fn new(former: Box<dyn Pattern>, latter: Box<dyn Pattern>, transform: Matrix) -> Gradient {
+    pub fn new(
+        former: Box<dyn Pattern>,
+        latter: Box<dyn Pattern>,
+        transform: Arc<Matrix>,
+    ) -> Gradient {
         Gradient {
             former,
             latter,
@@ -23,7 +28,7 @@ impl Gradient {
         Gradient::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
         )
     }
 }
@@ -41,7 +46,7 @@ impl Pattern for Gradient {
         former_color + (distance * fraction)
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 }

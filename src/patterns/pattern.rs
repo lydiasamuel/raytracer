@@ -25,5 +25,5 @@ pub trait Pattern: Sync + Send {
 
     fn pattern_at(&self, pattern_point: Tuple) -> Color;
 
-    fn get_transform(&self) -> Matrix;
+    fn get_transform(&self) -> Arc<Matrix>;
 }

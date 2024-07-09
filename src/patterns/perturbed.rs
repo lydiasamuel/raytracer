@@ -3,6 +3,7 @@ use crate::patterns::solid::Solid;
 use crate::tuples::tuple::Tuple;
 use crate::Color;
 use crate::Matrix;
+use std::sync::Arc;
 
 const PERMUTATIONS: [i64; 512] = [
     151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69,
@@ -35,11 +36,11 @@ const PERMUTATIONS: [i64; 512] = [
 pub struct Perturbed {
     delegate: Box<dyn Pattern>,
     scale: f64,
-    transform: Matrix,
+    transform: Arc<Matrix>,
 }
 
 impl Perturbed {
-    pub fn new(delegate: Box<dyn Pattern>, scale: f64, transform: Matrix) -> Perturbed {
+    pub fn new(delegate: Box<dyn Pattern>, scale: f64, transform: Arc<Matrix>) -> Perturbed {
         Perturbed {
             delegate,
             scale,
@@ -51,7 +52,7 @@ impl Perturbed {
         Perturbed::new(
             Box::new(Solid::new(Color::white())),
             0.2,
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
         )
     }
 
@@ -156,7 +157,7 @@ impl Pattern for Perturbed {
         self.delegate.local_pattern_at(perturbed_point)
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 }

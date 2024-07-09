@@ -3,15 +3,20 @@ use crate::patterns::solid::Solid;
 use crate::Color;
 use crate::Matrix;
 use crate::Tuple;
+use std::sync::Arc;
 
 pub struct Striped {
     former: Box<dyn Pattern>,
     latter: Box<dyn Pattern>,
-    transform: Matrix,
+    transform: Arc<Matrix>,
 }
 
 impl Striped {
-    pub fn new(former: Box<dyn Pattern>, latter: Box<dyn Pattern>, transform: Matrix) -> Striped {
+    pub fn new(
+        former: Box<dyn Pattern>,
+        latter: Box<dyn Pattern>,
+        transform: Arc<Matrix>,
+    ) -> Striped {
         Striped {
             former,
             latter,
@@ -23,7 +28,7 @@ impl Striped {
         Striped::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::identity(4),
+            Arc::new(Matrix::identity(4)),
         )
     }
 }
@@ -39,7 +44,7 @@ impl Pattern for Striped {
         }
     }
 
-    fn get_transform(&self) -> Matrix {
+    fn get_transform(&self) -> Arc<Matrix> {
         self.transform.clone()
     }
 }
@@ -130,7 +135,7 @@ mod tests {
         let pattern = Box::new(Striped::default());
         let material = Arc::new(Phong::new(pattern, 1.0, 0.0, 0.0, 200.0));
 
-        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(Matrix::identity(4), material));
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(Arc::new(Matrix::identity(4)), material));
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
@@ -157,7 +162,10 @@ mod tests {
 
         let material = Arc::new(Phong::new(pattern, 0.1, 0.9, 0.9, 200.0));
 
-        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(Matrix::scaling(2.0, 2.0, 2.0), material));
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
+            material,
+        ));
 
         // Act
         let result = expected_pattern.pattern_at_shape(shape.clone(), Tuple::point(1.5, 0.0, 0.0));
@@ -174,7 +182,7 @@ mod tests {
         let pattern = Striped::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::scaling(2.0, 2.0, 2.0),
+            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
         );
 
         // Act
@@ -191,17 +199,20 @@ mod tests {
         let pattern = Box::new(Striped::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::translation(0.5, 0.0, 0.0),
+            Arc::new(Matrix::translation(0.5, 0.0, 0.0)),
         ));
         let expected_pattern = Striped::new(
             Box::new(Solid::new(Color::white())),
             Box::new(Solid::new(Color::black())),
-            Matrix::translation(0.5, 0.0, 0.0),
+            Arc::new(Matrix::translation(0.5, 0.0, 0.0)),
         );
 
         let material = Arc::new(Phong::new(pattern, 0.1, 0.9, 0.9, 200.0));
 
-        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(Matrix::scaling(2.0, 2.0, 2.0), material));
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
+            material,
+        ));
 
         // Act
         let result = expected_pattern.pattern_at_shape(shape.clone(), Tuple::point(2.5, 0.0, 0.0));
