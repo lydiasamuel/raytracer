@@ -6,3 +6,4 @@ pub mod perturbed;
 pub mod ring;
 pub mod solid;
 pub mod striped;
+pub mod test_pattern;

@@ -2,7 +2,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use super::shape::Shape;
-use crate::patterns::solid::Solid;
 use crate::tuples::color::Color;
 use crate::tuples::pointlight::PointLight;
 use crate::{

@@ -23,34 +23,33 @@ impl fmt::Display for Tuple {
 
 impl Tuple {
     pub fn vector(x: f64, y: f64, z: f64) -> Tuple {
-        return Tuple::new(x, y, z, 0.0);
+        Tuple::new(x, y, z, 0.0)
     }
 
     pub fn origin() -> Tuple {
-        return Tuple::point(0.0, 0.0, 0.0);
+        Tuple::point(0.0, 0.0, 0.0)
     }
 
     pub fn point(x: f64, y: f64, z: f64) -> Tuple {
-        return Tuple::new(x, y, z, 1.0);
+        Tuple::new(x, y, z, 1.0)
     }
 
     pub fn new(x: f64, y: f64, z: f64, w: f64) -> Tuple {
-        return Tuple { x, y, z, w };
+        Tuple { x, y, z, w }
     }
 
     pub fn is_vector(&self) -> bool {
-        return self.w == 0.0;
+        (0.0 - self.w).abs() < EPSILON
     }
 
     pub fn is_point(&self) -> bool {
-        return self.w == 1.0;
+        (1.0 - self.w).abs() < EPSILON
     }
 
     pub fn magnitude(&self) -> f64 {
         assert!(self.is_vector());
 
-        return ((self.x * self.x) + (self.y * self.y) + (self.z * self.z) + (self.w * self.w))
-            .sqrt();
+        ((self.x * self.x) + (self.y * self.y) + (self.z * self.z) + (self.w * self.w)).sqrt()
     }
 
     /* Normalization is the process of taking an arbitrary vector and converting it into a unit vector while preserving its direction.
@@ -63,7 +62,7 @@ impl Tuple {
 
         let m = self.magnitude();
 
-        return Tuple::new(self.x / m, self.y / m, self.z / m, self.w / m);
+        Tuple::new(self.x / m, self.y / m, self.z / m, self.w / m)
     }
 
     /* The dot product can feel pretty abstract, but here's one quick way to internalize it:
@@ -77,7 +76,7 @@ impl Tuple {
         assert!(lhs.is_vector());
         assert!(rhs.is_vector());
 
-        return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
+        lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
     }
 
     // The cross product calculates a new vector that is perpendicular to both of the original vectors.
@@ -85,24 +84,24 @@ impl Tuple {
         assert!(lhs.is_vector());
         assert!(rhs.is_vector());
 
-        return Tuple::vector(
+        Tuple::vector(
             lhs.y * rhs.z - lhs.z * rhs.y,
             lhs.z * rhs.x - lhs.x * rhs.z,
             lhs.x * rhs.y - lhs.y * rhs.x,
-        );
+        )
     }
 
     pub fn reflect(incoming: Tuple, normal: Tuple) -> Tuple {
         assert!(incoming.is_vector());
         assert!(normal.is_vector());
 
-        return incoming - (normal * 2.0 * Tuple::dot(incoming, normal));
+        incoming - (normal * 2.0 * Tuple::dot(incoming, normal))
     }
 }
 
 impl PartialEq for Tuple {
     fn eq(&self, other: &Self) -> bool {
-        return if (self.x - other.x).abs() > EPSILON {
+        if (self.x - other.x).abs() > EPSILON {
             false
         } else if (self.y - other.y).abs() > EPSILON {
             false
@@ -112,7 +111,7 @@ impl PartialEq for Tuple {
             false
         } else {
             true
-        };
+        }
     }
 }
 
@@ -120,12 +119,12 @@ impl Neg for Tuple {
     type Output = Self;
 
     fn neg(self) -> Self {
-        return Self {
+        Self {
             x: -self.x,
             y: -self.y,
             z: -self.z,
             w: -self.w,
-        };
+        }
     }
 }
 
@@ -133,12 +132,12 @@ impl Mul<f64> for Tuple {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self {
-        return Self {
+        Self {
             x: self.x * rhs,
             y: self.y * rhs,
             z: self.z * rhs,
             w: self.w * rhs,
-        };
+        }
     }
 }
 
@@ -146,12 +145,12 @@ impl Div<f64> for Tuple {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self {
-        return Self {
+        Self {
             x: self.x / rhs,
             y: self.y / rhs,
             z: self.z / rhs,
             w: self.w / rhs,
-        };
+        }
     }
 }
 
@@ -159,12 +158,12 @@ impl Add for Tuple {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self {
-        return Self {
+        Self {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
             z: self.z + rhs.z,
             w: self.w + rhs.w,
-        };
+        }
     }
 }
 
@@ -172,12 +171,12 @@ impl Sub for Tuple {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Tuple {
-        return Tuple {
+        Tuple {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
             z: self.z - rhs.z,
             w: self.w - rhs.w,
-        };
+        }
     }
 }
 

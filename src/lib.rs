@@ -18,7 +18,7 @@ use crate::tuples::pointlight::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
 
-static REFLECTION_DEPTH: usize = 5;
+static MAX_RAY_RECURSION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
 static THREADS: usize = 8;
 
@@ -105,7 +105,7 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
                     let ray = thread_camera.ray_for_pixel(x, y);
                     // Send back color information to main thread to then write out to canvas
                     thread_send_channel
-                        .send((x, y, thread_world.color_at(&ray, REFLECTION_DEPTH)))
+                        .send((x, y, thread_world.color_at(&ray, MAX_RAY_RECURSION_DEPTH)))
                         .unwrap();
                 }
             }

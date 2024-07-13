@@ -91,6 +91,7 @@ impl World {
         // EPSILON is used to bump the intersection point slightly in the direction of the surface
         // normal to help prevent self shadowing
         let over_point = point + (normalv * EPSILON);
+        let under_point = point - (normalv * EPSILON);
 
         // Records objects that have been encountered but not yet exited.
         let mut containers: Vec<Arc<dyn Shape>> = vec![];
@@ -129,7 +130,17 @@ impl World {
         }
 
         return Computations::new(
-            time, object, point, over_point, n1, n2, eyev, normalv, reflectv, inside,
+            time,
+            object,
+            point,
+            over_point,
+            under_point,
+            n1,
+            n2,
+            eyev,
+            normalv,
+            reflectv,
+            inside,
         );
     }
 
@@ -164,8 +175,9 @@ impl World {
             );
 
             let reflected = self.reflected_color(comps, remaining);
+            let refracted = self.refracted_color(comps, remaining);
 
-            result = result + surface + reflected;
+            result = result + surface + reflected + refracted;
         }
 
         return result;
@@ -206,6 +218,50 @@ impl World {
         color * reflective
     }
 
+    pub fn refracted_color(&self, comps: &Computations, remaining: usize) -> Color {
+        // Similar base case for recursion to reflection, stops infinities
+        if remaining == 0 {
+            return Color::black();
+        }
+
+        let transparency = comps.object.get_material().transparency();
+
+        // Material is opaque so return black
+        if (transparency - 0.0).abs() < EPSILON {
+            return Color::black();
+        }
+
+        // Find the ration of first index of refraction to the second.
+        // i.e. the inversion of Snell's Law (describes relationship between angle of incoming ray
+        // and the angle of the refracted ray).
+        let n_ratio = comps.n1 / comps.n2;
+
+        // Calculate cos(theta_i) is the same as the dot product of the two vectors.
+        let cos_i = Tuple::dot(comps.eyev, comps.normalv);
+
+        // Find sin(theta_t)^2 via trigonometric identity
+        let sin2_t = (n_ratio * n_ratio) * (1.0 - (cos_i * cos_i));
+
+        // If sin2_t is greater than 1, then there's total internal reflection. This means that
+        // light isn't propagated across the interface between the two media, so we don't color it.
+        if sin2_t > 1.0 {
+            return Color::black();
+        }
+
+        // Find cos(theta_t) via trigonometric identity
+        let cos_t = (1.0 - sin2_t).sqrt();
+
+        // Compute the direction of the refracted ray
+        let direction = comps.normalv * (n_ratio * cos_i - cos_t) - comps.eyev * n_ratio;
+
+        // Create the refracted ray
+        let refract_ray = Ray::new(comps.under_point, direction);
+
+        // Find the color of the refracted ray, making sure to multiply by the transparency value
+        // to account for any opacity
+        self.color_at(&refract_ray, remaining - 1) * transparency
+    }
+
     pub fn is_shadowed(&self, point: Tuple, light: PointLight) -> bool {
         assert!(point.is_point());
 
@@ -236,6 +292,7 @@ mod tests {
     use crate::materials::phong::Phong;
     use crate::matrices::matrix::Matrix;
     use crate::patterns::solid::Solid;
+    use crate::patterns::test_pattern::TestPattern;
     use crate::scene::computations::Computations;
     use crate::scene::world::World;
     use crate::tuples::color::Color;
@@ -243,7 +300,7 @@ mod tests {
     use crate::tuples::pointlight::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
-    use crate::{EPSILON, REFLECTION_DEPTH};
+    use crate::{EPSILON, MAX_RAY_RECURSION_DEPTH};
     use std::f64::consts::SQRT_2;
     use std::sync::Arc;
 
@@ -338,7 +395,7 @@ mod tests {
 
         // Act
         let comps = World::prepare_computations(0, &ray, &intersections);
-        let result = World::shade_hit(&world, &comps, REFLECTION_DEPTH);
+        let result = World::shade_hit(&world, &comps, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::new(0.38066, 0.47583, 0.2855), result);
@@ -364,7 +421,7 @@ mod tests {
 
         // Act
         let comps = World::prepare_computations(0, &ray, &intersections);
-        let result = World::shade_hit(&world, &comps, REFLECTION_DEPTH);
+        let result = World::shade_hit(&world, &comps, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::new(0.90498, 0.90498, 0.90498), result);
@@ -378,7 +435,7 @@ mod tests {
         let ray = Ray::new(Tuple::point(0.0, 0.0, 5.0), Tuple::vector(0.0, 0.0, 1.0));
 
         // Act
-        let result = world.color_at(&ray, REFLECTION_DEPTH);
+        let result = world.color_at(&ray, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::black(), result);
@@ -392,7 +449,7 @@ mod tests {
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
         // Act
-        let result = world.color_at(&ray, REFLECTION_DEPTH);
+        let result = world.color_at(&ray, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::new(0.38066, 0.47583, 0.2855), result);
@@ -426,7 +483,7 @@ mod tests {
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.75), Tuple::vector(0.0, 0.0, -1.0));
 
         // Act
-        let result = world.color_at(&ray, REFLECTION_DEPTH);
+        let result = world.color_at(&ray, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(color, result);
@@ -511,7 +568,7 @@ mod tests {
         let comps = World::prepare_computations(0, &ray, &intersections);
 
         // Act
-        let result = world.shade_hit(&comps, REFLECTION_DEPTH);
+        let result = world.shade_hit(&comps, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::new(0.1, 0.1, 0.1), result);
@@ -563,7 +620,6 @@ mod tests {
     #[test]
     fn given_a_ray_strikes_a_non_reflective_surface_when_reflecting_color_should_return_black() {
         // Arrange
-        let color = Color::white();
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
         let outer = Arc::new(Sphere::new(
@@ -595,7 +651,7 @@ mod tests {
 
         // Act
         let comps = World::prepare_computations(0, &ray, &intersections);
-        let color = world.reflected_color(&comps, REFLECTION_DEPTH);
+        let color = world.reflected_color(&comps, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::black(), color);
@@ -605,7 +661,6 @@ mod tests {
     fn given_a_ray_strikes_a_reflective_surface_when_reflecting_color_should_return_correct_value()
     {
         // Arrange
-        let color = Color::white();
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
         let material: Arc<dyn Material> = Arc::new(Phong::new(
             Box::new(Solid::default()),
@@ -655,7 +710,7 @@ mod tests {
 
         // Act
         let comps = World::prepare_computations(0, &ray, &intersections);
-        let color = world.reflected_color(&comps, REFLECTION_DEPTH);
+        let color = world.reflected_color(&comps, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::new(0.19033, 0.23791, 0.14274), color);
@@ -665,7 +720,6 @@ mod tests {
     fn given_a_ray_strikes_a_reflective_surface_when_shading_reflected_hit_should_return_correct_value(
     ) {
         // Arrange
-        let color = Color::white();
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
         let material: Arc<dyn Material> = Arc::new(Phong::new(
             Box::new(Solid::default()),
@@ -715,7 +769,7 @@ mod tests {
 
         // Act
         let comps = World::prepare_computations(0, &ray, &intersections);
-        let color = world.shade_hit(&comps, REFLECTION_DEPTH);
+        let color = world.shade_hit(&comps, MAX_RAY_RECURSION_DEPTH);
 
         // Assert
         assert_eq!(Color::new(0.87675, 0.92434, 0.82917), color);
@@ -725,7 +779,6 @@ mod tests {
     pub fn given_a_ray_strikes_a_reflective_surface_when_reflection_is_not_allowed_to_recurse_further_should_return_black(
     ) {
         // Arrange
-        let color = Color::white();
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
         let material: Arc<dyn Material> = Arc::new(Phong::new(
             Box::new(Solid::default()),
@@ -859,8 +912,277 @@ mod tests {
             let expected = expected_results[i];
             let actual = &results[i];
 
-            assert_eq!(expected.0, actual.exited_refractive_index);
-            assert_eq!(expected.1, actual.entered_refractive_index);
+            assert_eq!(expected.0, actual.n1);
+            assert_eq!(expected.1, actual.n2);
         }
+    }
+
+    #[test]
+    fn given_a_glass_sphere_when_preparing_computations_should_expect_under_point_to_lie_beneath_surface(
+    ) {
+        // Arrange
+        let shape = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(0.0, 0.0, 1.0)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+        ));
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        let intersections = vec![Intersection::new(5.0, shape.clone())];
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &intersections);
+
+        // Assert
+        assert_eq!(true, comps.under_point.z > EPSILON / 2.0);
+        assert_eq!(true, comps.point.z < comps.under_point.z);
+    }
+
+    #[test]
+    fn given_an_opaque_surface_when_calculating_refracted_color_should_return_black() {
+        // Arrange
+        let world = World::default();
+        let shape = world.objects.first().unwrap().clone();
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        let intersections = vec![
+            Intersection::new(4.0, shape.clone()),
+            Intersection::new(6.0, shape.clone()),
+        ];
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &intersections);
+        let color = world.refracted_color(&comps, MAX_RAY_RECURSION_DEPTH);
+
+        // Assert
+        assert_eq!(Color::black(), color);
+    }
+
+    #[test]
+    fn given_a_glass_sphere_when_calculating_refracted_color_at_max_recursion_depth_should_return_black(
+    ) {
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+
+        let outer = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+        ));
+
+        let inner = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            Arc::new(Phong::default()),
+        ));
+
+        let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
+        let lights = vec![Arc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        let intersections = vec![
+            Intersection::new(4.0, outer.clone()),
+            Intersection::new(6.0, outer.clone()),
+        ];
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &intersections);
+        let color = world.refracted_color(&comps, 0);
+
+        // Assert
+        assert_eq!(Color::black(), color);
+    }
+
+    #[test]
+    fn given_a_glass_sphere_when_calculating_refracted_color_under_total_internal_reflection_should_return_black(
+    ) {
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+
+        let outer = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+        ));
+
+        let inner = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            Arc::new(Phong::default()),
+        ));
+
+        let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
+        let lights = vec![Arc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, SQRT_2 / 2.0),
+            Tuple::vector(0.0, 1.0, 0.0),
+        );
+
+        let intersections = vec![
+            Intersection::new(-SQRT_2 / 2.0, outer.clone()),
+            Intersection::new(SQRT_2 / 2.0, outer.clone()),
+        ];
+
+        // Act
+        let comps = World::prepare_computations(1, &ray, &intersections);
+        let color = world.refracted_color(&comps, MAX_RAY_RECURSION_DEPTH);
+
+        // Assert
+        assert_eq!(Color::black(), color);
+    }
+
+    #[test]
+    fn given_a_glass_sphere_when_calculating_refracted_color_should_return_correct_color_with_refracted_ray(
+    ) {
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+
+        let outer = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(TestPattern::default()),
+                1.0,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                0.0,
+                1.0,
+            )),
+        ));
+
+        let inner = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+        ));
+
+        let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
+        let lights = vec![Arc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, 0.1), Tuple::vector(0.0, 1.0, 0.0));
+
+        let intersections = vec![
+            Intersection::new(-0.9899, outer.clone()),
+            Intersection::new(-0.4899, inner.clone()),
+            Intersection::new(0.4899, inner.clone()),
+            Intersection::new(0.9899, outer.clone()),
+        ];
+
+        // Act
+        let comps = World::prepare_computations(2, &ray, &intersections);
+        let color = world.refracted_color(&comps, MAX_RAY_RECURSION_DEPTH);
+
+        // Assert
+        assert_eq!(Color::new(0.0, 0.998874, 0.047218), color);
+    }
+
+    #[test]
+    fn given_a_glass_plane_below_default_world_when_shading_hit_should_return_correct_color() {
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+
+        let outer = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::new(0.8, 1.0, 0.6))),
+                0.1,
+                0.7,
+                0.2,
+                200.0,
+                0.0,
+                0.0,
+                1.0,
+            )),
+        ));
+
+        let inner = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            Arc::new(Phong::default()),
+        ));
+
+        let floor = Arc::new(Plane::new(
+            Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::white())),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                0.5,
+                1.5,
+            )),
+        ));
+
+        let ball = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(0.0, -3.5, -0.5)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::red())),
+                0.5,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                0.0,
+                1.0,
+            )),
+        ));
+
+        let objects: Vec<Arc<dyn Shape>> =
+            vec![outer.clone(), inner.clone(), floor.clone(), ball.clone()];
+        let lights = vec![Arc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, -3.0),
+            Tuple::vector(0.0, -SQRT_2 / 2.0, SQRT_2 / 2.0),
+        );
+
+        let intersections = vec![Intersection::new(SQRT_2, floor.clone())];
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &intersections);
+        let color = world.shade_hit(&comps, MAX_RAY_RECURSION_DEPTH);
+
+        // Assert
+        assert_eq!(Color::new(0.93642, 0.68642, 0.68642), color);
     }
 }
