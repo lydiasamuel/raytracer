@@ -18,6 +18,7 @@ use crate::tuples::pointlight::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
 
+static REFLECTION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
 static THREADS: usize = 8;
 
@@ -104,7 +105,7 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
                     let ray = thread_camera.ray_for_pixel(x, y);
                     // Send back color information to main thread to then write out to canvas
                     thread_send_channel
-                        .send((x, y, thread_world.color_at(&ray)))
+                        .send((x, y, thread_world.color_at(&ray, REFLECTION_DEPTH)))
                         .unwrap();
                 }
             }
@@ -153,7 +154,7 @@ pub fn build_world() -> World {
         Arc::new(Matrix::identity(4)),
     ));
 
-    let floor_material = Arc::new(Phong::new(floor_pattern, 0.1, 0.9, 0.0, 200.0));
+    let floor_material = Arc::new(Phong::new(floor_pattern, 0.1, 0.9, 0.0, 200.0, 0.5));
 
     let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone());
 
@@ -165,6 +166,7 @@ pub fn build_world() -> World {
             0.7,
             0.3,
             200.0,
+            0.0,
         )),
     );
 
@@ -176,6 +178,7 @@ pub fn build_world() -> World {
             0.7,
             0.3,
             200.0,
+            0.0,
         )),
     );
 
@@ -189,6 +192,7 @@ pub fn build_world() -> World {
             0.7,
             0.3,
             200.0,
+            0.0,
         )),
     );
 

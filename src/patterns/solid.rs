@@ -14,7 +14,7 @@ impl Solid {
     }
 
     pub fn default() -> Solid {
-        Solid::new(Color::new(1.0, 1.0, 1.0))
+        Solid::new(Color::white())
     }
 }
 

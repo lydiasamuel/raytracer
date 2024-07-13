@@ -133,7 +133,7 @@ mod tests {
     fn given_shape_with_default_striped_pattern_when_lighting_should_return_correct_colors() {
         // Arrange
         let pattern = Box::new(Striped::default());
-        let material = Arc::new(Phong::new(pattern, 1.0, 0.0, 0.0, 200.0));
+        let material = Arc::new(Phong::new(pattern, 1.0, 0.0, 0.0, 200.0, 0.0));
 
         let shape: Arc<dyn Shape> = Arc::new(Sphere::new(Arc::new(Matrix::identity(4)), material));
 
@@ -160,7 +160,7 @@ mod tests {
         let pattern = Box::new(Striped::default());
         let expected_pattern = Striped::default();
 
-        let material = Arc::new(Phong::new(pattern, 0.1, 0.9, 0.9, 200.0));
+        let material = Arc::new(Phong::new(pattern, 0.1, 0.9, 0.9, 200.0, 0.0));
 
         let shape: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
@@ -207,7 +207,7 @@ mod tests {
             Arc::new(Matrix::translation(0.5, 0.0, 0.0)),
         );
 
-        let material = Arc::new(Phong::new(pattern, 0.1, 0.9, 0.9, 200.0));
+        let material = Arc::new(Phong::new(pattern, 0.1, 0.9, 0.9, 200.0, 0.0));
 
         let shape: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),

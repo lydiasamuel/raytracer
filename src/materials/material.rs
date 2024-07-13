@@ -12,4 +12,6 @@ pub trait Material: Send + Sync {
         normalv: Tuple,
         in_shadow: bool,
     ) -> Color;
+
+    fn reflective(&self) -> f64;
 }

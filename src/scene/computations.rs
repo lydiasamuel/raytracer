@@ -10,6 +10,7 @@ pub struct Computations {
     pub over_point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
+    pub reflectv: Tuple,
     pub inside: bool,
 }
 
@@ -21,12 +22,14 @@ impl Computations {
         over_point: Tuple,
         eyev: Tuple,
         normalv: Tuple,
+        reflectv: Tuple,
         inside: bool,
     ) -> Computations {
         assert!(point.is_point());
         assert!(over_point.is_point());
         assert!(eyev.is_vector());
         assert!(normalv.is_vector());
+        assert!(reflectv.is_vector());
 
         return Computations {
             time,
@@ -35,6 +38,7 @@ impl Computations {
             over_point,
             eyev,
             normalv,
+            reflectv,
             inside,
         };
     }

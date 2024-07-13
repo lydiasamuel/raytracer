@@ -344,6 +344,7 @@ mod tests {
             1.0,
             0.9,
             220.0,
+            0.0,
         ));
 
         let sphere = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());

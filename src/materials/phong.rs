@@ -13,6 +13,7 @@ pub struct Phong {
     diffuse: f64,
     specular: f64,
     shininess: f64,
+    reflective: f64,
 }
 
 impl Phong {
@@ -22,6 +23,7 @@ impl Phong {
         diffuse: f64,
         specular: f64,
         shininess: f64,
+        reflective: f64,
     ) -> Phong {
         Phong {
             pattern,
@@ -29,11 +31,12 @@ impl Phong {
             diffuse,  // Light reflected from a matte surface
             specular, // Reflection of the light source itself
             shininess,
+            reflective,
         }
     }
 
     pub fn default() -> Phong {
-        Phong::new(Box::new(Solid::default()), 0.1, 0.9, 0.9, 200.0)
+        Phong::new(Box::new(Solid::default()), 0.1, 0.9, 0.9, 200.0, 0.0)
     }
 }
 
@@ -96,6 +99,10 @@ impl Material for Phong {
         // Add the three contributions together to get the final shading
         ambient + diffuse + specular
     }
+
+    fn reflective(&self) -> f64 {
+        self.reflective
+    }
 }
 
 #[cfg(test)]
@@ -111,6 +118,7 @@ mod tests {
         let diffuse = 0.9;
         let specular = 0.9;
         let shininess = 200.0;
+        let reflective = 0.0;
 
         // Act
         let result = Phong::default();
@@ -120,6 +128,7 @@ mod tests {
         assert_eq!(diffuse, result.diffuse);
         assert_eq!(specular, result.specular);
         assert_eq!(shininess, result.shininess);
+        assert_eq!(reflective, result.reflective);
     }
 
     #[test]
@@ -231,7 +240,7 @@ mod tests {
     ) {
         // Arrange
         let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
-        let default = Phong::new(Box::new(Solid::default()), 0.1, 0.9, 0.9, 200.0);
+        let default = Phong::new(Box::new(Solid::default()), 0.1, 0.9, 0.9, 200.0, 0.0);
         let position = Tuple::origin();
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
