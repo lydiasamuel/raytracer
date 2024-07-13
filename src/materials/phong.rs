@@ -14,6 +14,8 @@ pub struct Phong {
     specular: f64,
     shininess: f64,
     reflective: f64,
+    transparency: f64,
+    refractive_index: f64,
 }
 
 impl Phong {
@@ -24,6 +26,8 @@ impl Phong {
         specular: f64,
         shininess: f64,
         reflective: f64,
+        transparency: f64,
+        refractive_index: f64,
     ) -> Phong {
         Phong {
             pattern,
@@ -32,11 +36,22 @@ impl Phong {
             specular, // Reflection of the light source itself
             shininess,
             reflective,
+            transparency,
+            refractive_index,
         }
     }
 
     pub fn default() -> Phong {
-        Phong::new(Box::new(Solid::default()), 0.1, 0.9, 0.9, 200.0, 0.0)
+        Phong::new(
+            Box::new(Solid::default()),
+            0.1,
+            0.9,
+            0.9,
+            200.0,
+            0.0,
+            0.0,
+            1.0,
+        )
     }
 }
 
@@ -102,6 +117,14 @@ impl Material for Phong {
 
     fn reflective(&self) -> f64 {
         self.reflective
+    }
+
+    fn transparency(&self) -> f64 {
+        self.transparency
+    }
+
+    fn refractive_index(&self) -> f64 {
+        self.refractive_index
     }
 }
 
@@ -240,7 +263,7 @@ mod tests {
     ) {
         // Arrange
         let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
-        let default = Phong::new(Box::new(Solid::default()), 0.1, 0.9, 0.9, 200.0, 0.0);
+        let default = Phong::default();
         let position = Tuple::origin();
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);

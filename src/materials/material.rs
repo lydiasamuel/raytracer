@@ -14,4 +14,8 @@ pub trait Material: Send + Sync {
     ) -> Color;
 
     fn reflective(&self) -> f64;
+
+    fn transparency(&self) -> f64;
+
+    fn refractive_index(&self) -> f64;
 }

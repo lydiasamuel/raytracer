@@ -16,10 +16,11 @@ impl Intersection {
     }
 
     // Assumes list of intersection is in ascending order by time
-    pub fn hit(intersections: &Vec<Intersection>) -> Option<Intersection> {
-        for intersect in intersections.iter() {
+    pub fn hit(intersections: &Vec<Intersection>) -> Option<usize> {
+        for i in 0..intersections.len() {
+            let intersect = &intersections[i];
             if intersect.time > 0.0 {
-                return Some(intersect.clone());
+                return Some(i);
             }
         }
 
@@ -57,7 +58,7 @@ mod tests {
 
         let hit = Intersection::hit(&intersections);
 
-        assert_eq!(true, intersections[0] == hit.unwrap());
+        assert_eq!(true, intersections[0] == intersections[hit.unwrap()]);
     }
 
     #[test]
@@ -74,7 +75,7 @@ mod tests {
 
         let hit = Intersection::hit(&intersections);
 
-        assert_eq!(true, intersections[1] == hit.unwrap());
+        assert_eq!(true, intersections[1] == intersections[hit.unwrap()]);
     }
 
     #[test]

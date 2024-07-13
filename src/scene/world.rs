@@ -34,6 +34,8 @@ impl World {
                 0.2,
                 200.0,
                 0.0,
+                0.0,
+                1.0,
             )),
         );
 
@@ -63,7 +65,13 @@ impl World {
         return result;
     }
 
-    fn prepare_computations(intersection: &Intersection, ray: &Ray) -> Computations {
+    fn prepare_computations(
+        hit_index: usize,
+        ray: &Ray,
+        intersections: &Vec<Intersection>,
+    ) -> Computations {
+        let intersection = &intersections[hit_index];
+
         let time = intersection.time;
         let object = intersection.object.clone();
         let point = ray.position(time);
@@ -84,9 +92,58 @@ impl World {
         // normal to help prevent self shadowing
         let over_point = point + (normalv * EPSILON);
 
+        // Records objects that have been encountered but not yet exited.
+        let mut containers: Vec<Arc<dyn Shape>> = vec![];
+        let mut n1 = 0.0;
+        let mut n2 = 0.0;
+
+        for (i, intersect) in intersections.into_iter().enumerate() {
+            // If intersection is the hit
+            if i == hit_index {
+                if containers.is_empty() {
+                    // Otherwise there's no object, so just set it to vacuum
+                    n1 = 1.0;
+                } else {
+                    // Set n1 to the refractive index of the last object in the containers list
+                    n1 = containers.last().unwrap().get_material().refractive_index();
+                }
+            }
+            // If the intersection's object is already in the containers list, then this intersection
+            // must be exiting the object.
+            if let Some(i) = Self::contains_object(intersect, &containers) {
+                containers.remove(i); // So remove it
+            } else {
+                // Otherwise it's entering the object
+                containers.push(intersect.object.clone());
+            }
+
+            if i == hit_index {
+                if containers.is_empty() {
+                    n2 = 1.0;
+                } else {
+                    n2 = containers.last().unwrap().get_material().refractive_index();
+                }
+
+                break; // Terminate the loop to stop us repeating ourselves
+            }
+        }
+
         return Computations::new(
-            time, object, point, over_point, eyev, normalv, reflectv, inside,
+            time, object, point, over_point, n1, n2, eyev, normalv, reflectv, inside,
         );
+    }
+
+    fn contains_object(
+        intersection: &Intersection,
+        containers: &Vec<Arc<dyn Shape>>,
+    ) -> Option<usize> {
+        for (i, object) in containers.into_iter().enumerate() {
+            if Arc::ptr_eq(&intersection.object, object) {
+                return Some(i);
+            }
+        }
+
+        None
     }
 
     pub fn shade_hit(&self, comps: &Computations, remaining: usize) -> Color {
@@ -121,8 +178,8 @@ impl World {
         // Find the hit from the resulting intersects
         let hit = Intersection::hit(&intersects);
 
-        if let Some(intersect) = hit {
-            let comps = World::prepare_computations(&intersect, ray);
+        if let Some(i) = hit {
+            let comps = World::prepare_computations(i, ray, &intersects);
 
             return self.shade_hit(&comps, remaining);
         }
@@ -162,8 +219,8 @@ impl World {
 
         let hit = Intersection::hit(&intersections);
         // Check to see if there was a hit, and if so did it occur before the ray reached the light source
-        if let Some(intersect) = hit {
-            intersect.time < distance
+        if let Some(i) = hit {
+            intersections[i].time < distance
         } else {
             false
         }
@@ -179,6 +236,7 @@ mod tests {
     use crate::materials::phong::Phong;
     use crate::matrices::matrix::Matrix;
     use crate::patterns::solid::Solid;
+    use crate::scene::computations::Computations;
     use crate::scene::world::World;
     use crate::tuples::color::Color;
     use crate::tuples::intersection::Intersection;
@@ -217,14 +275,14 @@ mod tests {
 
         let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 
-        let intersection = Intersection::new(4.0, shape.clone());
+        let intersections = vec![Intersection::new(4.0, shape.clone())];
 
         // Act
-        let result = World::prepare_computations(&intersection, &ray);
+        let result = World::prepare_computations(0, &ray, &intersections);
 
         // Assert
-        assert_eq!(intersection.time, result.time);
-        assert_eq!(true, Arc::ptr_eq(&intersection.object, &result.object));
+        assert_eq!(intersections[0].time, result.time);
+        assert_eq!(true, Arc::ptr_eq(&intersections[0].object, &result.object));
         assert_eq!(Tuple::point(0.0, 0.0, -1.0), result.point);
         assert_eq!(Tuple::vector(0.0, 0.0, -1.0), result.eyev);
         assert_eq!(Tuple::vector(0.0, 0.0, -1.0), result.normalv);
@@ -238,10 +296,10 @@ mod tests {
 
         let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 
-        let intersection = Intersection::new(4.0, shape.clone());
+        let intersections = vec![Intersection::new(4.0, shape.clone())];
 
         // Act
-        let result = World::prepare_computations(&intersection, &ray);
+        let result = World::prepare_computations(0, &ray, &intersections);
 
         // Assert
         assert_eq!(false, result.inside);
@@ -255,10 +313,10 @@ mod tests {
 
         let shape: Arc<dyn Shape> = Arc::new(Sphere::unit());
 
-        let intersection = Intersection::new(1.0, shape.clone());
+        let intersections = vec![Intersection::new(1.0, shape.clone())];
 
         // Act
-        let result = World::prepare_computations(&intersection, &ray);
+        let result = World::prepare_computations(0, &ray, &intersections);
 
         // Assert
         assert_eq!(Tuple::point(0.0, 0.0, 1.0), result.point);
@@ -276,10 +334,10 @@ mod tests {
 
         let shape: Arc<dyn Shape> = world.objects[0].clone();
 
-        let intersection = Intersection::new(4.0, shape.clone());
+        let intersections = vec![Intersection::new(4.0, shape.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
         let result = World::shade_hit(&world, &comps, REFLECTION_DEPTH);
 
         // Assert
@@ -302,10 +360,10 @@ mod tests {
 
         let shape: Arc<dyn Shape> = world.objects[1].clone();
 
-        let intersection = Intersection::new(0.5, shape.clone());
+        let intersections = vec![Intersection::new(0.5, shape.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
         let result = World::shade_hit(&world, &comps, REFLECTION_DEPTH);
 
         // Assert
@@ -353,6 +411,8 @@ mod tests {
             0.9,
             200.0,
             0.0,
+            0.0,
+            1.0,
         ));
 
         let outer = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());
@@ -446,9 +506,9 @@ mod tests {
         let world = World::new(objects, lights);
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, 5.0), Tuple::vector(0.0, 0.0, 1.0));
-        let intersection = Intersection::new(4.0, s2.clone());
+        let intersections = vec![Intersection::new(4.0, s2.clone())];
 
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
 
         // Act
         let result = world.shade_hit(&comps, REFLECTION_DEPTH);
@@ -468,10 +528,10 @@ mod tests {
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
-        let intersection = Intersection::new(5.0, shape.clone());
+        let intersections = vec![Intersection::new(5.0, shape.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
 
         // Assert
         assert_eq!(true, comps.over_point.z < -EPSILON / 2.0);
@@ -488,10 +548,10 @@ mod tests {
             Tuple::vector(0.0, -SQRT_2 / 2.0, SQRT_2 / 2.0),
         );
 
-        let intersection = Intersection::new(SQRT_2, shape.clone());
+        let intersections = vec![Intersection::new(SQRT_2, shape.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
 
         // Assert
         assert_eq!(
@@ -515,6 +575,8 @@ mod tests {
                 0.2,
                 200.0,
                 0.0,
+                0.0,
+                1.0,
             )),
         ));
         let inner = Arc::new(Sphere::new(
@@ -529,10 +591,10 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let intersection = Intersection::new(1.0, inner.clone());
+        let intersections = vec![Intersection::new(1.0, inner.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
         let color = world.reflected_color(&comps, REFLECTION_DEPTH);
 
         // Assert
@@ -552,6 +614,8 @@ mod tests {
             0.9,
             200.0,
             0.5,
+            0.0,
+            1.0,
         ));
 
         let outer = Arc::new(Sphere::new(
@@ -563,6 +627,8 @@ mod tests {
                 0.2,
                 200.0,
                 0.0,
+                0.0,
+                1.0,
             )),
         ));
         let inner = Arc::new(Sphere::new(
@@ -585,10 +651,10 @@ mod tests {
             Tuple::vector(0.0, -SQRT_2 / 2.0, SQRT_2 / 2.0),
         );
 
-        let intersection = Intersection::new(SQRT_2, plane.clone());
+        let intersections = vec![Intersection::new(SQRT_2, plane.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
         let color = world.reflected_color(&comps, REFLECTION_DEPTH);
 
         // Assert
@@ -608,6 +674,8 @@ mod tests {
             0.9,
             200.0,
             0.5,
+            0.0,
+            1.0,
         ));
 
         let outer = Arc::new(Sphere::new(
@@ -619,6 +687,8 @@ mod tests {
                 0.2,
                 200.0,
                 0.0,
+                0.0,
+                1.0,
             )),
         ));
         let inner = Arc::new(Sphere::new(
@@ -641,10 +711,10 @@ mod tests {
             Tuple::vector(0.0, -SQRT_2 / 2.0, SQRT_2 / 2.0),
         );
 
-        let intersection = Intersection::new(SQRT_2, plane.clone());
+        let intersections = vec![Intersection::new(SQRT_2, plane.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
         let color = world.shade_hit(&comps, REFLECTION_DEPTH);
 
         // Assert
@@ -664,6 +734,8 @@ mod tests {
             0.9,
             200.0,
             0.5,
+            0.0,
+            1.0,
         ));
 
         let outer = Arc::new(Sphere::new(
@@ -675,6 +747,8 @@ mod tests {
                 0.2,
                 200.0,
                 0.0,
+                0.0,
+                1.0,
             )),
         ));
         let inner = Arc::new(Sphere::new(
@@ -697,13 +771,96 @@ mod tests {
             Tuple::vector(0.0, -SQRT_2 / 2.0, SQRT_2 / 2.0),
         );
 
-        let intersection = Intersection::new(SQRT_2, plane.clone());
+        let intersections = vec![Intersection::new(SQRT_2, plane.clone())];
 
         // Act
-        let comps = World::prepare_computations(&intersection, &ray);
+        let comps = World::prepare_computations(0, &ray, &intersections);
         let color = world.reflected_color(&comps, 0);
 
         // Assert
         assert_eq!(Color::black(), color);
+    }
+
+    #[test]
+    pub fn given_nested_glass_spheres_when_calculating_entry_and_exit_refractive_indices_should_return_correct_values(
+    ) {
+        // Arrange
+        let outer = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+        ));
+
+        let inner_left = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(0.0, 0.0, -0.25)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                2.0,
+            )),
+        ));
+
+        let inner_right = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(0.0, 0.0, 0.25)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                2.5,
+            )),
+        ));
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -4.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        let intersections = vec![
+            Intersection::new(2.0, outer.clone()),
+            Intersection::new(2.75, inner_left.clone()),
+            Intersection::new(3.25, inner_right.clone()),
+            Intersection::new(4.75, inner_left.clone()),
+            Intersection::new(5.25, inner_right.clone()),
+            Intersection::new(6.0, outer.clone()),
+        ];
+
+        // Act
+        let mut results: Vec<Computations> = vec![];
+
+        for i in 0..intersections.len() {
+            results.push(World::prepare_computations(i, &ray, &intersections));
+        }
+
+        // Assert
+        let expected_results: Vec<(f64, f64)> = vec![
+            (1.0, 1.5),
+            (1.5, 2.0),
+            (2.0, 2.5),
+            (2.5, 2.5),
+            (2.5, 1.5),
+            (1.5, 1.0),
+        ];
+
+        for i in 0..results.len() {
+            let expected = expected_results[i];
+            let actual = &results[i];
+
+            assert_eq!(expected.0, actual.exited_refractive_index);
+            assert_eq!(expected.1, actual.entered_refractive_index);
+        }
     }
 }

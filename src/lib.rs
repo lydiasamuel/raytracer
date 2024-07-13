@@ -154,7 +154,16 @@ pub fn build_world() -> World {
         Arc::new(Matrix::identity(4)),
     ));
 
-    let floor_material = Arc::new(Phong::new(floor_pattern, 0.1, 0.9, 0.0, 200.0, 0.5));
+    let floor_material = Arc::new(Phong::new(
+        floor_pattern,
+        0.1,
+        0.9,
+        0.0,
+        200.0,
+        0.5,
+        0.0,
+        1.0,
+    ));
 
     let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone());
 
@@ -167,6 +176,8 @@ pub fn build_world() -> World {
             0.3,
             200.0,
             0.0,
+            0.0,
+            1.0,
         )),
     );
 
@@ -179,6 +190,8 @@ pub fn build_world() -> World {
             0.3,
             200.0,
             0.0,
+            0.0,
+            1.0,
         )),
     );
 
@@ -193,6 +206,8 @@ pub fn build_world() -> World {
             0.3,
             200.0,
             0.0,
+            0.0,
+            1.0,
         )),
     );
 

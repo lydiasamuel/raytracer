@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use uuid::Uuid;
 
+use super::shape::Shape;
+use crate::patterns::solid::Solid;
 use crate::tuples::color::Color;
 use crate::tuples::pointlight::PointLight;
 use crate::{
@@ -8,8 +10,6 @@ use crate::{
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
-
-use super::shape::Shape;
 
 pub struct Sphere {
     id: Uuid,
@@ -345,6 +345,8 @@ mod tests {
             0.9,
             220.0,
             0.0,
+            0.0,
+            1.0,
         ));
 
         let sphere = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());
