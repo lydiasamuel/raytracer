@@ -25,7 +25,7 @@ impl Plane {
             id: Uuid::new_v4(),
             transform,
             material,
-            casts_shadow
+            casts_shadow,
         }
     }
 

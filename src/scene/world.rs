@@ -37,13 +37,13 @@ impl World {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         );
 
         let inner = Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         );
 
         let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
@@ -183,8 +183,10 @@ impl World {
             if material.reflective() > 0.0 && material.transparency() > 0.0 {
                 let reflectance = Self::schlick(comps);
 
-                result = result + surface + (reflected * reflectance) + (refracted * (1.0 - reflectance));
-
+                result = result
+                    + surface
+                    + (reflected * reflectance)
+                    + (refracted * (1.0 - reflectance));
             } else {
                 result = result + surface + reflected + refracted;
             }
@@ -514,7 +516,11 @@ mod tests {
         ));
 
         let outer = Sphere::new(Arc::new(Matrix::identity(4)), material.clone(), true);
-        let inner = Sphere::new(Arc::new(Matrix::scaling(0.5, 0.5, 0.5)), material.clone(), true);
+        let inner = Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            material.clone(),
+            true,
+        );
 
         let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
         let lights = vec![Arc::new(light)];
@@ -596,7 +602,7 @@ mod tests {
         let s2 = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(0.0, 0.0, 10.0)),
             material.clone(),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![s1.clone(), s2.clone()];
@@ -624,7 +630,7 @@ mod tests {
         let shape = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(0.0, 0.0, 1.0)),
             material.clone(),
-            true
+            true,
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -677,12 +683,12 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -730,18 +736,18 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let plane = Arc::new(Plane::new(
             Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
             material.clone(),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone(), plane.clone()];
@@ -792,19 +798,19 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let plane = Arc::new(Plane::new(
             Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
             material.clone(),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone(), plane.clone()];
@@ -855,18 +861,18 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let plane = Arc::new(Plane::new(
             Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
             material.clone(),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone(), plane.clone()];
@@ -905,7 +911,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let inner_left = Arc::new(Sphere::new(
@@ -920,7 +926,7 @@ mod tests {
                 1.0,
                 2.0,
             )),
-            true
+            true,
         ));
 
         let inner_right = Arc::new(Sphere::new(
@@ -935,7 +941,7 @@ mod tests {
                 1.0,
                 2.5,
             )),
-            true
+            true,
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -4.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -991,7 +997,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -1044,13 +1050,13 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -1090,13 +1096,13 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -1139,7 +1145,7 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
 
         let inner = Arc::new(Sphere::new(
@@ -1154,7 +1160,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -1195,13 +1201,13 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let floor = Arc::new(Plane::new(
@@ -1216,7 +1222,7 @@ mod tests {
                 0.5,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let ball = Arc::new(Sphere::new(
@@ -1231,7 +1237,7 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> =
@@ -1271,7 +1277,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let ray = Ray::new(
@@ -1308,7 +1314,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 1.0, 0.0));
@@ -1342,7 +1348,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.99, -2.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -1358,7 +1364,8 @@ mod tests {
     }
 
     #[test]
-    fn given_a_glass_plane_that_is_reflective_and_transparent_below_default_world_when_shading_hit_should_return_correct_color() {
+    fn given_a_glass_plane_that_is_reflective_and_transparent_below_default_world_when_shading_hit_should_return_correct_color(
+    ) {
         let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
 
         let outer = Arc::new(Sphere::new(
@@ -1373,13 +1380,13 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let floor = Arc::new(Plane::new(
@@ -1394,7 +1401,7 @@ mod tests {
                 0.5,
                 1.5,
             )),
-            true
+            true,
         ));
 
         let ball = Arc::new(Sphere::new(
@@ -1409,7 +1416,7 @@ mod tests {
                 0.0,
                 1.0,
             )),
-            true
+            true,
         ));
 
         let objects: Vec<Arc<dyn Shape>> =

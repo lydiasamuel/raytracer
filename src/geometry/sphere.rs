@@ -14,7 +14,7 @@ pub struct Sphere {
     id: Uuid,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
-    casts_shadow: bool
+    casts_shadow: bool,
 }
 
 impl Sphere {
@@ -23,7 +23,7 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
-            casts_shadow: true
+            casts_shadow: true,
         }
     }
 
@@ -32,7 +32,7 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform,
             material,
-            casts_shadow
+            casts_shadow,
         }
     }
 }
@@ -227,7 +227,8 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(transform, Arc::new(Phong::default()), true));
+        let shape: Arc<dyn Shape> =
+            Arc::new(Sphere::new(transform, Arc::new(Phong::default()), true));
 
         let intersections = shape.clone().intersect(&ray);
 
@@ -333,7 +334,11 @@ mod tests {
 
         let transform = &Matrix::scaling(1.0, 0.5, 1.0) * &Matrix::rotation_z(consts::PI / 5.0);
 
-        let sphere = Sphere::new(Arc::new(transform.unwrap()), Arc::new(Phong::default()), true);
+        let sphere = Sphere::new(
+            Arc::new(transform.unwrap()),
+            Arc::new(Phong::default()),
+            true,
+        );
 
         let normal = sphere.normal_at(point);
 

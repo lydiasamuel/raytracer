@@ -179,7 +179,7 @@ pub fn build_world() -> World {
             1.0,
             1.52,
         )),
-        true
+        true,
     );
 
     let right = Sphere::new(
@@ -194,7 +194,7 @@ pub fn build_world() -> World {
             0.0,
             1.0,
         )),
-        true
+        true,
     );
 
     let left = Sphere::new(
@@ -211,7 +211,7 @@ pub fn build_world() -> World {
             0.0,
             1.0,
         )),
-        true
+        true,
     );
 
     let light_source = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
