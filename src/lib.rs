@@ -8,6 +8,7 @@ use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
 use crate::patterns::blended::Blended;
+use crate::patterns::checker::Checker;
 use crate::patterns::perturbed::Perturbed;
 use crate::patterns::solid::Solid;
 use crate::patterns::striped::Striped;
@@ -135,8 +136,8 @@ pub fn build_world() -> World {
     let floor_pattern = Box::new(Blended::new(
         Box::new(Perturbed::new(
             Box::new(Striped::new(
-                Box::new(Solid::new(Color::white())),
-                Box::new(Solid::new(Color::red())),
+                Box::new(Solid::new(Color::new(0.98, 0.92, 0.94))),
+                Box::new(Solid::new(Color::new(0.2, 0.24, 0.47))),
                 Arc::new(Matrix::rotation_y(PI / 2.0)),
             )),
             0.9,
@@ -144,8 +145,8 @@ pub fn build_world() -> World {
         )),
         Box::new(Perturbed::new(
             Box::new(Striped::new(
-                Box::new(Solid::new(Color::white())),
-                Box::new(Solid::new(Color::red())),
+                Box::new(Solid::new(Color::new(0.98, 0.92, 0.94))),
+                Box::new(Solid::new(Color::new(0.2, 0.24, 0.47))),
                 Arc::new(Matrix::identity(4)),
             )),
             0.9,
@@ -160,12 +161,30 @@ pub fn build_world() -> World {
         0.9,
         0.0,
         200.0,
-        0.5,
+        0.1,
         0.0,
         1.0,
     ));
 
     let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone(), false);
+
+    let wall_material = Arc::new(Phong::new(
+        Box::new(Checker::default()),
+        0.8,
+        0.4,
+        0.0,
+        100.0,
+        0.0,
+        0.0,
+        1.0,
+    ));
+
+    let left_wall_transform = (&Matrix::translation(0.0, 0.0, 20.0) * &Matrix::rotation_x(PI / 2.0)).unwrap();
+    let left_wall = Plane::new(
+        Arc::new(left_wall_transform),
+        wall_material.clone(),
+        false
+    );
 
     let middle = Sphere::new(
         Arc::new(Matrix::translation(-0.5, 1.0, 0.5)),
@@ -219,6 +238,7 @@ pub fn build_world() -> World {
     World::new(
         vec![
             Arc::new(floor),
+            Arc::new(left_wall),
             Arc::new(middle),
             Arc::new(right),
             Arc::new(left),
