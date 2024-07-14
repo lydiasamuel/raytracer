@@ -16,11 +16,11 @@ impl Intersection {
     }
 
     // Assumes list of intersection is in ascending order by time
-    pub fn hit(intersections: &Vec<Intersection>) -> Option<usize> {
+    pub fn hit(intersections: &Vec<Intersection>) -> Option<(usize, bool)> {
         for i in 0..intersections.len() {
             let intersect = &intersections[i];
             if intersect.time > 0.0 {
-                return Some(i);
+                return Some((i, intersect.object.casts_shadow()));
             }
         }
 

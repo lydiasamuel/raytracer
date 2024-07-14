@@ -14,6 +14,7 @@ pub struct Sphere {
     id: Uuid,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
+    casts_shadow: bool
 }
 
 impl Sphere {
@@ -22,14 +23,16 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
+            casts_shadow: true
         }
     }
 
-    pub fn new(transform: Arc<Matrix>, material: Arc<dyn Material>) -> Sphere {
+    pub fn new(transform: Arc<Matrix>, material: Arc<dyn Material>, casts_shadow: bool) -> Sphere {
         Sphere {
             id: Uuid::new_v4(),
             transform,
             material,
+            casts_shadow
         }
     }
 }
@@ -73,6 +76,10 @@ impl Shape for Sphere {
 
     fn get_material(&self) -> Arc<dyn Material> {
         self.material.clone()
+    }
+
+    fn casts_shadow(&self) -> bool {
+        self.casts_shadow
     }
 
     fn local_normal_at(&self, local_point: Tuple) -> Tuple {
@@ -208,7 +215,7 @@ mod tests {
     fn given_a_new_unit_sphere_when_updating_the_transform_should_expect_transform_to_be_set() {
         let transform = Arc::new(Matrix::translation(2.0, 3.0, 4.0));
 
-        let sphere = Sphere::new(transform.clone(), Arc::new(Phong::default()));
+        let sphere = Sphere::new(transform.clone(), Arc::new(Phong::default()), true);
 
         assert!(Arc::ptr_eq(&transform, &sphere.get_transform()));
     }
@@ -220,7 +227,7 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(transform, Arc::new(Phong::default())));
+        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(transform, Arc::new(Phong::default()), true));
 
         let intersections = shape.clone().intersect(&ray);
 
@@ -236,7 +243,7 @@ mod tests {
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
-        let sphere = Sphere::new(transform, Arc::new(Phong::default()));
+        let sphere = Sphere::new(transform, Arc::new(Phong::default()), true);
 
         let shape: Arc<dyn Shape> = Arc::new(sphere);
 
@@ -310,7 +317,7 @@ mod tests {
 
         let transform = Arc::new(Matrix::translation(0.0, 1.0, 0.0));
 
-        let sphere = Sphere::new(transform, Arc::new(Phong::default()));
+        let sphere = Sphere::new(transform, Arc::new(Phong::default()), true);
 
         let normal = sphere.normal_at(point);
 
@@ -326,7 +333,7 @@ mod tests {
 
         let transform = &Matrix::scaling(1.0, 0.5, 1.0) * &Matrix::rotation_z(consts::PI / 5.0);
 
-        let sphere = Sphere::new(Arc::new(transform.unwrap()), Arc::new(Phong::default()));
+        let sphere = Sphere::new(Arc::new(transform.unwrap()), Arc::new(Phong::default()), true);
 
         let normal = sphere.normal_at(point);
 
@@ -348,7 +355,7 @@ mod tests {
             1.0,
         ));
 
-        let sphere = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());
+        let sphere = Sphere::new(Arc::new(Matrix::identity(4)), material.clone(), true);
 
         let result = sphere.get_material();
 

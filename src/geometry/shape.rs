@@ -34,6 +34,8 @@ pub trait Shape: Sync + Send {
 
     fn get_material(&self) -> Arc<dyn Material>;
 
+    fn casts_shadow(&self) -> bool;
+
     // Assumes that the point will always be on the shape
     fn normal_at(&self, world_point: Tuple) -> Tuple {
         assert!(world_point.is_point());

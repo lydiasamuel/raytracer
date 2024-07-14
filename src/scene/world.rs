@@ -37,11 +37,13 @@ impl World {
                 0.0,
                 1.0,
             )),
+            true
         );
 
         let inner = Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         );
 
         let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
@@ -165,6 +167,7 @@ impl World {
             let in_shadow = self.is_shadowed(comps.over_point, light);
 
             let shape = comps.object.clone();
+            let material = shape.get_material();
 
             let surface = shape.light_material(
                 comps.over_point,
@@ -177,7 +180,14 @@ impl World {
             let reflected = self.reflected_color(comps, remaining);
             let refracted = self.refracted_color(comps, remaining);
 
-            result = result + surface + reflected + refracted;
+            if material.reflective() > 0.0 && material.transparency() > 0.0 {
+                let reflectance = Self::schlick(comps);
+
+                result = result + surface + (reflected * reflectance) + (refracted * (1.0 - reflectance));
+
+            } else {
+                result = result + surface + reflected + refracted;
+            }
         }
 
         return result;
@@ -190,7 +200,7 @@ impl World {
         // Find the hit from the resulting intersects
         let hit = Intersection::hit(&intersects);
 
-        if let Some(i) = hit {
+        if let Some((i, _)) = hit {
             let comps = World::prepare_computations(i, ray, &intersects);
 
             return self.shade_hit(&comps, remaining);
@@ -262,6 +272,33 @@ impl World {
         self.color_at(&refract_ray, remaining - 1) * transparency
     }
 
+    // Computes the approximation of the Fresnel Equations and returns the reflectance value between
+    // 0.0 and 1.0
+    pub fn schlick(comps: &Computations) -> f64 {
+        // Find the cosine of the angle between the eye and normal vectors
+        let mut cos = Tuple::dot(comps.eyev, comps.normalv);
+
+        // Total internal reflection can only occur if n1 > n2
+        if comps.n1 > comps.n2 {
+            let n = comps.n1 / comps.n2;
+            let sin2_t = (n * n) * (1.0 - (cos * cos));
+
+            if sin2_t > 1.0 {
+                return 1.0;
+            }
+
+            // Compute cosine of theta_t using trig identity
+            let cos_t = (1.0 - sin2_t).cos();
+
+            // When n1 > n2 use cos(theta_t) instead
+            cos = cos_t;
+        }
+
+        let r0 = ((comps.n1 - comps.n2) / (comps.n1 + comps.n2)).powi(2);
+
+        r0 + (1.0 - r0) * (1.0 - cos).powi(5)
+    }
+
     pub fn is_shadowed(&self, point: Tuple, light: PointLight) -> bool {
         assert!(point.is_point());
 
@@ -275,8 +312,12 @@ impl World {
 
         let hit = Intersection::hit(&intersections);
         // Check to see if there was a hit, and if so did it occur before the ray reached the light source
-        if let Some(i) = hit {
-            intersections[i].time < distance
+        if let Some((i, casts_shadow)) = hit {
+            if casts_shadow {
+                intersections[i].time < distance
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -472,8 +513,8 @@ mod tests {
             1.0,
         ));
 
-        let outer = Sphere::new(Arc::new(Matrix::identity(4)), material.clone());
-        let inner = Sphere::new(Arc::new(Matrix::scaling(0.5, 0.5, 0.5)), material.clone());
+        let outer = Sphere::new(Arc::new(Matrix::identity(4)), material.clone(), true);
+        let inner = Sphere::new(Arc::new(Matrix::scaling(0.5, 0.5, 0.5)), material.clone(), true);
 
         let objects: Vec<Arc<dyn Shape>> = vec![Arc::new(outer), Arc::new(inner)];
         let lights = vec![Arc::new(light)];
@@ -555,6 +596,7 @@ mod tests {
         let s2 = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(0.0, 0.0, 10.0)),
             material.clone(),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![s1.clone(), s2.clone()];
@@ -582,6 +624,7 @@ mod tests {
         let shape = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(0.0, 0.0, 1.0)),
             material.clone(),
+            true
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -634,10 +677,12 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -685,15 +730,18 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let plane = Arc::new(Plane::new(
             Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
             material.clone(),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone(), plane.clone()];
@@ -744,15 +792,19 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
+
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let plane = Arc::new(Plane::new(
             Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
             material.clone(),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone(), plane.clone()];
@@ -803,15 +855,18 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let plane = Arc::new(Plane::new(
             Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
             material.clone(),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone(), plane.clone()];
@@ -850,6 +905,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
+            true
         ));
 
         let inner_left = Arc::new(Sphere::new(
@@ -864,6 +920,7 @@ mod tests {
                 1.0,
                 2.0,
             )),
+            true
         ));
 
         let inner_right = Arc::new(Sphere::new(
@@ -878,6 +935,7 @@ mod tests {
                 1.0,
                 2.5,
             )),
+            true
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -4.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -933,6 +991,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
+            true
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -985,11 +1044,13 @@ mod tests {
                 1.0,
                 1.5,
             )),
+            true
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -1029,11 +1090,13 @@ mod tests {
                 1.0,
                 1.5,
             )),
+            true
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -1076,6 +1139,7 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
 
         let inner = Arc::new(Sphere::new(
@@ -1090,6 +1154,7 @@ mod tests {
                 1.0,
                 1.5,
             )),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> = vec![outer.clone(), inner.clone()];
@@ -1130,11 +1195,13 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
 
         let inner = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
             Arc::new(Phong::default()),
+            true
         ));
 
         let floor = Arc::new(Plane::new(
@@ -1149,6 +1216,7 @@ mod tests {
                 0.5,
                 1.5,
             )),
+            true
         ));
 
         let ball = Arc::new(Sphere::new(
@@ -1163,6 +1231,7 @@ mod tests {
                 0.0,
                 1.0,
             )),
+            true
         ));
 
         let objects: Vec<Arc<dyn Shape>> =
@@ -1184,5 +1253,183 @@ mod tests {
 
         // Assert
         assert_eq!(Color::new(0.93642, 0.68642, 0.68642), color);
+    }
+
+    #[test]
+    pub fn given_a_glass_sphere_when_calculating_schlick_approximation_under_total_internal_reflection_should_return_max_value(
+    ) {
+        // Arrange
+        let shape = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+            true
+        ));
+
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, SQRT_2 / 2.0),
+            Tuple::vector(0.0, 1.0, 0.0),
+        );
+
+        let intersections = vec![
+            Intersection::new(-SQRT_2 / 2.0, shape.clone()),
+            Intersection::new(SQRT_2 / 2.0, shape.clone()),
+        ];
+
+        // Act
+        let comps = World::prepare_computations(1, &ray, &intersections);
+        let result = World::schlick(&comps);
+
+        // Assert
+        assert_eq!(1.0, result);
+    }
+
+    #[test]
+    pub fn given_a_glass_sphere_when_calculating_schlick_approximation_with_perpendicular_viewing_angle_should_return_small_value(
+    ) {
+        // Arrange
+        let shape = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+            true
+        ));
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, 0.0), Tuple::vector(0.0, 1.0, 0.0));
+
+        let intersections = vec![
+            Intersection::new(-1.0, shape.clone()),
+            Intersection::new(1.0, shape.clone()),
+        ];
+
+        // Act
+        let comps = World::prepare_computations(1, &ray, &intersections);
+        let result = World::schlick(&comps);
+
+        // Assert
+        assert_eq!(true, (result - 0.0597) < EPSILON);
+    }
+
+    #[test]
+    pub fn given_a_glass_sphere_when_calculating_schlick_approximation_with_small_angle_and_n2_gt_n1_should_return_large_value(
+    ) {
+        // Arrange
+        let shape = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::default()),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                1.0,
+                1.5,
+            )),
+            true
+        ));
+
+        let ray = Ray::new(Tuple::point(0.0, 0.99, -2.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        let intersections = vec![Intersection::new(1.8589, shape.clone())];
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &intersections);
+        let result = World::schlick(&comps);
+
+        // Assert
+        assert_eq!(true, (result - 0.48873) < EPSILON);
+    }
+
+    #[test]
+    fn given_a_glass_plane_that_is_reflective_and_transparent_below_default_world_when_shading_hit_should_return_correct_color() {
+        let light = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::white());
+
+        let outer = Arc::new(Sphere::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::new(0.8, 1.0, 0.6))),
+                0.1,
+                0.7,
+                0.2,
+                200.0,
+                0.0,
+                0.0,
+                1.0,
+            )),
+            true
+        ));
+
+        let inner = Arc::new(Sphere::new(
+            Arc::new(Matrix::scaling(0.5, 0.5, 0.5)),
+            Arc::new(Phong::default()),
+            true
+        ));
+
+        let floor = Arc::new(Plane::new(
+            Arc::new(Matrix::translation(0.0, -1.0, 0.0)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::white())),
+                0.1,
+                0.9,
+                0.9,
+                200.0,
+                0.5,
+                0.5,
+                1.5,
+            )),
+            true
+        ));
+
+        let ball = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(0.0, -3.5, -0.5)),
+            Arc::new(Phong::new(
+                Box::new(Solid::new(Color::red())),
+                0.5,
+                0.9,
+                0.9,
+                200.0,
+                0.0,
+                0.0,
+                1.0,
+            )),
+            true
+        ));
+
+        let objects: Vec<Arc<dyn Shape>> =
+            vec![outer.clone(), inner.clone(), floor.clone(), ball.clone()];
+        let lights = vec![Arc::new(light)];
+
+        let world = World::new(objects, lights);
+
+        let ray = Ray::new(
+            Tuple::point(0.0, 0.0, -3.0),
+            Tuple::vector(0.0, -SQRT_2 / 2.0, SQRT_2 / 2.0),
+        );
+
+        let intersections = vec![Intersection::new(SQRT_2, floor.clone())];
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &intersections);
+        let color = world.shade_hit(&comps, MAX_RAY_RECURSION_DEPTH);
+
+        // Assert
+        assert_eq!(Color::new(0.93391, 0.69643, 0.69243), color);
     }
 }

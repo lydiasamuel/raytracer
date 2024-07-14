@@ -165,20 +165,21 @@ pub fn build_world() -> World {
         1.0,
     ));
 
-    let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone());
+    let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone(), false);
 
     let middle = Sphere::new(
         Arc::new(Matrix::translation(-0.5, 1.0, 0.5)),
         Arc::new(Phong::new(
-            Box::new(Solid::new(Color::new(0.1, 1.0, 0.5))),
-            0.1,
-            0.7,
-            0.3,
-            200.0,
-            0.0,
-            0.0,
+            Box::new(Solid::new(Color::new(0.2, 0.01, 0.3))),
+            0.2,
+            0.25,
             1.0,
+            300.0,
+            0.9,
+            1.0,
+            1.52,
         )),
+        true
     );
 
     let right = Sphere::new(
@@ -193,6 +194,7 @@ pub fn build_world() -> World {
             0.0,
             1.0,
         )),
+        true
     );
 
     let left = Sphere::new(
@@ -209,6 +211,7 @@ pub fn build_world() -> World {
             0.0,
             1.0,
         )),
+        true
     );
 
     let light_source = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));

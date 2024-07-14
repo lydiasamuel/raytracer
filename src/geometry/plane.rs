@@ -16,14 +16,16 @@ pub struct Plane {
     id: Uuid,
     transform: Arc<Matrix>, // Used to translate a point from object space to world space
     material: Arc<dyn Material>,
+    casts_shadow: bool,
 }
 
 impl Plane {
-    pub fn new(transform: Arc<Matrix>, material: Arc<dyn Material>) -> Plane {
+    pub fn new(transform: Arc<Matrix>, material: Arc<dyn Material>, casts_shadow: bool) -> Plane {
         Plane {
             id: Uuid::new_v4(),
             transform,
             material,
+            casts_shadow
         }
     }
 
@@ -32,6 +34,7 @@ impl Plane {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
+            casts_shadow: true,
         }
     }
 }
@@ -69,6 +72,10 @@ impl Shape for Plane {
 
     fn get_material(&self) -> Arc<dyn Material> {
         self.material.clone()
+    }
+
+    fn casts_shadow(&self) -> bool {
+        self.casts_shadow
     }
 
     fn local_normal_at(&self, _: Tuple) -> Tuple {
