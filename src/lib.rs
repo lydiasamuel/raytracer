@@ -2,7 +2,7 @@ use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
 use std::thread;
-
+use crate::geometry::cube::Cube;
 use crate::geometry::plane::Plane;
 use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
@@ -201,7 +201,7 @@ pub fn build_world() -> World {
         true,
     );
 
-    let right = Sphere::new(
+    let right = Cube::new(
         Arc::new((&Matrix::translation(1.5, 0.5, -0.5) * &Matrix::scaling(0.5, 0.5, 0.5)).unwrap()),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(0.5, 1.0, 0.1))),
@@ -209,9 +209,9 @@ pub fn build_world() -> World {
             0.7,
             0.3,
             200.0,
-            0.0,
-            0.0,
+            0.9,
             1.0,
+            1.52,
         )),
         true,
     );

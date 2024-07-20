@@ -6,7 +6,7 @@ Made the rendering loop parallel with simple 1D row-wise partitioning of the ima
 
 ## Example Input
 
-`cargo run --release tmp.ppm 1000 1000`
+`cargo run --release tmp.ppm 1600 1600`
 
 ## Example Output
 

@@ -56,9 +56,9 @@ mod tests {
             Intersection::new(2.0, shape.clone()),
         ];
 
-        let hit = Intersection::hit(&intersections);
+        let hit = Intersection::hit(&intersections).unwrap();
 
-        assert_eq!(true, intersections[0] == intersections[hit.unwrap()]);
+        assert_eq!(true, intersections[0] == intersections[hit.0]);
     }
 
     #[test]
@@ -73,9 +73,9 @@ mod tests {
             Intersection::new(1.0, shape.clone()),
         ];
 
-        let hit = Intersection::hit(&intersections);
+        let hit = Intersection::hit(&intersections).unwrap();
 
-        assert_eq!(true, intersections[1] == intersections[hit.unwrap()]);
+        assert_eq!(true, intersections[1] == intersections[hit.0]);
     }
 
     #[test]
