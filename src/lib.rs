@@ -21,7 +21,7 @@ use crate::window::canvas::Canvas;
 
 static MAX_RAY_RECURSION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
-static THREADS: usize = 8;
+static NUM_OF_THREADS: usize = 12;
 
 pub mod geometry;
 pub mod materials;
@@ -78,36 +78,37 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
     // Initialise sending channels for producer consumer
     let (send_channel, receive_channel) = mpsc::channel();
-    // Figure out chunk size using row-wise 1D partitioning
-    let chunk_size = camera.height() / THREADS;
-    // Account for case where image height isn't a perfect multiple of threads
-    let leftover_chunk_size = camera.height() % THREADS;
+
+    let width = camera.width();
+    let height = camera.height();
 
     let mut handles = Vec::new();
-    for i in 0..THREADS {
+    for i in 0..NUM_OF_THREADS {
         // Clone send channel and scene info across to thread
         let thread_send_channel = send_channel.clone();
         let thread_world = world.clone();
         let thread_camera = camera.clone();
+        let thread_number = i;
 
         let handle = thread::spawn(move || {
-            let num_of_rows;
+            // Set x to remainder and y to quotient
+            let mut x = thread_number % width;
+            let mut y = thread_number / width;
 
-            if i == THREADS - 1 {
-                num_of_rows = chunk_size + leftover_chunk_size;
-            } else {
-                num_of_rows = chunk_size;
-            }
+            // Stop if we've gone past the bottom of the canvas
+            while y < height {
+                let ray = thread_camera.ray_for_pixel(x, y);
 
-            let row_start = i * chunk_size;
-            // Iterate over the partition of rows given to this thread
-            for y in row_start..(row_start + num_of_rows) {
-                for x in 0..thread_camera.width() {
-                    let ray = thread_camera.ray_for_pixel(x, y);
-                    // Send back color information to main thread to then write out to canvas
-                    thread_send_channel
-                        .send((x, y, thread_world.color_at(&ray, MAX_RAY_RECURSION_DEPTH)))
-                        .unwrap();
+                // Send back color information to main thread to then write out to canvas
+                thread_send_channel
+                    .send((x, y, thread_world.color_at(&ray, MAX_RAY_RECURSION_DEPTH)))
+                    .unwrap();
+
+                // Increment x by the num of threads and loop if we're past the end of the row
+                x += NUM_OF_THREADS;
+                if x >= width {
+                    x = x % width;
+                    y = y + 1;
                 }
             }
         });
