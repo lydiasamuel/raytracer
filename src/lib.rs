@@ -1,3 +1,4 @@
+use crate::geometry::cone::Cone;
 use crate::geometry::cube::Cube;
 use crate::geometry::plane::Plane;
 use crate::geometry::sphere::Sphere;
@@ -15,7 +16,6 @@ use crate::tuples::pointlight::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
 
-use crate::geometry::cylinder::Cylinder;
 use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
@@ -216,9 +216,9 @@ pub fn build_world() -> World {
         true,
     );
 
-    let left = Cylinder::new(
+    let left = Cone::new(
         Arc::new(
-            (&Matrix::translation(-1.5, 0.0, -0.75) * &Matrix::scaling(0.33, 0.33, 0.33)).unwrap(),
+            (&Matrix::translation(-1.5, 1.0, -0.75) * &Matrix::scaling(0.33, 1.0, 0.33)).unwrap(),
         ),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(1.0, 0.8, 0.1))),
@@ -231,8 +231,8 @@ pub fn build_world() -> World {
             1.0,
         )),
         true,
+        -1.0,
         0.0,
-        2.0,
         true,
     );
 
