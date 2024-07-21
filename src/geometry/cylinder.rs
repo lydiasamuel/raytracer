@@ -18,6 +18,7 @@ pub struct Cylinder {
     casts_shadow: bool,
     minimum: f64,
     maximum: f64,
+    closed: bool,
 }
 
 impl Cylinder {
@@ -29,6 +30,7 @@ impl Cylinder {
             casts_shadow: true,
             minimum: f64::NEG_INFINITY,
             maximum: f64::INFINITY,
+            closed: false,
         }
     }
 
@@ -38,6 +40,7 @@ impl Cylinder {
         casts_shadow: bool,
         minimum: f64,
         maximum: f64,
+        closed: bool,
     ) -> Cylinder {
         Cylinder {
             id: Uuid::new_v4(),
@@ -46,6 +49,43 @@ impl Cylinder {
             casts_shadow,
             minimum,
             maximum,
+            closed,
+        }
+    }
+
+    // Checks to see if the intersection at 't', is within a radius of 1 from the y-axis.
+    fn check_cap(ray: &Ray, t: f64) -> bool {
+        let origin = ray.origin();
+        let direction = ray.direction();
+
+        let x = origin.x + t * direction.x;
+        let z = origin.z + t * direction.z;
+
+        ((x * x) + (z * z)) <= 1.0
+    }
+
+    fn intersect_caps(self: Arc<Self>, ray: &Ray, intersections: &mut Vec<Intersection>) {
+        let direction = ray.direction();
+
+        // Caps only matter if the cylinder is closed, and might possibly be intersected by the ray
+        if !self.closed || direction.y.abs() < EPSILON {
+            return;
+        }
+
+        let origin = ray.origin();
+
+        // Check for an intersection with the lower end cap by intersecting the ray with the plane
+        // at y = cyl.minimum
+        let t0 = (self.minimum - origin.y) / direction.y;
+        if Cylinder::check_cap(ray, t0) {
+            intersections.push(Intersection::new(t0, self.clone()));
+        }
+
+        // Check for an intersection with the upper end cap by intersecting the ray with the plane
+        // at y = cyl.maximum
+        let t1 = (self.maximum - origin.y) / direction.y;
+        if Cylinder::check_cap(ray, t1) {
+            intersections.push(Intersection::new(t1, self.clone()));
         }
     }
 }
@@ -59,11 +99,16 @@ impl Shape for Cylinder {
         let origin = local_ray.origin();
         let direction = local_ray.direction();
 
+        let mut intersections: Vec<Intersection> = vec![];
+
         let a = direction.x.powi(2) + direction.z.powi(2);
 
-        // Ray is parallel to the y-axis, so it will not hit the cylinder
+        // Ray is parallel to the y-axis, so it will not hit the cylinder walls. Though it might
+        // possibly intersect the end caps.
         if a < EPSILON {
-            return vec![];
+            Cylinder::intersect_caps(self.clone(), local_ray, &mut intersections);
+
+            return intersections;
         }
 
         let b = (2.0 * origin.x * direction.x) + (2.0 * origin.z * direction.z);
@@ -71,10 +116,8 @@ impl Shape for Cylinder {
 
         let discriminant = (b * b) - (4.0 * a * c);
 
-        // Ray does not intersect the cylinder
-        if discriminant < 0.0 {
-            vec![]
-        } else {
+        // Ray intersects the cylinder walls if the discriminant is >= 0
+        if discriminant >= 0.0 {
             let sqrt_discriminant = discriminant.sqrt();
 
             let mut t0 = (-b - sqrt_discriminant) / (2.0 * a);
@@ -86,8 +129,6 @@ impl Shape for Cylinder {
                 t1 = tmp;
             }
 
-            let mut intersections: Vec<Intersection> = vec![];
-
             // If the y coordinates are between the min and max values of the cylinder, then the
             // intersection is valid
             let y0 = origin.y + t0 * direction.y;
@@ -97,11 +138,13 @@ impl Shape for Cylinder {
 
             let y1 = origin.y + t1 * direction.y;
             if self.minimum < y1 && y1 < self.maximum {
-                intersections.push(Intersection::new(t1, self));
+                intersections.push(Intersection::new(t1, self.clone()));
             }
-
-            intersections
         }
+
+        Cylinder::intersect_caps(self, local_ray, &mut intersections);
+
+        intersections
     }
 
     fn get_transform(&self) -> Arc<Matrix> {
@@ -117,6 +160,17 @@ impl Shape for Cylinder {
     }
 
     fn local_normal_at(&self, local_point: Tuple) -> Tuple {
+        // Compute the square distance from the y-axis
+        let dist = local_point.x * local_point.x + local_point.z * local_point.z;
+
+        if dist < 1.0 && local_point.y >= self.maximum - EPSILON {
+            return Tuple::vector(0.0, 1.0, 0.0);
+        }
+
+        if dist < 1.0 && local_point.y <= self.minimum + EPSILON {
+            return Tuple::vector(0.0, -1.0, 0.0);
+        }
+
         Tuple::vector(local_point.x, 0.0, local_point.z)
     }
 
@@ -187,6 +241,7 @@ mod tests {
             true,
             1.0,
             2.0,
+            false,
         ));
 
         let rays = vec![
@@ -253,6 +308,83 @@ mod tests {
             (Tuple::point(0.0, 5.0, -1.0), Tuple::vector(0.0, 0.0, -1.0)),
             (Tuple::point(0.0, -2.0, 1.0), Tuple::vector(0.0, 0.0, 1.0)),
             (Tuple::point(-1.0, 1.0, 0.0), Tuple::vector(-1.0, 0.0, 0.0)),
+        ];
+
+        // Act
+        for i in 0..expected_normals.len() {
+            let normal = cylinder.local_normal_at(expected_normals[i].0);
+
+            // Assert
+            assert_eq!(expected_normals[i].1, normal);
+        }
+    }
+
+    #[test]
+    fn given_a_ray_when_intersecting_a_constrained_capped_cylinder_should_identify_intersections_correctly(
+    ) {
+        // Arrange
+        let cylinder = Arc::new(Cylinder::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::default()),
+            true,
+            1.0,
+            2.0,
+            true,
+        ));
+
+        let rays = vec![
+            Ray::new(
+                Tuple::point(0.0, 3.0, 0.0),
+                Tuple::vector(0.0, -1.0, 0.0).normalize(),
+            ),
+            Ray::new(
+                Tuple::point(0.0, 3.0, -2.0),
+                Tuple::vector(0.0, -1.0, 2.0).normalize(),
+            ),
+            Ray::new(
+                Tuple::point(0.0, 4.0, -2.0),
+                Tuple::vector(0.0, -1.0, 1.0).normalize(),
+            ),
+            Ray::new(
+                Tuple::point(0.0, 0.0, -2.0),
+                Tuple::vector(0.0, 1.0, 2.0).normalize(),
+            ),
+            Ray::new(
+                Tuple::point(0.0, -1.0, -2.0),
+                Tuple::vector(0.0, 1.0, 1.0).normalize(),
+            ),
+        ];
+
+        let expected_intersect_counts = vec![2, 2, 2, 2, 2];
+
+        // Act
+        for i in 0..rays.len() {
+            let intersects = cylinder.clone().local_intersect(&rays[i]);
+
+            // Assert
+            assert_eq!(expected_intersect_counts[i], intersects.len());
+        }
+    }
+
+    #[test]
+    fn given_a_cylinder_when_computing_normal_on_the_end_caps_should_return_correct_result() {
+        // Arrange
+        let cylinder = Arc::new(Cylinder::new(
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::default()),
+            true,
+            1.0,
+            2.0,
+            true,
+        ));
+
+        let expected_normals = vec![
+            (Tuple::point(0.0, 1.0, 0.0), Tuple::vector(0.0, -1.0, 0.0)),
+            (Tuple::point(0.5, 1.0, 0.0), Tuple::vector(0.0, -1.0, 0.0)),
+            (Tuple::point(0.0, 1.0, 0.5), Tuple::vector(0.0, -1.0, 0.0)),
+            (Tuple::point(0.0, 2.0, 0.0), Tuple::vector(0.0, 1.0, 0.0)),
+            (Tuple::point(0.5, 2.0, 0.0), Tuple::vector(0.0, 1.0, 0.0)),
+            (Tuple::point(0.0, 2.0, 0.5), Tuple::vector(0.0, 1.0, 0.0)),
         ];
 
         // Act
