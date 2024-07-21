@@ -61,7 +61,7 @@ impl Shape for Sphere {
         let t2 = (-b - discriminant.sqrt()) / (a * 2.0);
 
         let i1 = Intersection::new(t1, self.clone());
-        let i2 = Intersection::new(t2, self.clone());
+        let i2 = Intersection::new(t2, self);
 
         if t1 < t2 {
             vec![i1, i2]

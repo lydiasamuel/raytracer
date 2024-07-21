@@ -135,7 +135,8 @@ mod tests {
         let pattern = Box::new(Striped::default());
         let material = Arc::new(Phong::new(pattern, 1.0, 0.0, 0.0, 200.0, 0.0, 0.0, 1.0));
 
-        let shape: Arc<dyn Shape> = Arc::new(Sphere::new(Arc::new(Matrix::identity(4)), material, true));
+        let shape: Arc<dyn Shape> =
+            Arc::new(Sphere::new(Arc::new(Matrix::identity(4)), material, true));
 
         let eyev = Tuple::vector(0.0, 0.0, -1.0);
         let normalv = Tuple::vector(0.0, 0.0, -1.0);
@@ -165,7 +166,7 @@ mod tests {
         let shape: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
             material,
-            true
+            true,
         ));
 
         // Act
@@ -213,7 +214,7 @@ mod tests {
         let shape: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
             material,
-            true
+            true,
         ));
 
         // Act

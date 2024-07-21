@@ -1,7 +1,3 @@
-use std::error::Error;
-use std::f64::consts::PI;
-use std::sync::{mpsc, Arc};
-use std::thread;
 use crate::geometry::cube::Cube;
 use crate::geometry::plane::Plane;
 use crate::geometry::sphere::Sphere;
@@ -18,6 +14,11 @@ use crate::tuples::color::Color;
 use crate::tuples::pointlight::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
+
+use std::error::Error;
+use std::f64::consts::PI;
+use std::sync::{mpsc, Arc};
+use std::thread;
 
 static MAX_RAY_RECURSION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
@@ -180,12 +181,9 @@ pub fn build_world() -> World {
         1.0,
     ));
 
-    let left_wall_transform = (&Matrix::translation(0.0, 0.0, 20.0) * &Matrix::rotation_x(PI / 2.0)).unwrap();
-    let left_wall = Plane::new(
-        Arc::new(left_wall_transform),
-        wall_material.clone(),
-        false
-    );
+    let left_wall_transform =
+        (&Matrix::translation(0.0, 0.0, 20.0) * &Matrix::rotation_x(PI / 2.0)).unwrap();
+    let left_wall = Plane::new(Arc::new(left_wall_transform), wall_material.clone(), false);
 
     let middle = Sphere::new(
         Arc::new(Matrix::translation(-0.5, 1.0, 0.5)),

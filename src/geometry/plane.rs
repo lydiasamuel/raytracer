@@ -45,6 +45,9 @@ impl Shape for Plane {
     }
 
     fn local_intersect(self: Arc<Self>, local_ray: &Ray) -> Vec<Intersection> {
+        let origin = local_ray.origin();
+        let direction = local_ray.direction();
+
         /*
             Four cases to consider
             1. Ray is parallel to the plane, and thus will never intersect it
@@ -55,15 +58,15 @@ impl Shape for Plane {
             4. Ray origin is below the plane
         */
 
-        if local_ray.direction().y.abs() < EPSILON {
+        if direction.y.abs() < EPSILON {
             // Plane is in xz therefore if there's no y slope it's parallel
-            return Vec::new(); // No intersections in this case
+            return vec![]; // No intersections in this case
         }
 
         // Ray is either above or below the plane so calculate the intersection time
-        let time = -local_ray.origin().y / local_ray.direction().y;
+        let time = -origin.y / direction.y;
 
-        vec![Intersection::new(time, self.clone())]
+        vec![Intersection::new(time, self)]
     }
 
     fn get_transform(&self) -> Arc<Matrix> {

@@ -1,6 +1,3 @@
-use std::sync::Arc;
-use uuid::Uuid;
-use crate::EPSILON;
 use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
 use crate::materials::phong::Phong;
@@ -10,6 +7,9 @@ use crate::tuples::intersection::Intersection;
 use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
+use crate::EPSILON;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct Cube {
     id: Uuid,
@@ -24,7 +24,7 @@ impl Cube {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
-            casts_shadow: true
+            casts_shadow: true,
         }
     }
 
@@ -70,10 +70,13 @@ impl Shape for Cube {
     }
 
     fn local_intersect(self: Arc<Self>, local_ray: &Ray) -> Vec<Intersection> {
+        let origin = local_ray.origin();
+        let direction = local_ray.direction();
+
         // For each axes of the cube, check where ray intersects the corresponding plane
-        let (xtmin, xtmax) = Cube::check_axis(local_ray.origin().x, local_ray.direction().x);
-        let (ytmin, ytmax) = Cube::check_axis(local_ray.origin().y, local_ray.direction().y);
-        let (ztmin, ztmax) = Cube::check_axis(local_ray.origin().z, local_ray.direction().z);
+        let (xtmin, xtmax) = Cube::check_axis(origin.x, direction.x);
+        let (ytmin, ytmax) = Cube::check_axis(origin.y, direction.y);
+        let (ztmin, ztmax) = Cube::check_axis(origin.z, direction.z);
 
         // Return the largest minimum t value and the smallest maximum t value
         let tmin = f64::max(f64::max(xtmin, ytmin), ztmin);
@@ -81,11 +84,10 @@ impl Shape for Cube {
 
         if tmin > tmax {
             vec![]
-        }
-        else {
+        } else {
             vec![
                 Intersection::new(tmin, self.clone()),
-                Intersection::new(tmax, self.clone())
+                Intersection::new(tmax, self),
             ]
         }
     }
@@ -103,7 +105,10 @@ impl Shape for Cube {
     }
 
     fn local_normal_at(&self, local_point: Tuple) -> Tuple {
-        let maxc = f64::max(f64::max(local_point.x.abs(), local_point.y.abs()), local_point.z.abs());
+        let maxc = f64::max(
+            f64::max(local_point.x.abs(), local_point.y.abs()),
+            local_point.z.abs(),
+        );
 
         if maxc == local_point.x.abs() {
             Tuple::vector(local_point.x, 0.0, 0.0)
@@ -129,14 +134,15 @@ impl Shape for Cube {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::geometry::cube::Cube;
     use crate::geometry::shape::Shape;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
-    fn given_a_ray_when_intersecting_a_cube_should_identify_intersection_correctly_on_all_six_faces() {
+    fn given_a_ray_when_intersecting_a_cube_should_identify_intersection_correctly_on_all_six_faces(
+    ) {
         // Arrange
         let cube = Arc::new(Cube::default());
 
@@ -157,7 +163,7 @@ mod tests {
             (4.0, 6.0),
             (4.0, 6.0),
             (4.0, 6.0),
-            (-1.0, 1.0)
+            (-1.0, 1.0),
         ];
 
         // Act
@@ -177,9 +183,18 @@ mod tests {
         let cube = Arc::new(Cube::default());
 
         let rays = vec![
-            Ray::new(Tuple::point(-2.0, 0.0, 0.0), Tuple::vector(0.2673, 0.5345, 0.8018)),
-            Ray::new(Tuple::point(0.0, -2.0, 0.0), Tuple::vector(0.8018, 0.2673, 0.5345)),
-            Ray::new(Tuple::point(0.0, 0.0, -2.0), Tuple::vector(0.5345, 0.8018, 0.2673)),
+            Ray::new(
+                Tuple::point(-2.0, 0.0, 0.0),
+                Tuple::vector(0.2673, 0.5345, 0.8018),
+            ),
+            Ray::new(
+                Tuple::point(0.0, -2.0, 0.0),
+                Tuple::vector(0.8018, 0.2673, 0.5345),
+            ),
+            Ray::new(
+                Tuple::point(0.0, 0.0, -2.0),
+                Tuple::vector(0.5345, 0.8018, 0.2673),
+            ),
             Ray::new(Tuple::point(2.0, 0.0, 2.0), Tuple::vector(0.0, 0.0, -1.0)),
             Ray::new(Tuple::point(0.0, 2.0, 2.0), Tuple::vector(0.0, -1.0, 0.0)),
             Ray::new(Tuple::point(2.0, 2.0, 0.0), Tuple::vector(-1.0, 0.0, 0.0)),
@@ -207,7 +222,10 @@ mod tests {
             (Tuple::point(-0.6, 0.3, 1.0), Tuple::vector(0.0, 0.0, 1.0)),
             (Tuple::point(0.4, 0.4, -1.0), Tuple::vector(0.0, 0.0, -1.0)),
             (Tuple::point(1.0, 1.0, 1.0), Tuple::vector(1.0, 0.0, 0.0)),
-            (Tuple::point(-1.0, -1.0, -1.0), Tuple::vector(-1.0, 0.0, 0.0)),
+            (
+                Tuple::point(-1.0, -1.0, -1.0),
+                Tuple::vector(-1.0, 0.0, 0.0),
+            ),
         ];
 
         // Act
