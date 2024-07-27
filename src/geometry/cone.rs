@@ -1,3 +1,4 @@
+use crate::geometry::group::Group;
 use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
 use crate::materials::phong::Phong;
@@ -8,13 +9,14 @@ use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use crate::EPSILON;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 use uuid::Uuid;
 
 pub struct Cone {
     id: Uuid,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
+    parent: RwLock<Weak<Group>>,
     casts_shadow: bool,
     minimum: f64,
     maximum: f64,
@@ -27,6 +29,7 @@ impl Cone {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
+            parent: RwLock::new(Weak::new()),
             casts_shadow: true,
             minimum: f64::NEG_INFINITY,
             maximum: f64::INFINITY,
@@ -46,6 +49,7 @@ impl Cone {
             id: Uuid::new_v4(),
             transform,
             material,
+            parent: RwLock::new(Weak::new()),
             casts_shadow,
             minimum,
             maximum,
@@ -163,6 +167,15 @@ impl Shape for Cone {
 
     fn get_material(&self) -> Arc<dyn Material> {
         self.material.clone()
+    }
+
+    fn get_parent(&self) -> Option<Arc<Group>> {
+        self.parent.read().unwrap().upgrade()
+    }
+
+    fn set_parent(&mut self, parent: Arc<Group>) {
+        let mut tmp = self.parent.write().unwrap();
+        *tmp = Arc::downgrade(&parent);
     }
 
     fn casts_shadow(&self) -> bool {

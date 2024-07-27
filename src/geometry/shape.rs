@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::geometry::group::Group;
 use crate::tuples::color::Color;
 use crate::tuples::pointlight::PointLight;
 use crate::{
@@ -33,6 +34,10 @@ pub trait Shape: Sync + Send {
     fn get_transform(&self) -> Arc<Matrix>;
 
     fn get_material(&self) -> Arc<dyn Material>;
+
+    fn get_parent(&self) -> Option<Arc<Group>>;
+
+    fn set_parent(&mut self, parent: Arc<Group>);
 
     fn casts_shadow(&self) -> bool;
 

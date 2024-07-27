@@ -1,7 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 use uuid::Uuid;
 
 use super::shape::Shape;
+use crate::geometry::group::Group;
 use crate::tuples::color::Color;
 use crate::tuples::pointlight::PointLight;
 use crate::{
@@ -14,6 +15,9 @@ pub struct Sphere {
     id: Uuid,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
+    // Using RwLock for thread safe interior mutability of a weak reference to the parent which
+    // prevents reference cycles
+    parent: RwLock<Weak<Group>>,
     casts_shadow: bool,
 }
 
@@ -23,6 +27,7 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
+            parent: RwLock::new(Weak::new()),
             casts_shadow: true,
         }
     }
@@ -32,6 +37,7 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform,
             material,
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow,
         }
     }
@@ -76,6 +82,15 @@ impl Shape for Sphere {
 
     fn get_material(&self) -> Arc<dyn Material> {
         self.material.clone()
+    }
+
+    fn get_parent(&self) -> Option<Arc<Group>> {
+        self.parent.read().unwrap().upgrade()
+    }
+
+    fn set_parent(&mut self, parent: Arc<Group>) {
+        let mut tmp = self.parent.write().unwrap();
+        *tmp = Arc::downgrade(&parent);
     }
 
     fn casts_shadow(&self) -> bool {
