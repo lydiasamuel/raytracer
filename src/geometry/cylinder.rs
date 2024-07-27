@@ -163,7 +163,7 @@ impl Shape for Cylinder {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&mut self, parent: Arc<Group>) {
+    fn set_parent(&self, parent: Arc<Group>) {
         let mut tmp = self.parent.write().unwrap();
         *tmp = Arc::downgrade(&parent);
     }

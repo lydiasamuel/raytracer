@@ -37,7 +37,7 @@ impl Sphere {
             id: Uuid::new_v4(),
             transform,
             material,
-            parent: RwLock::new(Weak::<Group>::new()),
+            parent: RwLock::new(Weak::new()),
             casts_shadow,
         }
     }
@@ -88,7 +88,7 @@ impl Shape for Sphere {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&mut self, parent: Arc<Group>) {
+    fn set_parent(&self, parent: Arc<Group>) {
         let mut tmp = self.parent.write().unwrap();
         *tmp = Arc::downgrade(&parent);
     }

@@ -37,7 +37,7 @@ pub trait Shape: Sync + Send {
 
     fn get_parent(&self) -> Option<Arc<Group>>;
 
-    fn set_parent(&mut self, parent: Arc<Group>);
+    fn set_parent(&self, parent: Arc<Group>);
 
     fn casts_shadow(&self) -> bool;
 
