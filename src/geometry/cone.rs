@@ -5,12 +5,13 @@ use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use crate::EPSILON;
 use std::sync::{Arc, RwLock, Weak};
 use uuid::Uuid;
+use crate::tuples::bounding_box::BoundingBox;
 
 pub struct Cone {
     id: Uuid,
@@ -200,6 +201,14 @@ impl Shape for Cone {
         } else {
             Tuple::vector(local_point.x, y, local_point.z)
         }
+    }
+
+    fn bounds(&self) -> BoundingBox {
+        let a = self.minimum.abs();
+        let b = self.maximum.abs();
+        let limit = f64::max(a, b);
+
+        BoundingBox::new(Tuple::point(-limit, self.minimum, -limit), Tuple::point(limit, self.maximum, limit))
     }
 
     fn light_material(

@@ -5,12 +5,13 @@ use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use crate::EPSILON;
 use std::sync::{Arc, RwLock, Weak};
 use uuid::Uuid;
+use crate::tuples::bounding_box::BoundingBox;
 
 pub struct Cube {
     id: Uuid,
@@ -129,6 +130,10 @@ impl Shape for Cube {
         } else {
             Tuple::vector(0.0, 0.0, local_point.z)
         }
+    }
+
+    fn bounds(&self) -> BoundingBox {
+        BoundingBox::new(Tuple::point(-1.0, -1.0, -1.0), Tuple::point(1.0, 1.0, 1.0))
     }
 
     fn light_material(

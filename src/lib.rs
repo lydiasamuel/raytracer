@@ -12,7 +12,7 @@ use crate::patterns::striped::Striped;
 use crate::scene::camera::Camera;
 use crate::scene::world::World;
 use crate::tuples::color::Color;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
 

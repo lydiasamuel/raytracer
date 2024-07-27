@@ -6,7 +6,7 @@ use crate::patterns::solid::Solid;
 use crate::scene::computations::Computations;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use crate::EPSILON;
@@ -340,7 +340,7 @@ mod tests {
     use crate::scene::world::World;
     use crate::tuples::color::Color;
     use crate::tuples::intersection::Intersection;
-    use crate::tuples::pointlight::PointLight;
+    use crate::tuples::point_light::PointLight;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use crate::{EPSILON, MAX_RAY_RECURSION_DEPTH};

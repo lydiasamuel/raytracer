@@ -5,9 +5,10 @@ use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
+use crate::tuples::bounding_box::BoundingBox;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 
@@ -99,6 +100,19 @@ impl Shape for Group {
         panic!("Error: Can't call local_normal_at on a group")
     }
 
+    fn bounds(&self) -> BoundingBox {
+        let mut result = BoundingBox::empty();
+
+        let children = self.children.read().unwrap();
+
+        for child in (*children).iter() {
+            let shape_bounds = child.clone().parent_space_bounds_of();
+            result = result + shape_bounds;
+        }
+
+        result
+    }
+
     fn light_material(
         self: Arc<Self>,
         world_point: Tuple,
@@ -114,7 +128,6 @@ impl Shape for Group {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
     use crate::geometry::group::Group;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
@@ -122,7 +135,9 @@ mod tests {
     use crate::matrices::matrix::Matrix;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
+    use std::f64::consts::PI;
     use std::sync::Arc;
+    use crate::geometry::cylinder::Cylinder;
 
     #[test]
     fn given_a_ray_when_intersecting_with_an_empty_group_should_return_no_hits() {
@@ -249,15 +264,18 @@ mod tests {
         g2.add_child(sphere.clone());
 
         // Act
-        let n = sphere.normal_to_world(Tuple::vector(3.0_f64.sqrt() / 3.0, 3.0_f64.sqrt() / 3.0, 3.0_f64.sqrt() / 3.0));
+        let n = sphere.normal_to_world(Tuple::vector(
+            3.0_f64.sqrt() / 3.0,
+            3.0_f64.sqrt() / 3.0,
+            3.0_f64.sqrt() / 3.0,
+        ));
 
         // Assert
         assert_eq!(Tuple::vector(0.28571, 0.42857, -0.85714), n);
     }
 
     #[test]
-    fn given_a_child_object_when_finding_normal_should_apply_each_transform_in_sequence(
-    ) {
+    fn given_a_child_object_when_finding_normal_should_apply_each_transform_in_sequence() {
         // Arrange
         let g1 = Arc::new(Group::new(
             Arc::new(Matrix::rotation_y(PI / 2.0)),
@@ -283,5 +301,36 @@ mod tests {
 
         // Assert
         assert_eq!(Tuple::vector(0.28570, 0.42854, -0.85716), n);
+    }
+
+    #[test]
+    fn given_a_group_when_finding_the_bounding_box_should_return_box_that_encloses_each_one() {
+        // Arrange
+        let g = Arc::new(Group::default());
+
+        let sphere = Arc::new(Sphere::new(
+            Arc::new((&Matrix::translation(2.0, 5.0, -3.0) * &Matrix::scaling(2.0, 2.0, 2.0)).unwrap()),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        let cylinder = Arc::new(Cylinder::new(
+            Arc::new((&Matrix::translation(-4.0, -1.0, 4.0) * &Matrix::scaling(0.5, 1.0, 0.5)).unwrap()),
+            Arc::new(Phong::default()),
+            true,
+            -2.0,
+            2.0,
+            true
+        ));
+
+        g.add_child(sphere);
+        g.add_child(cylinder);
+
+        // Act
+        let bounds = g.bounds();
+
+        // Assert
+        assert_eq!(bounds.min(), Tuple::point(-4.5, -3.0, -5.0));
+        assert_eq!(bounds.max(), Tuple::point(4.0, 7.0, 4.5));
     }
 }

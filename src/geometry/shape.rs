@@ -3,12 +3,13 @@ use uuid::Uuid;
 
 use crate::geometry::group::Group;
 use crate::tuples::color::Color;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::{
     materials::material::Material,
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
+use crate::tuples::bounding_box::BoundingBox;
 
 pub trait Shape: Sync + Send {
     fn id(&self) -> Uuid;
@@ -90,6 +91,13 @@ pub trait Shape: Sync + Send {
             None => result,
             Some(shape) => shape.normal_to_world(result),
         }
+    }
+
+    // Gets the bounding extents for the shape (transformed if for a group)
+    fn bounds(&self) -> BoundingBox;
+
+    fn parent_space_bounds_of(self: Arc<Self>) -> BoundingBox {
+        self.bounds().transform(self.get_transform().as_ref())
     }
 
     fn light_material(

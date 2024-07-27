@@ -59,7 +59,7 @@ mod tests {
     use crate::patterns::solid::Solid;
     use crate::patterns::striped::Striped;
     use crate::tuples::color::Color;
-    use crate::tuples::pointlight::PointLight;
+    use crate::tuples::point_light::PointLight;
     use crate::tuples::tuple::Tuple;
     use std::sync::Arc;
 

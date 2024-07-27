@@ -5,7 +5,7 @@ use crate::geometry::shape::Shape;
 use crate::patterns::pattern::Pattern;
 use crate::patterns::solid::Solid;
 
-use crate::tuples::{color::Color, pointlight::PointLight, tuple::Tuple};
+use crate::tuples::{color::Color, point_light::PointLight, tuple::Tuple};
 
 pub struct Phong {
     pattern: Box<dyn Pattern>,

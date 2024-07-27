@@ -1,5 +1,5 @@
 use crate::geometry::shape::Shape;
-use crate::tuples::{color::Color, pointlight::PointLight, tuple::Tuple};
+use crate::tuples::{color::Color, point_light::PointLight, tuple::Tuple};
 use std::sync::Arc;
 
 pub trait Material: Send + Sync {

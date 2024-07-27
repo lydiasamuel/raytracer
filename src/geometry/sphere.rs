@@ -4,12 +4,13 @@ use uuid::Uuid;
 use super::shape::Shape;
 use crate::geometry::group::Group;
 use crate::tuples::color::Color;
-use crate::tuples::pointlight::PointLight;
+use crate::tuples::point_light::PointLight;
 use crate::{
     materials::{material::Material, phong::Phong},
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
+use crate::tuples::bounding_box::BoundingBox;
 
 pub struct Sphere {
     id: Uuid,
@@ -98,6 +99,10 @@ impl Shape for Sphere {
 
     fn local_normal_at(&self, local_point: Tuple) -> Tuple {
         local_point - Tuple::origin()
+    }
+
+    fn bounds(&self) ->BoundingBox {
+        BoundingBox::new(Tuple::point(-1.0, -1.0, -1.0), Tuple::point(1.0, 1.0, 1.0))
     }
 
     fn light_material(
