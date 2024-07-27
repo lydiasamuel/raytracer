@@ -3,13 +3,13 @@ use uuid::Uuid;
 
 use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
+use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
 use crate::tuples::pointlight::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
-use crate::materials::phong::Phong;
 
 pub struct Group {
     id: Uuid,
@@ -43,12 +43,11 @@ impl Group {
         }
     }
 
-    pub fn add_child(self: Arc<Self>, child: Arc<dyn Shape>) {
+    pub fn add_child(self: &Arc<Self>, child: Arc<dyn Shape>) {
         // Set the child's parent using the interior mutability method
-        child.set_parent(self.clone());
+        child.clone().set_parent(self);
         // Add it to the child list
-        let mut tmp = self.children.write().unwrap();
-        tmp.push(child.clone());
+        self.children.write().unwrap().push(child);
     }
 }
 
@@ -58,7 +57,22 @@ impl Shape for Group {
     }
 
     fn local_intersect(self: Arc<Self>, local_ray: &Ray) -> Vec<Intersection> {
-        todo!()
+        let mut result = Vec::new();
+
+        let children = self.children.read().unwrap();
+
+        for child in (*children).iter() {
+            let mut intersections = child.clone().intersect(local_ray);
+            result.append(&mut intersections);
+        }
+
+        // Possible improvement by using a sorted list here instead to save on a bit of work,
+        // but may actually be slower in practise
+        if children.len() > 1 {
+            result.sort();
+        }
+
+        result
     }
 
     fn get_transform(&self) -> Arc<Matrix> {
@@ -73,17 +87,16 @@ impl Shape for Group {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: Arc<Group>) {
-        let mut tmp = self.parent.write().unwrap();
-        *tmp = Arc::downgrade(&parent);
+    fn set_parent(&self, parent: &Arc<Group>) {
+        *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 
     fn casts_shadow(&self) -> bool {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, local_point: Tuple) -> Tuple {
-        todo!()
+    fn local_normal_at(&self, _: Tuple) -> Tuple {
+        panic!("Error: Can't call local_normal_at on a group")
     }
 
     fn light_material(
@@ -96,5 +109,179 @@ impl Shape for Group {
     ) -> Color {
         self.get_material()
             .lighting(self, light, world_point, eyev, normalv, in_shadow)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::f64::consts::PI;
+    use crate::geometry::group::Group;
+    use crate::geometry::shape::Shape;
+    use crate::geometry::sphere::Sphere;
+    use crate::materials::phong::Phong;
+    use crate::matrices::matrix::Matrix;
+    use crate::tuples::ray::Ray;
+    use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
+
+    #[test]
+    fn given_a_ray_when_intersecting_with_an_empty_group_should_return_no_hits() {
+        // Arrange
+        let group = Arc::new(Group::default());
+        let ray = Ray::new(Tuple::origin(), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let intersects = group.local_intersect(&ray);
+
+        // Assert
+        assert_eq!(0, intersects.len())
+    }
+
+    #[test]
+    fn given_a_ray_when_intersecting_with_a_non_empty_group_should_return_all_the_correct_hits() {
+        // Arrange
+        let group = Arc::new(Group::default());
+        let s1: Arc<dyn Shape> = Arc::new(Sphere::unit());
+        let s2: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(0.0, 0.0, -3.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+        let s3: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        group.clone().add_child(s1.clone());
+        group.clone().add_child(s2.clone());
+        group.clone().add_child(s3.clone());
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let intersects = group.local_intersect(&ray);
+
+        // Assert
+        assert_eq!(4, intersects.len());
+        assert_eq!(true, Arc::ptr_eq(&intersects[0].object, &s2));
+        assert_eq!(true, Arc::ptr_eq(&intersects[1].object, &s2));
+        assert_eq!(true, Arc::ptr_eq(&intersects[2].object, &s1));
+        assert_eq!(true, Arc::ptr_eq(&intersects[3].object, &s1));
+    }
+
+    #[test]
+    fn given_a_ray_when_intersecting_with_a_non_empty_transformed_group_should_reflect_group_transform_in_all_child_intersects(
+    ) {
+        // Arrange
+        let group = Arc::new(Group::new(
+            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
+            Vec::new(),
+        ));
+        let sphere: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        group.clone().add_child(sphere.clone());
+
+        let ray = Ray::new(Tuple::point(10.0, 0.0, -10.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let intersects = group.intersect(&ray);
+
+        // Assert
+        assert_eq!(2, intersects.len());
+    }
+
+    #[test]
+    fn given_a_point_when_converting_it_from_world_to_object_space_should_apply_each_transform_in_sequence(
+    ) {
+        // Arrange
+        let g1 = Arc::new(Group::new(
+            Arc::new(Matrix::rotation_y(PI / 2.0)),
+            Vec::new(),
+        ));
+
+        let g2 = Arc::new(Group::new(
+            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
+            Vec::new(),
+        ));
+
+        let sphere = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        g1.add_child(g2.clone());
+        g2.add_child(sphere.clone());
+
+        // Act
+        let p = sphere.world_to_object(Tuple::point(-2.0, 0.0, -10.0));
+
+        // Assert
+        assert_eq!(Tuple::point(0.0, 0.0, -1.0), p);
+    }
+
+    #[test]
+    fn given_a_normal_when_converting_it_from_object_to_world_space_should_apply_each_transform_in_sequence(
+    ) {
+        // Arrange
+        let g1 = Arc::new(Group::new(
+            Arc::new(Matrix::rotation_y(PI / 2.0)),
+            Vec::new(),
+        ));
+
+        let g2 = Arc::new(Group::new(
+            Arc::new(Matrix::scaling(1.0, 2.0, 3.0)),
+            Vec::new(),
+        ));
+
+        let sphere = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        g1.add_child(g2.clone());
+        g2.add_child(sphere.clone());
+
+        // Act
+        let n = sphere.normal_to_world(Tuple::vector(3.0_f64.sqrt() / 3.0, 3.0_f64.sqrt() / 3.0, 3.0_f64.sqrt() / 3.0));
+
+        // Assert
+        assert_eq!(Tuple::vector(0.28571, 0.42857, -0.85714), n);
+    }
+
+    #[test]
+    fn given_a_child_object_when_finding_normal_should_apply_each_transform_in_sequence(
+    ) {
+        // Arrange
+        let g1 = Arc::new(Group::new(
+            Arc::new(Matrix::rotation_y(PI / 2.0)),
+            Vec::new(),
+        ));
+
+        let g2 = Arc::new(Group::new(
+            Arc::new(Matrix::scaling(1.0, 2.0, 3.0)),
+            Vec::new(),
+        ));
+
+        let sphere = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        g1.add_child(g2.clone());
+        g2.add_child(sphere.clone());
+
+        // Act
+        let n = sphere.normal_at(Tuple::point(1.7321, 1.1547, -5.5774));
+
+        // Assert
+        assert_eq!(Tuple::vector(0.28570, 0.42854, -0.85716), n);
     }
 }

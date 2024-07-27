@@ -8,9 +8,7 @@ pub trait Pattern: Sync + Send {
     fn pattern_at_shape(&self, object: Arc<dyn Shape>, world_point: Tuple) -> Color {
         assert!(world_point.is_point());
 
-        let object_inverse_transform = object.get_transform().inverse().unwrap();
-
-        let object_point = (&object_inverse_transform * &world_point).unwrap();
+        let object_point = object.world_to_object(world_point);
 
         self.local_pattern_at(object_point)
     }

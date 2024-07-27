@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::sync::Arc;
 
 use crate::geometry::shape::Shape;
@@ -28,13 +29,27 @@ impl Intersection {
     }
 }
 
-impl PartialEq for Intersection {
+impl Ord for Intersection {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.time.total_cmp(&other.time)
+    }
+}
+
+impl PartialOrd<Self> for Intersection {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for Intersection {}
+
+impl PartialEq<Self> for Intersection {
     fn eq(&self, other: &Self) -> bool {
         if (self.time - other.time).abs() > EPSILON {
-            return false;
+            false
+        } else {
+            Arc::ptr_eq(&self.object, &other.object)
         }
-
-        Arc::ptr_eq(&self.object, &other.object)
     }
 }
 

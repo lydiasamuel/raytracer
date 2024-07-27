@@ -84,9 +84,8 @@ impl Shape for Plane {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: Arc<Group>) {
-        let mut tmp = self.parent.write().unwrap();
-        *tmp = Arc::downgrade(&parent);
+    fn set_parent(&self, parent: &Arc<Group>) {
+        *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 
     fn casts_shadow(&self) -> bool {

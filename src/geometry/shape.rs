@@ -37,7 +37,9 @@ pub trait Shape: Sync + Send {
 
     fn get_parent(&self) -> Option<Arc<Group>>;
 
-    fn set_parent(&self, parent: Arc<Group>);
+    // Have to use a reference here, since if we take ownership the value immediately drops and we
+    // lose the weak reference and thus our parent
+    fn set_parent(&self, parent: &Arc<Group>);
 
     fn casts_shadow(&self) -> bool;
 
@@ -45,18 +47,50 @@ pub trait Shape: Sync + Send {
     fn normal_at(&self, world_point: Tuple) -> Tuple {
         assert!(world_point.is_point());
 
-        let inverse_transform = self.get_transform().inverse().unwrap();
-
-        let local_point = (&inverse_transform * &world_point).unwrap();
+        let local_point = self.world_to_object(world_point);
         let local_normal = self.local_normal_at(local_point);
 
-        let mut world_normal = (&inverse_transform.transpose() * &local_normal).unwrap();
-        world_normal.w = 0.0;
-
-        world_normal.normalize()
+        self.normal_to_world(local_normal)
     }
 
     fn local_normal_at(&self, local_point: Tuple) -> Tuple;
+
+    // Converts a point from world space to object space, recursively taking into consideration any
+    // parent objects between the two spaces
+    fn world_to_object(&self, point: Tuple) -> Tuple {
+        assert!(point.is_point());
+
+        let parent = self.get_parent();
+        let object_point: Tuple;
+
+        if let Some(shape) = parent {
+            object_point = shape.world_to_object(point);
+        } else {
+            object_point = point;
+        }
+
+        let inverse_transform = self.get_transform().inverse().unwrap();
+        (&inverse_transform * &object_point).unwrap()
+    }
+
+    // Converts a normal vector from object space to world space, recursively taking into
+    // consideration any parent objects between the two spaces
+    fn normal_to_world(&self, normal: Tuple) -> Tuple {
+        assert!(normal.is_vector());
+
+        let inverse_transform = self.get_transform().inverse().unwrap();
+
+        let mut result = (&inverse_transform.transpose() * &normal).unwrap();
+        result.w = 0.0;
+        result = result.normalize();
+
+        let parent = self.get_parent();
+
+        match parent {
+            None => result,
+            Some(shape) => shape.normal_to_world(result),
+        }
+    }
 
     fn light_material(
         self: Arc<Self>,
