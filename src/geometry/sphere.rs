@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use super::shape::Shape;
 use crate::geometry::group::Group;
+use crate::tuples::bounding_box::BoundingBox;
 use crate::tuples::color::Color;
 use crate::tuples::point_light::PointLight;
 use crate::{
@@ -10,7 +11,6 @@ use crate::{
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
-use crate::tuples::bounding_box::BoundingBox;
 
 pub struct Sphere {
     id: Uuid,
@@ -101,7 +101,7 @@ impl Shape for Sphere {
         local_point - Tuple::origin()
     }
 
-    fn bounds(&self) ->BoundingBox {
+    fn bounds(&self) -> BoundingBox {
         BoundingBox::new(Tuple::point(-1.0, -1.0, -1.0), Tuple::point(1.0, 1.0, 1.0))
     }
 

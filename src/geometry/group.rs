@@ -128,6 +128,7 @@ impl Shape for Group {
 
 #[cfg(test)]
 mod tests {
+    use crate::geometry::cylinder::Cylinder;
     use crate::geometry::group::Group;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
@@ -137,7 +138,6 @@ mod tests {
     use crate::tuples::tuple::Tuple;
     use std::f64::consts::PI;
     use std::sync::Arc;
-    use crate::geometry::cylinder::Cylinder;
 
     #[test]
     fn given_a_ray_when_intersecting_with_an_empty_group_should_return_no_hits() {
@@ -309,18 +309,22 @@ mod tests {
         let g = Arc::new(Group::default());
 
         let sphere = Arc::new(Sphere::new(
-            Arc::new((&Matrix::translation(2.0, 5.0, -3.0) * &Matrix::scaling(2.0, 2.0, 2.0)).unwrap()),
+            Arc::new(
+                (&Matrix::translation(2.0, 5.0, -3.0) * &Matrix::scaling(2.0, 2.0, 2.0)).unwrap(),
+            ),
             Arc::new(Phong::default()),
             true,
         ));
 
         let cylinder = Arc::new(Cylinder::new(
-            Arc::new((&Matrix::translation(-4.0, -1.0, 4.0) * &Matrix::scaling(0.5, 1.0, 0.5)).unwrap()),
+            Arc::new(
+                (&Matrix::translation(-4.0, -1.0, 4.0) * &Matrix::scaling(0.5, 1.0, 0.5)).unwrap(),
+            ),
             Arc::new(Phong::default()),
             true,
             -2.0,
             2.0,
-            true
+            true,
         ));
 
         g.add_child(sphere);

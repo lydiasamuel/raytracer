@@ -1,6 +1,6 @@
-use std::ops::Add;
 use crate::matrices::matrix::Matrix;
 use crate::tuples::tuple::Tuple;
+use std::ops::Add;
 
 #[derive(Debug, Copy, Clone)]
 pub struct BoundingBox {
@@ -10,10 +10,7 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     pub fn new(min: Tuple, max: Tuple) -> BoundingBox {
-        BoundingBox {
-            min,
-            max
-        }
+        BoundingBox { min, max }
     }
 
     pub fn empty() -> BoundingBox {
@@ -40,9 +37,12 @@ impl BoundingBox {
     }
 
     pub fn box_contains_box(&self, point: Tuple) -> bool {
-        point.x >= self.min.x && point.x <= self.max.x &&
-        point.y >= self.min.y && point.y <= self.max.y &&
-        point.z >= self.min.z && point.z <= self.max.z
+        point.x >= self.min.x
+            && point.x <= self.max.x
+            && point.y >= self.min.y
+            && point.y <= self.max.y
+            && point.z >= self.min.z
+            && point.z <= self.max.z
     }
 
     pub fn transform(self, transform: &Matrix) -> Self {

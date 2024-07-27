@@ -3,6 +3,7 @@ use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
+use crate::tuples::bounding_box::BoundingBox;
 use crate::tuples::color::Color;
 use crate::tuples::intersection::Intersection;
 use crate::tuples::point_light::PointLight;
@@ -11,7 +12,6 @@ use crate::tuples::tuple::Tuple;
 use crate::EPSILON;
 use std::sync::{Arc, RwLock, Weak};
 use uuid::Uuid;
-use crate::tuples::bounding_box::BoundingBox;
 
 pub struct Cube {
     id: Uuid,

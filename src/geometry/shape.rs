@@ -2,6 +2,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::geometry::group::Group;
+use crate::tuples::bounding_box::BoundingBox;
 use crate::tuples::color::Color;
 use crate::tuples::point_light::PointLight;
 use crate::{
@@ -9,7 +10,6 @@ use crate::{
     matrices::matrix::Matrix,
     tuples::{intersection::Intersection, ray::Ray, tuple::Tuple},
 };
-use crate::tuples::bounding_box::BoundingBox;
 
 pub trait Shape: Sync + Send {
     fn id(&self) -> Uuid;
