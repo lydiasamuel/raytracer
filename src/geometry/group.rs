@@ -19,6 +19,7 @@ pub struct Group {
     children: RwLock<Vec<Arc<dyn Shape>>>,
     parent: RwLock<Weak<Group>>,
     casts_shadow: bool,
+    bounds: RwLock<Option<BoundingBox>>, // Lazy initialisation of bounding box for the group
 }
 
 impl Group {
@@ -30,6 +31,7 @@ impl Group {
             children: RwLock::new(Vec::new()),
             parent: RwLock::new(Weak::new()),
             casts_shadow: true,
+            bounds: RwLock::new(None),
         }
     }
 
@@ -41,6 +43,7 @@ impl Group {
             children: RwLock::new(children),
             parent: RwLock::new(Weak::new()),
             casts_shadow: true,
+            bounds: RwLock::new(None),
         }
     }
 
@@ -49,6 +52,21 @@ impl Group {
         child.clone().set_parent(self);
         // Add it to the child list
         self.children.write().unwrap().push(child);
+        // Invalidate the stored bounds
+        *self.bounds.write().unwrap() = None;
+    }
+
+    fn find_bounds(&self) -> BoundingBox {
+        let mut result = BoundingBox::empty();
+
+        let children = self.children.read().unwrap();
+
+        for child in (*children).iter() {
+            let shape_bounds = child.clone().parent_space_bounds_of();
+            result = result + shape_bounds;
+        }
+
+        result
     }
 }
 
@@ -58,22 +76,26 @@ impl Shape for Group {
     }
 
     fn local_intersect(self: Arc<Self>, local_ray: &Ray) -> Vec<Intersection> {
-        let mut result = Vec::new();
+        if self.bounds().intersects(local_ray) {
+            let mut result = Vec::new();
 
-        let children = self.children.read().unwrap();
+            let children = self.children.read().unwrap();
 
-        for child in (*children).iter() {
-            let mut intersections = child.clone().intersect(local_ray);
-            result.append(&mut intersections);
+            for child in (*children).iter() {
+                let mut intersections = child.clone().intersect(local_ray);
+                result.append(&mut intersections);
+            }
+
+            // Possible improvement by using a sorted list here instead to save on a bit of work,
+            // but may actually be slower in practise
+            if children.len() > 1 {
+                result.sort();
+            }
+
+            result
+        } else {
+            vec![]
         }
-
-        // Possible improvement by using a sorted list here instead to save on a bit of work,
-        // but may actually be slower in practise
-        if children.len() > 1 {
-            result.sort();
-        }
-
-        result
     }
 
     fn get_transform(&self) -> Arc<Matrix> {
@@ -101,16 +123,17 @@ impl Shape for Group {
     }
 
     fn bounds(&self) -> BoundingBox {
-        let mut result = BoundingBox::empty();
-
-        let children = self.children.read().unwrap();
-
-        for child in (*children).iter() {
-            let shape_bounds = child.clone().parent_space_bounds_of();
-            result = result + shape_bounds;
+        {
+            // Wrap this in its own scope so the read lock gets dropped before we potentially acquire
+            // the write lock
+            if let Some(bounds) = *self.bounds.read().unwrap() {
+                return bounds;
+            }
         }
 
-        result
+        let bounds = self.find_bounds();
+        *self.bounds.write().unwrap() = Some(bounds);
+        bounds
     }
 
     fn light_material(
@@ -132,6 +155,7 @@ mod tests {
     use crate::geometry::group::Group;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
+    use crate::geometry::test_shape::TestShape;
     use crate::materials::phong::Phong;
     use crate::matrices::matrix::Matrix;
     use crate::tuples::ray::Ray;
@@ -336,5 +360,41 @@ mod tests {
         // Assert
         assert_eq!(bounds.min(), Tuple::point(-4.5, -3.0, -5.0));
         assert_eq!(bounds.max(), Tuple::point(4.0, 7.0, 4.5));
+    }
+
+    #[test]
+    fn given_a_ray_that_misses_when_intersecting_with_a_non_empty_group_should_not_test_children() {
+        // Arrange
+        let group = Arc::new(Group::default());
+
+        let s: Arc<TestShape> = Arc::new(TestShape::new());
+
+        group.clone().add_child(s.clone());
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 1.0, 0.0));
+
+        // Act
+        let intersects = group.local_intersect(&ray);
+
+        // Assert
+        assert_eq!(true, s.saved_ray().is_none());
+    }
+
+    #[test]
+    fn given_a_ray_that_hits_when_intersecting_with_a_non_empty_group_should_test_children() {
+        // Arrange
+        let group = Arc::new(Group::default());
+
+        let s: Arc<TestShape> = Arc::new(TestShape::new());
+
+        group.clone().add_child(s.clone());
+
+        let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let intersects = group.local_intersect(&ray);
+
+        // Assert
+        assert_eq!(true, s.saved_ray().is_some());
     }
 }
