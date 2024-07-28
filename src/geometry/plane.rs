@@ -104,6 +104,8 @@ impl Shape for Plane {
         )
     }
 
+    fn divide(self: Arc<Self>, _: usize) {}
+
     fn light_material(
         self: Arc<Self>,
         world_point: Tuple,

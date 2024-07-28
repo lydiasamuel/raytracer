@@ -123,6 +123,43 @@ impl BoundingBox {
         }
     }
 
+    pub fn split_bounds(self) -> (BoundingBox, BoundingBox) {
+        // Figure out the box's largest dimension
+        let dx = self.max.x - self.min.x;
+        let dy = self.max.y - self.min.y;
+        let dz = self.max.z - self.min.z;
+
+        let greatest = f64::max(dx, f64::max(dy, dz));
+
+        // Variables to help construct the points on
+        // the dividing plane
+        let (mut x0, mut y0, mut z0) = (self.min.x, self.min.y, self.min.z);
+        let (mut x1, mut y1, mut z1) = (self.max.x, self.max.y, self.max.z);
+
+        // adjust the points so that they lie on the
+        // dividing plane
+        if (greatest - dx).abs() < EPSILON {
+            x0 += dx / 2.0;
+            x1 = x0;
+        } else if (greatest - dy).abs() < EPSILON {
+            y0 += dy / 2.0;
+            y1 = y0;
+        } else {
+            z0 += dz / 2.0;
+            z1 = z0;
+        }
+
+        let mid_min = Tuple::point(x0, y0, z0);
+        let mid_max = Tuple::point(x1, y1, z1);
+
+        // construct and return the two halves of
+        // the bounding box
+        (
+            BoundingBox::new(self.min, mid_max),
+            BoundingBox::new(mid_min, self.max),
+        )
+    }
+
     pub fn min(&self) -> Tuple {
         self.min
     }
@@ -426,5 +463,69 @@ mod tests {
             // Assert
             assert_eq!(expected, result);
         }
+    }
+
+    #[test]
+    fn given_a_perfect_cube_when_splitting_it_should_return_correct_bounds() {
+        // Arrange
+        let bounding_box =
+            BoundingBox::new(Tuple::point(-1.0, -4.0, -5.0), Tuple::point(9.0, 6.0, 5.0));
+
+        // Act
+        let (left, right) = bounding_box.split_bounds();
+
+        // Assert
+        assert_eq!(Tuple::point(-1.0, -4.0, -5.0), left.min);
+        assert_eq!(Tuple::point(4.0, 6.0, 5.0), left.max);
+        assert_eq!(Tuple::point(4.0, -4.0, -5.0), right.min);
+        assert_eq!(Tuple::point(9.0, 6.0, 5.0), right.max);
+    }
+
+    #[test]
+    fn given_an_x_wide_box_when_splitting_it_should_return_correct_bounds() {
+        // Arrange
+        let bounding_box =
+            BoundingBox::new(Tuple::point(-1.0, -2.0, -3.0), Tuple::point(9.0, 5.5, 3.0));
+
+        // Act
+        let (left, right) = bounding_box.split_bounds();
+
+        // Assert
+        assert_eq!(Tuple::point(-1.0, -2.0, -3.0), left.min);
+        assert_eq!(Tuple::point(4.0, 5.5, 3.0), left.max);
+        assert_eq!(Tuple::point(4.0, -2.0, -3.0), right.min);
+        assert_eq!(Tuple::point(9.0, 5.5, 3.0), right.max);
+    }
+
+    #[test]
+    fn given_an_y_wide_box_when_splitting_it_should_return_correct_bounds() {
+        // Arrange
+        let bounding_box =
+            BoundingBox::new(Tuple::point(-1.0, -2.0, -3.0), Tuple::point(5.0, 8.0, 3.0));
+
+        // Act
+        let (left, right) = bounding_box.split_bounds();
+
+        // Assert
+        assert_eq!(Tuple::point(-1.0, -2.0, -3.0), left.min);
+        assert_eq!(Tuple::point(5.0, 3.0, 3.0), left.max);
+        assert_eq!(Tuple::point(-1.0, 3.0, -3.0), right.min);
+        assert_eq!(Tuple::point(5.0, 8.0, 3.0), right.max);
+    }
+
+    #[test]
+    fn given_an_z_wide_box_when_splitting_it_should_return_correct_bounds() {
+        // Arrange
+        let bounding_box =
+            BoundingBox::new(Tuple::point(-1.0, -2.0, -3.0), Tuple::point(5.0, 3.0, 7.0));
+
+        // Act
+        let (left, right) = bounding_box.split_bounds();
+
+        // Assert
+        assert_eq!(Tuple::point(-1.0, -2.0, -3.0), left.min);
+        assert_eq!(Tuple::point(5.0, 3.0, 2.0), left.max);
+        assert_eq!(Tuple::point(-1.0, -2.0, 2.0), right.min);
+        assert_eq!(Tuple::point(5.0, 3.0, 7.0), right.max);
     }
 }

@@ -136,6 +136,8 @@ impl Shape for Cube {
         BoundingBox::new(Tuple::point(-1.0, -1.0, -1.0), Tuple::point(1.0, 1.0, 1.0))
     }
 
+    fn divide(self: Arc<Self>, _: usize) {}
+
     fn light_material(
         self: Arc<Self>,
         world_point: Tuple,

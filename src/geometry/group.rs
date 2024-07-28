@@ -35,15 +35,21 @@ impl Group {
         }
     }
 
-    pub fn new(transform: Arc<Matrix>, children: Vec<Arc<dyn Shape>>) -> Group {
+    pub fn new(transform: Arc<Matrix>) -> Group {
         Group {
             id: Uuid::new_v4(),
             transform,
             material: Arc::new(Phong::default()),
-            children: RwLock::new(children),
+            children: RwLock::new(Vec::new()),
             parent: RwLock::new(Weak::new()),
             casts_shadow: true,
             bounds: RwLock::new(None),
+        }
+    }
+
+    pub fn add_children(self: &Arc<Self>, children: Vec<Arc<dyn Shape>>) {
+        for child in children {
+            self.add_child(child)
         }
     }
 
@@ -61,12 +67,54 @@ impl Group {
 
         let children = self.children.read().unwrap();
 
-        for child in (*children).iter() {
+        for child in children.iter() {
             let shape_bounds = child.clone().parent_space_bounds_of();
             result = result + shape_bounds;
         }
 
         result
+    }
+
+    fn partition_children(self: Arc<Self>) -> (Vec<Arc<dyn Shape>>, Vec<Arc<dyn Shape>>) {
+        let n = self.count();
+
+        let mut left = Vec::with_capacity(n);
+        let mut right = Vec::with_capacity(n);
+        let mut children = Vec::with_capacity(n);
+
+        {
+            let (left_bbox, right_bbox) = self.bounds().split_bounds();
+
+            for child in self.children.read().unwrap().iter() {
+                let child_bbox = child.clone().parent_space_bounds_of();
+
+                if left_bbox.contains_box(child_bbox) {
+                    left.push(child.clone());
+                } else if right_bbox.contains_box(child_bbox) {
+                    right.push(child.clone());
+                } else {
+                    children.push(child.clone());
+                }
+            }
+        }
+
+        *self.children.write().unwrap() = children;
+
+        (left, right)
+    }
+
+    fn make_subgroup(self: Arc<Self>, children: Vec<Arc<dyn Shape>>) {
+        if !children.is_empty() {
+            let subgroup = Arc::new(Group::default());
+
+            subgroup.add_children(children);
+
+            self.add_child(subgroup)
+        }
+    }
+
+    pub fn count(&self) -> usize {
+        self.children.read().unwrap().len()
     }
 }
 
@@ -136,6 +184,30 @@ impl Shape for Group {
         bounds
     }
 
+    // Recursively splits the bounding box for this group if the number of children passes the
+    // threshold
+    fn divide(self: Arc<Self>, threshold: usize) {
+        // If the threshold is less than or equal to the number of children in the group,
+        // the children are partitioned and corresponding subgroups formed which are
+        // added to the group.
+        if threshold <= self.count() {
+            let (left, right) = self.clone().partition_children();
+
+            if !left.is_empty() {
+                self.clone().make_subgroup(left);
+            }
+            if !right.is_empty() {
+                self.clone().make_subgroup(right);
+            }
+        }
+
+        // Then divide is recursively invoked on the group's children, even if the group's immediate
+        // children are not partitioned
+        for child in self.children.read().unwrap().iter() {
+            child.clone().divide(threshold);
+        }
+    }
+
     fn light_material(
         self: Arc<Self>,
         world_point: Tuple,
@@ -192,9 +264,7 @@ mod tests {
             true,
         ));
 
-        group.clone().add_child(s1.clone());
-        group.clone().add_child(s2.clone());
-        group.clone().add_child(s3.clone());
+        group.add_children(vec![s1.clone(), s2.clone(), s3.clone()]);
 
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
@@ -213,10 +283,7 @@ mod tests {
     fn given_a_ray_when_intersecting_with_a_non_empty_transformed_group_should_reflect_group_transform_in_all_child_intersects(
     ) {
         // Arrange
-        let group = Arc::new(Group::new(
-            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
-            Vec::new(),
-        ));
+        let group = Arc::new(Group::new(Arc::new(Matrix::scaling(2.0, 2.0, 2.0))));
         let sphere: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
             Arc::new(Phong::default()),
@@ -238,15 +305,9 @@ mod tests {
     fn given_a_point_when_converting_it_from_world_to_object_space_should_apply_each_transform_in_sequence(
     ) {
         // Arrange
-        let g1 = Arc::new(Group::new(
-            Arc::new(Matrix::rotation_y(PI / 2.0)),
-            Vec::new(),
-        ));
+        let g1 = Arc::new(Group::new(Arc::new(Matrix::rotation_y(PI / 2.0))));
 
-        let g2 = Arc::new(Group::new(
-            Arc::new(Matrix::scaling(2.0, 2.0, 2.0)),
-            Vec::new(),
-        ));
+        let g2 = Arc::new(Group::new(Arc::new(Matrix::scaling(2.0, 2.0, 2.0))));
 
         let sphere = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
@@ -268,15 +329,9 @@ mod tests {
     fn given_a_normal_when_converting_it_from_object_to_world_space_should_apply_each_transform_in_sequence(
     ) {
         // Arrange
-        let g1 = Arc::new(Group::new(
-            Arc::new(Matrix::rotation_y(PI / 2.0)),
-            Vec::new(),
-        ));
+        let g1 = Arc::new(Group::new(Arc::new(Matrix::rotation_y(PI / 2.0))));
 
-        let g2 = Arc::new(Group::new(
-            Arc::new(Matrix::scaling(1.0, 2.0, 3.0)),
-            Vec::new(),
-        ));
+        let g2 = Arc::new(Group::new(Arc::new(Matrix::scaling(1.0, 2.0, 3.0))));
 
         let sphere = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
@@ -301,15 +356,9 @@ mod tests {
     #[test]
     fn given_a_child_object_when_finding_normal_should_apply_each_transform_in_sequence() {
         // Arrange
-        let g1 = Arc::new(Group::new(
-            Arc::new(Matrix::rotation_y(PI / 2.0)),
-            Vec::new(),
-        ));
+        let g1 = Arc::new(Group::new(Arc::new(Matrix::rotation_y(PI / 2.0))));
 
-        let g2 = Arc::new(Group::new(
-            Arc::new(Matrix::scaling(1.0, 2.0, 3.0)),
-            Vec::new(),
-        ));
+        let g2 = Arc::new(Group::new(Arc::new(Matrix::scaling(1.0, 2.0, 3.0))));
 
         let sphere = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(5.0, 0.0, 0.0)),
@@ -396,5 +445,158 @@ mod tests {
 
         // Assert
         assert_eq!(true, s.saved_ray().is_some());
+    }
+
+    #[test]
+    fn given_a_group_with_three_children_when_partitioning_the_group_should_bucket_the_children_properly(
+    ) {
+        // Arrange
+        let group = Arc::new(Group::default());
+
+        let s1: Arc<dyn Shape> = Arc::new(Sphere::unit());
+        let s2: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(-2.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+        let s3: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(2.0, 1.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        group.add_children(vec![s1.clone(), s2.clone(), s3.clone()]);
+
+        // Act
+        let (left, right) = group.clone().partition_children();
+
+        // Assert
+        assert_eq!(1, group.count());
+        assert_eq!(true, Arc::ptr_eq(&group.children.read().unwrap()[0], &s1));
+
+        assert_eq!(1, left.len());
+        assert_eq!(true, Arc::ptr_eq(&left[0], &s2));
+
+        assert_eq!(1, right.len());
+        assert_eq!(true, Arc::ptr_eq(&right[0], &s3));
+    }
+
+    #[test]
+    fn given_a_list_of_children_when_creating_a_sub_group_should_nest_it_correctly() {
+        // Arrange
+        let group = Arc::new(Group::default());
+
+        let s1: Arc<dyn Shape> = Arc::new(Sphere::unit());
+        let s2: Arc<dyn Shape> = Arc::new(Sphere::unit());
+
+        // Act
+        group.clone().make_subgroup(vec![s1.clone(), s2.clone()]);
+
+        // Assert
+        assert_eq!(1, group.count());
+
+        let p1 = s1.get_parent();
+        let p2 = s2.get_parent();
+
+        assert_eq!(true, p1.is_some());
+        assert_eq!(true, p2.is_some());
+        assert_eq!(true, Arc::ptr_eq(&p1.unwrap(), &p2.unwrap()));
+
+        assert_eq!(2, s1.get_parent().unwrap().count());
+
+        let subgroup: Arc<dyn Shape> = s1.get_parent().unwrap();
+
+        assert_eq!(
+            true,
+            Arc::ptr_eq(&group.children.read().unwrap()[0], &subgroup)
+        );
+    }
+
+    #[test]
+    fn given_a_group_with_too_few_children_when_subdividing_should_recursively_divide_the_children()
+    {
+        // Arrange
+        let subgroup = Arc::new(Group::default());
+
+        let s1: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(-2.0, 0.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+        let s2: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(2.0, 1.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+        let s3: Arc<dyn Shape> = Arc::new(Sphere::new(
+            Arc::new(Matrix::translation(2.0, -1.0, 0.0)),
+            Arc::new(Phong::default()),
+            true,
+        ));
+
+        subgroup.add_children(vec![s1.clone(), s2.clone(), s3.clone()]);
+
+        let s4 = Arc::new(Sphere::unit());
+
+        let group = Arc::new(Group::default());
+
+        group
+            .clone()
+            .add_children(vec![subgroup.clone(), s4.clone()]);
+
+        // Act
+        group.clone().divide(3);
+
+        // Assert
+        let group_children = group.children.read().unwrap();
+
+        assert_eq!(2, group_children.len());
+        assert_eq!(
+            true,
+            Arc::ptr_eq(&(subgroup.clone() as Arc<dyn Shape>), &group_children[0])
+        );
+        assert_eq!(
+            true,
+            Arc::ptr_eq(&(s4 as Arc<dyn Shape>), &group_children[1])
+        );
+
+        // Assert
+        assert_eq!(2, subgroup.count());
+
+        let p1 = s1.get_parent();
+        assert_eq!(true, p1.is_some());
+
+        assert_eq!(1, s1.get_parent().unwrap().count());
+        assert_eq!(
+            true,
+            Arc::ptr_eq(
+                &subgroup.children.read().unwrap()[0],
+                &(s1.get_parent().unwrap() as Arc<dyn Shape>)
+            )
+        );
+
+        // Assert
+        let p2 = s2.get_parent();
+        let p3 = s3.get_parent();
+
+        assert_eq!(true, p2.is_some());
+        assert_eq!(true, p3.is_some());
+        assert_eq!(true, Arc::ptr_eq(&p2.unwrap(), &p3.unwrap()));
+
+        assert_eq!(2, s2.get_parent().unwrap().count());
+        assert_eq!(
+            true,
+            Arc::ptr_eq(
+                &subgroup.children.read().unwrap()[1],
+                &(s2.get_parent().unwrap() as Arc<dyn Shape>)
+            )
+        );
+        assert_eq!(
+            true,
+            Arc::ptr_eq(
+                &subgroup.children.read().unwrap()[1],
+                &(s3.get_parent().unwrap() as Arc<dyn Shape>)
+            )
+        );
     }
 }
