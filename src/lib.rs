@@ -1,14 +1,8 @@
-use crate::geometry::cone::Cone;
-use crate::geometry::cube::Cube;
 use crate::geometry::plane::Plane;
-use crate::geometry::sphere::Sphere;
 use crate::materials::phong::Phong;
 use crate::matrices::matrix::Matrix;
-use crate::patterns::blended::Blended;
 use crate::patterns::checker::Checker;
-use crate::patterns::perturbed::Perturbed;
 use crate::patterns::solid::Solid;
-use crate::patterns::striped::Striped;
 use crate::scene::camera::Camera;
 use crate::scene::world::World;
 use crate::tuples::color::Color;
@@ -20,6 +14,8 @@ use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
 use std::thread;
+use crate::geometry::shape::Shape;
+use crate::scene::obj_file_parser::ObjFileParser;
 
 static MAX_RAY_RECURSION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
@@ -64,7 +60,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         config.width,
         PI / 3.0,
         Matrix::view_transform(
-            Tuple::point(0.0, 1.5, -5.0),
+            Tuple::point(0.0, 3.0, -5.0),
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::vector(0.0, 1.0, 0.0),
         ),
@@ -136,30 +132,12 @@ pub fn render(world: Arc<World>, camera: Arc<Camera>) -> Canvas {
 }
 
 pub fn build_world() -> World {
-    let floor_pattern = Box::new(Blended::new(
-        Box::new(Perturbed::new(
-            Box::new(Striped::new(
-                Box::new(Solid::new(Color::new(0.98, 0.92, 0.94))),
-                Box::new(Solid::new(Color::new(0.2, 0.24, 0.47))),
-                Arc::new(Matrix::rotation_y(PI / 2.0)),
-            )),
-            0.9,
-            Arc::new(Matrix::rotation_x(PI / 3.0)),
-        )),
-        Box::new(Perturbed::new(
-            Box::new(Striped::new(
-                Box::new(Solid::new(Color::new(0.98, 0.92, 0.94))),
-                Box::new(Solid::new(Color::new(0.2, 0.24, 0.47))),
-                Arc::new(Matrix::identity(4)),
-            )),
-            0.9,
-            Arc::new(Matrix::rotation_z(PI / 3.0)),
-        )),
-        Arc::new(Matrix::identity(4)),
-    ));
-
     let floor_material = Arc::new(Phong::new(
-        floor_pattern,
+        Box::new(Checker::new(
+            Box::new(Solid::new(Color::new(0.9, 0.9, 0.9))),
+            Box::new(Solid::new(Color::new(0.8, 0.8, 0.8))),
+            Arc::new(Matrix::identity(4))
+        )),
         0.1,
         0.9,
         0.0,
@@ -171,80 +149,34 @@ pub fn build_world() -> World {
 
     let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone(), false);
 
-    let wall_material = Arc::new(Phong::new(
-        Box::new(Checker::default()),
-        0.8,
-        0.4,
-        0.0,
-        100.0,
-        0.0,
-        0.0,
-        1.0,
+    let middle = ObjFileParser::parse_obj_file(
+        "tests/obj_files/teapot.obj".to_string(),
+        Arc::new(Matrix::identity(4)),
+        Arc::new(Phong::new(
+            Box::new(Solid::new(Color::new(0.7, 0.2, 0.5))),
+            0.1,
+            0.9,
+            0.9,
+            200.0,
+            0.0,
+            0.0,
+            1.0,
+        )),
+        true)
+    .unwrap();
+
+    let middle_obj = middle.obj_to_group(Arc::new(
+        (&Matrix::scaling(0.6, 0.6, 0.6) * &Matrix::translation(-0.4, 0.0, 0.4)).unwrap()
     ));
 
-    let left_wall_transform =
-        (&Matrix::translation(0.0, 0.0, 20.0) * &Matrix::rotation_x(PI / 2.0)).unwrap();
-    let left_wall = Plane::new(Arc::new(left_wall_transform), wall_material.clone(), false);
-
-    let middle = Sphere::new(
-        Arc::new(Matrix::translation(-0.5, 1.0, 0.5)),
-        Arc::new(Phong::new(
-            Box::new(Solid::new(Color::new(0.2, 0.01, 0.3))),
-            0.2,
-            0.25,
-            1.0,
-            300.0,
-            0.9,
-            1.0,
-            1.52,
-        )),
-        true,
-    );
-
-    let right = Cube::new(
-        Arc::new((&Matrix::translation(1.5, 0.5, -0.5) * &Matrix::scaling(0.5, 0.5, 0.5)).unwrap()),
-        Arc::new(Phong::new(
-            Box::new(Solid::new(Color::new(0.5, 1.0, 0.1))),
-            0.1,
-            0.7,
-            0.3,
-            200.0,
-            0.2,
-            0.0,
-            1.0,
-        )),
-        true,
-    );
-
-    let left = Cone::new(
-        Arc::new(
-            (&Matrix::translation(-1.5, 1.0, -0.75) * &Matrix::scaling(0.33, 1.0, 0.33)).unwrap(),
-        ),
-        Arc::new(Phong::new(
-            Box::new(Solid::new(Color::new(1.0, 0.8, 0.1))),
-            0.1,
-            0.7,
-            0.3,
-            200.0,
-            0.1,
-            0.0,
-            1.0,
-        )),
-        true,
-        -1.0,
-        0.0,
-        true,
-    );
+    middle_obj.clone().divide(5);
 
     let light_source = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 
     World::new(
         vec![
             Arc::new(floor),
-            Arc::new(left_wall),
-            Arc::new(middle),
-            Arc::new(right),
-            Arc::new(left),
+            middle_obj,
         ],
         vec![Arc::new(light_source)],
     )

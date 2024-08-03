@@ -68,6 +68,14 @@ impl Shape for TestShape {
         BoundingBox::new(Tuple::point(-1.0, -1.0, -1.0), Tuple::point(1.0, 1.0, 1.0))
     }
 
+    fn points(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn edge_vectors(&self) -> (Tuple, Tuple) {
+        panic!("Error: edge_vectors function is not implemented for this shape")
+    }
+
     fn divide(self: Arc<Self>, _: usize) {}
 
     fn light_material(

@@ -113,6 +113,16 @@ impl Group {
         }
     }
 
+    pub fn get_child(&self, index: usize) -> Option<Arc<dyn Shape>> {
+        let children = self.children.read().unwrap();
+
+        if index < children.len() {
+            Some(children[index].clone())
+        } else {
+            None
+        }
+    }
+
     pub fn count(&self) -> usize {
         self.children.read().unwrap().len()
     }
@@ -182,6 +192,14 @@ impl Shape for Group {
         let bounds = self.find_bounds();
         *self.bounds.write().unwrap() = Some(bounds);
         bounds
+    }
+
+    fn points(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn edge_vectors(&self) -> (Tuple, Tuple) {
+        panic!("Error: edge_vectors function is not implemented for this shape")
     }
 
     // Recursively splits the bounding box for this group if the number of children passes the

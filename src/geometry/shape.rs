@@ -100,6 +100,10 @@ pub trait Shape: Sync + Send {
         self.bounds().transform(self.get_transform().as_ref())
     }
 
+    fn points(&self) -> (Tuple, Tuple, Tuple);
+
+    fn edge_vectors(&self) -> (Tuple, Tuple);
+
     fn divide(self: Arc<Self>, threshold: usize);
 
     fn light_material(

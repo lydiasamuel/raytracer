@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock, Weak};
-use uuid::Uuid;
 use crate::geometry::group::Group;
 use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
@@ -12,6 +10,8 @@ use crate::tuples::point_light::PointLight;
 use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use crate::EPSILON;
+use std::sync::{Arc, RwLock, Weak};
+use uuid::Uuid;
 
 pub struct Triangle {
     id: Uuid,
@@ -62,7 +62,7 @@ impl Triangle {
         }
     }
 
-    fn default(p1: Tuple, p2: Tuple, p3: Tuple) -> Triangle {
+    pub fn default(p1: Tuple, p2: Tuple, p3: Tuple) -> Triangle {
         Self::new(
             p1,
             p2,
@@ -107,9 +107,7 @@ impl Shape for Triangle {
 
         let t = f * Tuple::dot(self.e2, origin_cross_e1);
 
-        vec![
-            Intersection::new(t, self)
-        ]
+        vec![Intersection::new(t, self)]
     }
 
     fn get_transform(&self) -> Arc<Matrix> {
@@ -145,6 +143,14 @@ impl Shape for Triangle {
             .add_point(self.p3)
     }
 
+    fn points(&self) -> (Tuple, Tuple, Tuple) {
+        (self.p1, self.p2, self.p3)
+    }
+
+    fn edge_vectors(&self) -> (Tuple, Tuple) {
+        (self.e1, self.e2)
+    }
+
     fn divide(self: Arc<Self>, _: usize) {}
 
     fn light_material(
@@ -162,11 +168,11 @@ impl Shape for Triangle {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::geometry::shape::Shape;
     use crate::geometry::triangle::Triangle;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
     fn given_basic_values_when_constructing_a_triangle_should_initialise_edge_vectors_and_normal_correctly(
@@ -196,7 +202,7 @@ mod tests {
         let triangle = Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
-            Tuple::point(1.0, 0.0, 0.0)
+            Tuple::point(1.0, 0.0, 0.0),
         );
 
         // Act
@@ -216,7 +222,7 @@ mod tests {
         let triangle = Arc::new(Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
-            Tuple::point(1.0, 0.0, 0.0)
+            Tuple::point(1.0, 0.0, 0.0),
         ));
 
         let ray = Ray::new(Tuple::point(0.0, -1.0, -2.0), Tuple::vector(0.0, 1.0, 0.0));
@@ -234,7 +240,7 @@ mod tests {
         let triangle = Arc::new(Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
-            Tuple::point(1.0, 0.0, 0.0)
+            Tuple::point(1.0, 0.0, 0.0),
         ));
 
         let ray = Ray::new(Tuple::point(1.0, 1.0, -2.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -252,7 +258,7 @@ mod tests {
         let triangle = Arc::new(Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
-            Tuple::point(1.0, 0.0, 0.0)
+            Tuple::point(1.0, 0.0, 0.0),
         ));
 
         let ray = Ray::new(Tuple::point(-1.0, 1.0, -2.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -270,7 +276,7 @@ mod tests {
         let triangle = Arc::new(Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
-            Tuple::point(1.0, 0.0, 0.0)
+            Tuple::point(1.0, 0.0, 0.0),
         ));
 
         let ray = Ray::new(Tuple::point(0.0, -1.0, -2.0), Tuple::vector(0.0, 0.0, 1.0));
@@ -288,7 +294,7 @@ mod tests {
         let triangle = Arc::new(Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
-            Tuple::point(1.0, 0.0, 0.0)
+            Tuple::point(1.0, 0.0, 0.0),
         ));
 
         let ray = Ray::new(Tuple::point(0.0, 0.5, -2.0), Tuple::vector(0.0, 0.0, 1.0));
