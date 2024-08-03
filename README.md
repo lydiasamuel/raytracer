@@ -1,6 +1,6 @@
 # Raytracer
 
-Completed rust version of the first thirteen chapters of "The Ray Tracer Challenge" by Jamis Buck.
+Completed rust version of the first fourteen chapters of "The Ray Tracer Challenge" by Jamis Buck.
 
 Made the rendering loop parallel with cyclic partitioning of the image to improve render times.
 
