@@ -423,7 +423,7 @@ mod tests {
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 1.0, 0.0));
 
         // Act
-        let intersects = group.local_intersect(&ray);
+        group.local_intersect(&ray);
 
         // Assert
         assert_eq!(true, s.saved_ray().is_none());
@@ -441,7 +441,7 @@ mod tests {
         let ray = Ray::new(Tuple::point(0.0, 0.0, -5.0), Tuple::vector(0.0, 0.0, 1.0));
 
         // Act
-        let intersects = group.local_intersect(&ray);
+        group.local_intersect(&ray);
 
         // Assert
         assert_eq!(true, s.saved_ray().is_some());

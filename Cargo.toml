@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 array2d = "0.3.2"
+anyhow = "1.0.86"
 
 [dependencies.uuid]
 version = "1.7.0"
