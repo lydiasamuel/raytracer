@@ -10,12 +10,12 @@ use crate::tuples::point_light::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
 
+use crate::geometry::shape::Shape;
+use crate::scene::obj_file_parser::ObjFileParser;
 use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
 use std::thread;
-use crate::geometry::shape::Shape;
-use crate::scene::obj_file_parser::ObjFileParser;
 
 static MAX_RAY_RECURSION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
@@ -136,7 +136,7 @@ pub fn build_world() -> World {
         Box::new(Checker::new(
             Box::new(Solid::new(Color::new(0.9, 0.9, 0.9))),
             Box::new(Solid::new(Color::new(0.8, 0.8, 0.8))),
-            Arc::new(Matrix::identity(4))
+            Arc::new(Matrix::identity(4)),
         )),
         0.1,
         0.9,
@@ -162,11 +162,12 @@ pub fn build_world() -> World {
             0.0,
             1.0,
         )),
-        true)
+        true,
+    )
     .unwrap();
 
     let middle_obj = middle.obj_to_group(Arc::new(
-        (&Matrix::scaling(0.6, 0.6, 0.6) * &Matrix::translation(-0.4, 0.0, 0.4)).unwrap()
+        (&Matrix::scaling(0.6, 0.6, 0.6) * &Matrix::translation(-0.4, 0.0, 0.4)).unwrap(),
     ));
 
     middle_obj.clone().divide(5);
@@ -174,10 +175,7 @@ pub fn build_world() -> World {
     let light_source = PointLight::new(Tuple::point(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 
     World::new(
-        vec![
-            Arc::new(floor),
-            middle_obj,
-        ],
+        vec![Arc::new(floor), middle_obj],
         vec![Arc::new(light_source)],
     )
 }
