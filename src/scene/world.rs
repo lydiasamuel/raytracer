@@ -62,7 +62,7 @@ impl World {
             result.append(&mut intersects);
         }
 
-        result.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap());
+        result.sort_by(|a, b| a.time().partial_cmp(&b.time()).unwrap());
 
         return result;
     }
@@ -74,12 +74,12 @@ impl World {
     ) -> Computations {
         let intersection = &intersections[hit_index];
 
-        let time = intersection.time;
-        let object = intersection.object.clone();
+        let time = intersection.time();
+        let object = intersection.object();
         let point = ray.position(time);
 
         let eyev = -ray.direction();
-        let mut normalv = object.as_ref().normal_at(point);
+        let mut normalv = object.as_ref().normal_at(point, intersection);
 
         let mut inside = false;
 
@@ -117,7 +117,7 @@ impl World {
                 containers.remove(i); // So remove it
             } else {
                 // Otherwise it's entering the object
-                containers.push(intersect.object.clone());
+                containers.push(intersect.object());
             }
 
             if i == hit_index {
@@ -151,7 +151,7 @@ impl World {
         containers: &Vec<Arc<dyn Shape>>,
     ) -> Option<usize> {
         for (i, object) in containers.into_iter().enumerate() {
-            if Arc::ptr_eq(&intersection.object, object) {
+            if Arc::ptr_eq(&intersection.object(), object) {
                 return Some(i);
             }
         }
@@ -316,7 +316,7 @@ impl World {
         // Check to see if there was a hit, and if so did it occur before the ray reached the light source
         if let Some((i, casts_shadow)) = hit {
             if casts_shadow {
-                intersections[i].time < distance
+                intersections[i].time() < distance
             } else {
                 false
             }
@@ -330,6 +330,7 @@ impl World {
 mod tests {
     use crate::geometry::plane::Plane;
     use crate::geometry::shape::Shape;
+    use crate::geometry::smooth_triangle::SmoothTriangle;
     use crate::geometry::sphere::Sphere;
     use crate::materials::material::Material;
     use crate::materials::phong::Phong;
@@ -361,10 +362,10 @@ mod tests {
         // Assert
         assert_eq!(4, result.len());
 
-        assert_eq!(4.0, result[0].time);
-        assert_eq!(4.5, result[1].time);
-        assert_eq!(5.5, result[2].time);
-        assert_eq!(6.0, result[3].time);
+        assert_eq!(4.0, result[0].time());
+        assert_eq!(4.5, result[1].time());
+        assert_eq!(5.5, result[2].time());
+        assert_eq!(6.0, result[3].time());
     }
 
     #[test]
@@ -381,8 +382,11 @@ mod tests {
         let result = World::prepare_computations(0, &ray, &intersections);
 
         // Assert
-        assert_eq!(intersections[0].time, result.time);
-        assert_eq!(true, Arc::ptr_eq(&intersections[0].object, &result.object));
+        assert_eq!(intersections[0].time(), result.time);
+        assert_eq!(
+            true,
+            Arc::ptr_eq(&intersections[0].object(), &result.object)
+        );
         assert_eq!(Tuple::point(0.0, 0.0, -1.0), result.point);
         assert_eq!(Tuple::vector(0.0, 0.0, -1.0), result.eyev);
         assert_eq!(Tuple::vector(0.0, 0.0, -1.0), result.normalv);
@@ -1438,5 +1442,28 @@ mod tests {
 
         // Assert
         assert_eq!(Color::new(0.93391, 0.69643, 0.69243), color);
+    }
+
+    #[test]
+    fn given_a_smooth_triangle_when_preparing_the_normal_should_calculate_the_correct_result() {
+        // Arrange
+        let triangle = Arc::new(SmoothTriangle::default(
+            Tuple::point(0.0, 1.0, 0.0),
+            Tuple::point(-1.0, 0.0, 0.0),
+            Tuple::point(1.0, 0.0, 0.0),
+            Tuple::vector(0.0, 1.0, 0.0),
+            Tuple::vector(-1.0, 0.0, 0.0),
+            Tuple::vector(1.0, 0.0, 0.0),
+        ));
+
+        let intersection = Intersection::new_with_uv(1.0, triangle.clone(), 0.45, 0.25);
+
+        let ray = Ray::new(Tuple::point(-0.2, 0.3, -2.0), Tuple::vector(0.0, 0.0, 1.0));
+
+        // Act
+        let comps = World::prepare_computations(0, &ray, &vec![intersection]);
+
+        // Assert
+        assert_eq!(Tuple::vector(-0.5547, 0.83205, 0.0), comps.normalv);
     }
 }

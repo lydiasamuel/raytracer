@@ -130,7 +130,7 @@ impl Shape for Triangle {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, _: Tuple) -> Tuple {
+    fn local_normal_at(&self, _: Tuple, _: &Intersection) -> Tuple {
         self.normal
     }
 
@@ -145,6 +145,10 @@ impl Shape for Triangle {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         (self.p1, self.p2, self.p3)
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {
@@ -170,6 +174,7 @@ impl Shape for Triangle {
 mod tests {
     use crate::geometry::shape::Shape;
     use crate::geometry::triangle::Triangle;
+    use crate::tuples::intersection::Intersection;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use std::sync::Arc;
@@ -199,16 +204,18 @@ mod tests {
     #[test]
     fn given_any_point_when_finding_the_local_normal_should_return_the_precomputed_value() {
         // Arrange
-        let triangle = Triangle::default(
+        let triangle = Arc::new(Triangle::default(
             Tuple::point(0.0, 1.0, 0.0),
             Tuple::point(-1.0, 0.0, 0.0),
             Tuple::point(1.0, 0.0, 0.0),
-        );
+        ));
+
+        let hit = Intersection::new(1.0, triangle.clone());
 
         // Act
-        let n1 = triangle.local_normal_at(Tuple::point(0.0, 0.5, 0.0));
-        let n2 = triangle.local_normal_at(Tuple::point(-0.5, 0.75, 0.0));
-        let n3 = triangle.local_normal_at(Tuple::point(0.5, 0.25, 0.0));
+        let n1 = triangle.local_normal_at(Tuple::point(0.0, 0.5, 0.0), &hit);
+        let n2 = triangle.local_normal_at(Tuple::point(-0.5, 0.75, 0.0), &hit);
+        let n3 = triangle.local_normal_at(Tuple::point(0.5, 0.25, 0.0), &hit);
 
         // Assert
         assert_eq!(n1, triangle.normal);
@@ -304,6 +311,6 @@ mod tests {
 
         // Assert
         assert_eq!(1, intersects.len());
-        assert_eq!(2.0, intersects[0].time);
+        assert_eq!(2.0, intersects[0].time());
     }
 }

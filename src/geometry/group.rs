@@ -176,7 +176,7 @@ impl Shape for Group {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, _: Tuple) -> Tuple {
+    fn local_normal_at(&self, _: Tuple, _: &Intersection) -> Tuple {
         panic!("Error: Can't call local_normal_at on a group")
     }
 
@@ -196,6 +196,10 @@ impl Shape for Group {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {
@@ -248,6 +252,7 @@ mod tests {
     use crate::geometry::test_shape::TestShape;
     use crate::materials::phong::Phong;
     use crate::matrices::matrix::Matrix;
+    use crate::tuples::intersection::Intersection;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use std::f64::consts::PI;
@@ -291,10 +296,10 @@ mod tests {
 
         // Assert
         assert_eq!(4, intersects.len());
-        assert_eq!(true, Arc::ptr_eq(&intersects[0].object, &s2));
-        assert_eq!(true, Arc::ptr_eq(&intersects[1].object, &s2));
-        assert_eq!(true, Arc::ptr_eq(&intersects[2].object, &s1));
-        assert_eq!(true, Arc::ptr_eq(&intersects[3].object, &s1));
+        assert_eq!(true, Arc::ptr_eq(&intersects[0].object(), &s2));
+        assert_eq!(true, Arc::ptr_eq(&intersects[1].object(), &s2));
+        assert_eq!(true, Arc::ptr_eq(&intersects[2].object(), &s1));
+        assert_eq!(true, Arc::ptr_eq(&intersects[3].object(), &s1));
     }
 
     #[test]
@@ -384,11 +389,13 @@ mod tests {
             true,
         ));
 
+        let hit = Intersection::new(1.0, sphere.clone());
+
         g1.add_child(g2.clone());
         g2.add_child(sphere.clone());
 
         // Act
-        let n = sphere.normal_at(Tuple::point(1.7321, 1.1547, -5.5774));
+        let n = sphere.normal_at(Tuple::point(1.7321, 1.1547, -5.5774), &hit);
 
         // Assert
         assert_eq!(Tuple::vector(0.28570, 0.42854, -0.85716), n);

@@ -97,7 +97,7 @@ impl Shape for Sphere {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, local_point: Tuple) -> Tuple {
+    fn local_normal_at(&self, local_point: Tuple, _: &Intersection) -> Tuple {
         local_point - Tuple::origin()
     }
 
@@ -107,6 +107,10 @@ impl Shape for Sphere {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {
@@ -147,8 +151,8 @@ mod tests {
         let intersections = shape.intersect(&ray);
 
         assert_eq!(2, intersections.len());
-        assert_eq!(4.0, intersections[0].time);
-        assert_eq!(6.0, intersections[1].time);
+        assert_eq!(4.0, intersections[0].time());
+        assert_eq!(6.0, intersections[1].time());
     }
 
     #[test]
@@ -163,8 +167,8 @@ mod tests {
         let intersections = shape.intersect(&ray);
 
         assert_eq!(2, intersections.len());
-        assert_eq!(5.0, intersections[0].time);
-        assert_eq!(5.0, intersections[1].time);
+        assert_eq!(5.0, intersections[0].time());
+        assert_eq!(5.0, intersections[1].time());
     }
 
     #[test]
@@ -193,8 +197,8 @@ mod tests {
         let intersections = shape.intersect(&ray);
 
         assert_eq!(2, intersections.len());
-        assert_eq!(-1.0, intersections[0].time);
-        assert_eq!(1.0, intersections[1].time);
+        assert_eq!(-1.0, intersections[0].time());
+        assert_eq!(1.0, intersections[1].time());
     }
 
     #[test]
@@ -209,8 +213,8 @@ mod tests {
         let intersections = shape.intersect(&ray);
 
         assert_eq!(2, intersections.len());
-        assert_eq!(-6.0, intersections[0].time);
-        assert_eq!(-4.0, intersections[1].time);
+        assert_eq!(-6.0, intersections[0].time());
+        assert_eq!(-4.0, intersections[1].time());
     }
 
     #[test]
@@ -225,11 +229,11 @@ mod tests {
         let intersections = shape.clone().intersect(&ray);
 
         assert_eq!(2, intersections.len());
-        assert_eq!(4.0, intersections[0].time);
-        assert_eq!(6.0, intersections[1].time);
+        assert_eq!(4.0, intersections[0].time());
+        assert_eq!(6.0, intersections[1].time());
 
-        assert!(Arc::ptr_eq(&shape, &intersections[0].object));
-        assert!(Arc::ptr_eq(&shape, &intersections[1].object));
+        assert!(Arc::ptr_eq(&shape, &intersections[0].object()));
+        assert!(Arc::ptr_eq(&shape, &intersections[1].object()));
     }
 
     #[test]
@@ -262,8 +266,8 @@ mod tests {
         let intersections = shape.clone().intersect(&ray);
 
         assert_eq!(2, intersections.len());
-        assert_eq!(3.0, intersections[0].time);
-        assert_eq!(7.0, intersections[1].time);
+        assert_eq!(3.0, intersections[0].time());
+        assert_eq!(7.0, intersections[1].time());
     }
 
     #[test]
@@ -287,9 +291,11 @@ mod tests {
     ) {
         let point = Tuple::point(1.0, 0.0, 0.0);
 
-        let sphere = Sphere::unit();
+        let sphere = Arc::new(Sphere::unit());
 
-        let normal = sphere.normal_at(point);
+        let hit = Intersection::new(1.0, sphere.clone());
+
+        let normal = sphere.normal_at(point, &hit);
 
         let expected = Tuple::vector(1.0, 0.0, 0.0);
 
@@ -301,9 +307,11 @@ mod tests {
     ) {
         let point = Tuple::point(0.0, 1.0, 0.0);
 
-        let sphere = Sphere::unit();
+        let sphere = Arc::new(Sphere::unit());
 
-        let normal = sphere.normal_at(point);
+        let hit = Intersection::new(1.0, sphere.clone());
+
+        let normal = sphere.normal_at(point, &hit);
 
         let expected = Tuple::vector(0.0, 1.0, 0.0);
 
@@ -315,9 +323,11 @@ mod tests {
     ) {
         let point = Tuple::point(0.0, 0.0, 1.0);
 
-        let sphere = Sphere::unit();
+        let sphere = Arc::new(Sphere::unit());
 
-        let normal = sphere.normal_at(point);
+        let hit = Intersection::new(1.0, sphere.clone());
+
+        let normal = sphere.normal_at(point, &hit);
 
         let expected = Tuple::vector(0.0, 0.0, 1.0);
 
@@ -331,9 +341,11 @@ mod tests {
 
         let point = Tuple::point(value, value, value);
 
-        let sphere = Sphere::unit();
+        let sphere = Arc::new(Sphere::unit());
 
-        let normal = sphere.normal_at(point);
+        let hit = Intersection::new(1.0, sphere.clone());
+
+        let normal = sphere.normal_at(point, &hit);
 
         let expected = Tuple::vector(value, value, value);
 
@@ -347,9 +359,11 @@ mod tests {
 
         let transform = Arc::new(Matrix::translation(0.0, 1.0, 0.0));
 
-        let sphere = Sphere::new(transform, Arc::new(Phong::default()), true);
+        let sphere = Arc::new(Sphere::new(transform, Arc::new(Phong::default()), true));
 
-        let normal = sphere.normal_at(point);
+        let hit = Intersection::new(1.0, sphere.clone());
+
+        let normal = sphere.normal_at(point, &hit);
 
         let expected = Tuple::vector(0.0, 1.70711, -0.70711);
 
@@ -363,13 +377,15 @@ mod tests {
 
         let transform = &Matrix::scaling(1.0, 0.5, 1.0) * &Matrix::rotation_z(consts::PI / 5.0);
 
-        let sphere = Sphere::new(
+        let sphere = Arc::new(Sphere::new(
             Arc::new(transform.unwrap()),
             Arc::new(Phong::default()),
             true,
-        );
+        ));
 
-        let normal = sphere.normal_at(point);
+        let hit = Intersection::new(1.0, sphere.clone());
+
+        let normal = sphere.normal_at(point, &hit);
 
         let expected = Tuple::vector(0.0, 0.9701425, -0.2425356);
 

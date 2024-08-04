@@ -60,7 +60,7 @@ impl Shape for TestShape {
         true
     }
 
-    fn local_normal_at(&self, _: Tuple) -> Tuple {
+    fn local_normal_at(&self, _: Tuple, _: &Intersection) -> Tuple {
         panic!("Error: can't take normal of test shape ")
     }
 
@@ -70,6 +70,10 @@ impl Shape for TestShape {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {

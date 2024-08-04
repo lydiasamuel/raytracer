@@ -93,7 +93,7 @@ impl Shape for Plane {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, _: Tuple) -> Tuple {
+    fn local_normal_at(&self, _: Tuple, _: &Intersection) -> Tuple {
         (&self.transform.inverse().unwrap() * &Tuple::vector(0.0, 1.0, 0.0)).unwrap()
     }
 
@@ -106,6 +106,10 @@ impl Shape for Plane {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {
@@ -130,6 +134,7 @@ impl Shape for Plane {
 mod tests {
     use crate::geometry::plane::Plane;
     use crate::geometry::shape::Shape;
+    use crate::tuples::intersection::Intersection;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use std::sync::Arc;
@@ -137,12 +142,14 @@ mod tests {
     #[test]
     fn given_a_plane_when_calculating_normal_should_be_constant_everywhere() {
         // Arrange
-        let p = Plane::default();
+        let p = Arc::new(Plane::default());
+
+        let hit = Intersection::new(1.0, p.clone());
 
         // Act
-        let n1 = p.local_normal_at(Tuple::point(0.0, 0.0, 0.0));
-        let n2 = p.local_normal_at(Tuple::point(10.0, 0.0, -10.0));
-        let n3 = p.local_normal_at(Tuple::point(-5.0, 0.0, 150.0));
+        let n1 = p.local_normal_at(Tuple::point(0.0, 0.0, 0.0), &hit);
+        let n2 = p.local_normal_at(Tuple::point(10.0, 0.0, -10.0), &hit);
+        let n3 = p.local_normal_at(Tuple::point(-5.0, 0.0, 150.0), &hit);
 
         // Assert
         assert_eq!(Tuple::vector(0.0, 1.0, 0.0), n1);
@@ -187,8 +194,8 @@ mod tests {
 
         // Assert
         assert_eq!(1, result.len());
-        assert_eq!(1.0, result[0].time);
-        assert_eq!(true, Arc::ptr_eq(&p, &result[0].object));
+        assert_eq!(1.0, result[0].time());
+        assert_eq!(true, Arc::ptr_eq(&p, &result[0].object()));
     }
 
     #[test]
@@ -202,7 +209,7 @@ mod tests {
 
         // Assert
         assert_eq!(1, result.len());
-        assert_eq!(1.0, result[0].time);
-        assert_eq!(true, Arc::ptr_eq(&p, &result[0].object));
+        assert_eq!(1.0, result[0].time());
+        assert_eq!(true, Arc::ptr_eq(&p, &result[0].object()));
     }
 }

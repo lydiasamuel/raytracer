@@ -117,7 +117,7 @@ impl Shape for Cube {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, local_point: Tuple) -> Tuple {
+    fn local_normal_at(&self, local_point: Tuple, _: &Intersection) -> Tuple {
         let maxc = f64::max(
             f64::max(local_point.x.abs(), local_point.y.abs()),
             local_point.z.abs(),
@@ -138,6 +138,10 @@ impl Shape for Cube {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {
@@ -163,6 +167,7 @@ impl Shape for Cube {
 mod tests {
     use crate::geometry::cube::Cube;
     use crate::geometry::shape::Shape;
+    use crate::tuples::intersection::Intersection;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use std::sync::Arc;
@@ -199,8 +204,8 @@ mod tests {
 
             // Assert
             assert_eq!(2, intersects.len());
-            assert_eq!(expected_intersects[i].0, intersects[0].time);
-            assert_eq!(expected_intersects[i].1, intersects[1].time);
+            assert_eq!(expected_intersects[i].0, intersects[0].time());
+            assert_eq!(expected_intersects[i].1, intersects[1].time());
         }
     }
 
@@ -241,6 +246,8 @@ mod tests {
         // Arrange
         let cube = Arc::new(Cube::default());
 
+        let hit = Intersection::new(1.0, cube.clone());
+
         let expected_normals = vec![
             (Tuple::point(1.0, 0.5, -0.8), Tuple::vector(1.0, 0.0, 0.0)),
             (Tuple::point(-1.0, -0.2, 0.9), Tuple::vector(-1.0, 0.0, 0.0)),
@@ -257,7 +264,7 @@ mod tests {
 
         // Act
         for i in 0..expected_normals.len() {
-            let normal = cube.local_normal_at(expected_normals[i].0);
+            let normal = cube.local_normal_at(expected_normals[i].0, &hit);
 
             // Assert
             assert_eq!(expected_normals[i].1, normal);

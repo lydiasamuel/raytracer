@@ -172,7 +172,7 @@ impl Shape for Cylinder {
         self.casts_shadow
     }
 
-    fn local_normal_at(&self, local_point: Tuple) -> Tuple {
+    fn local_normal_at(&self, local_point: Tuple, _: &Intersection) -> Tuple {
         // Compute the square distance from the y-axis
         let dist = local_point.x * local_point.x + local_point.z * local_point.z;
 
@@ -196,6 +196,10 @@ impl Shape for Cylinder {
 
     fn points(&self) -> (Tuple, Tuple, Tuple) {
         panic!("Error: points function is not implemented for this shape")
+    }
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple) {
+        panic!("Error: normals function is not implemented for this shape")
     }
 
     fn edge_vectors(&self) -> (Tuple, Tuple) {
@@ -223,6 +227,7 @@ mod tests {
     use crate::geometry::shape::Shape;
     use crate::materials::phong::Phong;
     use crate::matrices::matrix::Matrix;
+    use crate::tuples::intersection::Intersection;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
     use crate::EPSILON;
@@ -256,8 +261,8 @@ mod tests {
 
             // Assert
             assert_eq!(2, intersects.len());
-            assert!((expected_intersects[i].0 - intersects[0].time).abs() < EPSILON);
-            assert!((expected_intersects[i].1 - intersects[1].time).abs() < EPSILON);
+            assert!((expected_intersects[i].0 - intersects[0].time()).abs() < EPSILON);
+            assert!((expected_intersects[i].1 - intersects[1].time()).abs() < EPSILON);
         }
     }
 
@@ -333,6 +338,8 @@ mod tests {
         // Arrange
         let cylinder = Arc::new(Cylinder::default());
 
+        let hit = Intersection::new(1.0, cylinder.clone());
+
         let expected_normals = vec![
             (Tuple::point(1.0, 0.0, 0.0), Tuple::vector(1.0, 0.0, 0.0)),
             (Tuple::point(0.0, 5.0, -1.0), Tuple::vector(0.0, 0.0, -1.0)),
@@ -342,7 +349,7 @@ mod tests {
 
         // Act
         for i in 0..expected_normals.len() {
-            let normal = cylinder.local_normal_at(expected_normals[i].0);
+            let normal = cylinder.local_normal_at(expected_normals[i].0, &hit);
 
             // Assert
             assert_eq!(expected_normals[i].1, normal);
@@ -408,6 +415,8 @@ mod tests {
             true,
         ));
 
+        let hit = Intersection::new(1.0, cylinder.clone());
+
         let expected_normals = vec![
             (Tuple::point(0.0, 1.0, 0.0), Tuple::vector(0.0, -1.0, 0.0)),
             (Tuple::point(0.5, 1.0, 0.0), Tuple::vector(0.0, -1.0, 0.0)),
@@ -419,7 +428,7 @@ mod tests {
 
         // Act
         for i in 0..expected_normals.len() {
-            let normal = cylinder.local_normal_at(expected_normals[i].0);
+            let normal = cylinder.local_normal_at(expected_normals[i].0, &hit);
 
             // Assert
             assert_eq!(expected_normals[i].1, normal);

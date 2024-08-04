@@ -150,7 +150,7 @@ pub fn build_world() -> World {
     let floor = Plane::new(Arc::new(Matrix::identity(4)), floor_material.clone(), false);
 
     let middle = ObjFileParser::parse_obj_file(
-        "tests/obj_files/teapot.obj".to_string(),
+        "tests/obj_files/smooth_teapot.obj".to_string(),
         Arc::new(Matrix::identity(4)),
         Arc::new(Phong::new(
             Box::new(Solid::new(Color::new(0.7, 0.2, 0.5))),
@@ -167,7 +167,9 @@ pub fn build_world() -> World {
     .unwrap();
 
     let middle_obj = middle.obj_to_group(Arc::new(
-        (&Matrix::scaling(0.6, 0.6, 0.6) * &Matrix::translation(-0.4, 0.0, 0.4)).unwrap(),
+        (&(&Matrix::scaling(0.15, 0.15, 0.15) * &Matrix::translation(-0.4, 0.0, 0.4)).unwrap()
+            * &Matrix::rotation_x(3.0 * PI / 2.0))
+            .unwrap(),
     ));
 
     middle_obj.clone().divide(5);

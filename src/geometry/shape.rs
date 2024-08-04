@@ -44,17 +44,18 @@ pub trait Shape: Sync + Send {
 
     fn casts_shadow(&self) -> bool;
 
-    // Assumes that the point will always be on the shape
-    fn normal_at(&self, world_point: Tuple) -> Tuple {
+    // Assumes that the point will always be on the shape, also the hits are only used for smooth
+    // triangles
+    fn normal_at(&self, world_point: Tuple, hit: &Intersection) -> Tuple {
         assert!(world_point.is_point());
 
         let local_point = self.world_to_object(world_point);
-        let local_normal = self.local_normal_at(local_point);
+        let local_normal = self.local_normal_at(local_point, hit);
 
         self.normal_to_world(local_normal)
     }
 
-    fn local_normal_at(&self, local_point: Tuple) -> Tuple;
+    fn local_normal_at(&self, local_point: Tuple, hit: &Intersection) -> Tuple;
 
     // Converts a point from world space to object space, recursively taking into consideration any
     // parent objects between the two spaces
@@ -101,6 +102,8 @@ pub trait Shape: Sync + Send {
     }
 
     fn points(&self) -> (Tuple, Tuple, Tuple);
+
+    fn normals(&self) -> (Tuple, Tuple, Tuple);
 
     fn edge_vectors(&self) -> (Tuple, Tuple);
 

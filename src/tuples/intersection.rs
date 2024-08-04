@@ -2,18 +2,30 @@ use std::cmp::Ordering;
 use std::sync::Arc;
 
 use crate::geometry::shape::Shape;
-
 use crate::EPSILON;
 
 #[derive(Clone)]
 pub struct Intersection {
-    pub time: f64,
-    pub object: Arc<dyn Shape>,
+    time: f64,
+    object: Arc<dyn Shape>,
+    // Properties specific to a SmoothTriangle, used to help identify where on the triangle the
+    // intersection occurred, relative to the triangle's corners.
+    u: f64,
+    v: f64,
 }
 
 impl Intersection {
     pub fn new(time: f64, object: Arc<dyn Shape>) -> Intersection {
-        Intersection { time, object }
+        Intersection {
+            time,
+            object,
+            u: 0.0,
+            v: 0.0,
+        }
+    }
+
+    pub fn new_with_uv(time: f64, object: Arc<dyn Shape>, u: f64, v: f64) -> Intersection {
+        Intersection { time, object, u, v }
     }
 
     // Assumes list of intersection is in ascending order by time
@@ -26,6 +38,22 @@ impl Intersection {
         }
 
         None
+    }
+
+    pub fn time(&self) -> f64 {
+        self.time
+    }
+
+    pub fn object(&self) -> Arc<dyn Shape> {
+        self.object.clone()
+    }
+
+    pub fn u(&self) -> f64 {
+        self.u
+    }
+
+    pub fn v(&self) -> f64 {
+        self.v
     }
 }
 

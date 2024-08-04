@@ -1,5 +1,6 @@
 use crate::geometry::group::Group;
 use crate::geometry::shape::Shape;
+use crate::geometry::smooth_triangle::SmoothTriangle;
 use crate::geometry::triangle::Triangle;
 use crate::materials::material::Material;
 use crate::matrices::matrix::Matrix;
@@ -17,15 +18,22 @@ use uuid::Uuid;
 const VERTEX_COMMAND: &str = "v";
 const FACE_COMMAND: &str = "f";
 const GROUP_COMMAND: &str = "g";
+const VERTEX_NORMAL_COMMAND: &str = "vn";
 
 pub struct ObjFileParser {
     vertices: Vec<Tuple>,
+    vertex_normals: Vec<Tuple>,
     groups: HashMap<String, Arc<Group>>,
     default_group: Uuid,
     current_group: String,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
     casts_shadow: bool,
+}
+
+struct Indices {
+    pub index: usize,
+    pub normal_index: Option<usize>,
 }
 
 impl ObjFileParser {
@@ -39,6 +47,7 @@ impl ObjFileParser {
 
         let mut result = ObjFileParser {
             vertices: Vec::new(),
+            vertex_normals: Vec::new(),
             groups: HashMap::new(),
             default_group,
             current_group: default_group.to_string(),
@@ -51,16 +60,21 @@ impl ObjFileParser {
         if let Ok(lines) = Self::read_lines(file_path.clone()) {
             for line in lines.flatten() {
                 if !line.trim().is_empty() {
-                    let split: Vec<&str> = line.split(' ').collect();
+                    let mut parameters: Vec<&str> = line.split(' ').collect();
 
-                    let command = split[0].to_lowercase();
+                    // Remove any empty parameters caused by multiple spaces
+                    parameters.retain(|&x| x != "");
+
+                    let command = parameters[0].to_lowercase();
 
                     if command == VERTEX_COMMAND {
-                        result.handle_vertex_command(split)?;
+                        result.handle_vertex_command(parameters)?;
                     } else if command == FACE_COMMAND {
-                        result.handle_face_command(split)?;
+                        result.handle_face_command(parameters)?;
                     } else if command == GROUP_COMMAND {
-                        result.handle_group_command(split);
+                        result.handle_group_command(parameters);
+                    } else if command == VERTEX_NORMAL_COMMAND {
+                        result.handle_vertex_normal_command(parameters)?;
                     }
                 }
             }
@@ -71,25 +85,45 @@ impl ObjFileParser {
         }
     }
 
-    fn handle_vertex_command(&mut self, split: Vec<&str>) -> Result<(), anyhow::Error> {
-        let x = f64::from_str(split[1])?;
-        let y = f64::from_str(split[2])?;
-        let z = f64::from_str(split[3])?;
+    fn handle_vertex_command(&mut self, parameters: Vec<&str>) -> Result<(), anyhow::Error> {
+        let x = f64::from_str(parameters[1])?;
+        let y = f64::from_str(parameters[2])?;
+        let z = f64::from_str(parameters[3])?;
 
         self.vertices.push(Tuple::point(x, y, z));
 
         Ok(())
     }
 
-    fn handle_face_command(&mut self, split: Vec<&str>) -> Result<(), anyhow::Error> {
-        let mut vertices: Vec<usize> = Vec::new();
+    fn handle_face_command(&mut self, parameters: Vec<&str>) -> Result<(), anyhow::Error> {
+        let mut vertex_indices: Vec<Indices> = Vec::new();
 
-        for i in 1..split.len() {
-            vertices.push(usize::from_str(split[i])?);
+        for i in 1..parameters.len() {
+            let option = parameters[i];
+
+            let split: Vec<&str> = option.split('/').collect();
+
+            if split.len() == 1 {
+                let index = usize::from_str(option)?;
+
+                vertex_indices.push(Indices {
+                    index,
+                    normal_index: None,
+                })
+            } else {
+                let index = usize::from_str(split[0])?;
+                let normal_index = usize::from_str(split[2])?;
+
+                vertex_indices.push(Indices {
+                    index,
+                    normal_index: Some(normal_index),
+                })
+            }
         }
 
-        let triangles = self.fan_triangulation(vertices);
+        let triangles = self.fan_triangulation(vertex_indices);
 
+        // If the group is already present, just add the new triangles as children
         if let Some(group) = self.groups.get(&self.current_group) {
             group.add_children(triangles)
         } else {
@@ -101,30 +135,71 @@ impl ObjFileParser {
         Ok(())
     }
 
-    fn handle_group_command(&mut self, split: Vec<&str>) {
-        let group_name = split[1];
+    fn handle_group_command(&mut self, parameters: Vec<&str>) {
+        let group_name = parameters[1];
 
         self.current_group = group_name.to_string();
     }
 
+    fn handle_vertex_normal_command(&mut self, parameters: Vec<&str>) -> Result<(), anyhow::Error> {
+        let x = f64::from_str(parameters[1])?;
+        let y = f64::from_str(parameters[2])?;
+        let z = f64::from_str(parameters[3])?;
+
+        self.vertex_normals.push(Tuple::vector(x, y, z));
+
+        Ok(())
+    }
+
     // Assumes we're dealing with convex polygons - i.e. those whose interior angles are all less
     // than or equal to 180 degrees
-    fn fan_triangulation(&mut self, vertices: Vec<usize>) -> Vec<Arc<dyn Shape>> {
+    fn fan_triangulation(&mut self, vertex_indices: Vec<Indices>) -> Vec<Arc<dyn Shape>> {
         let mut triangles: Vec<Arc<dyn Shape>> = Vec::new();
 
-        for index in 1..(vertices.len() - 1) {
-            let p1 = self.get_vertex(vertices[0]);
-            let p2 = self.get_vertex(vertices[index]);
-            let p3 = self.get_vertex(vertices[index + 1]);
+        for index in 1..(vertex_indices.len() - 1) {
+            let p1 = self.get_vertex(vertex_indices[0].index);
+            let p2 = self.get_vertex(vertex_indices[index].index);
+            let p3 = self.get_vertex(vertex_indices[index + 1].index);
 
-            triangles.push(Arc::new(Triangle::new(
-                p1,
-                p2,
-                p3,
-                self.transform.clone(),
-                self.material.clone(),
-                self.casts_shadow,
-            )));
+            // If there's no normal index we're dealing with a non-smooth triangle
+            if vertex_indices[0].normal_index.is_none() {
+                triangles.push(Arc::new(Triangle::new(
+                    p1,
+                    p2,
+                    p3,
+                    self.transform.clone(),
+                    self.material.clone(),
+                    self.casts_shadow,
+                )));
+            } else {
+                let n1 = self.get_vertex_normal(
+                    vertex_indices[0]
+                        .normal_index
+                        .expect("Error: Expected vertex normal for face to be present."),
+                );
+                let n2 = self.get_vertex_normal(
+                    vertex_indices[index]
+                        .normal_index
+                        .expect("Error: Expected vertex normal for face to be present."),
+                );
+                let n3 = self.get_vertex_normal(
+                    vertex_indices[index + 1]
+                        .normal_index
+                        .expect("Error: Expected vertex normal for face to be present."),
+                );
+
+                triangles.push(Arc::new(SmoothTriangle::new(
+                    p1,
+                    p2,
+                    p3,
+                    n1,
+                    n2,
+                    n3,
+                    self.transform.clone(),
+                    self.material.clone(),
+                    self.casts_shadow,
+                )));
+            }
         }
 
         triangles
@@ -132,6 +207,10 @@ impl ObjFileParser {
 
     fn get_vertex(&self, index: usize) -> Tuple {
         self.vertices[index - 1]
+    }
+
+    fn get_vertex_normal(&self, index: usize) -> Tuple {
+        self.vertex_normals[index - 1]
     }
 
     // The output is wrapped in a Result to allow matching on errors.
@@ -301,7 +380,80 @@ mod tests {
 
         let group = result.obj_to_group(Arc::new(Matrix::identity(4)));
 
-        assert!(Arc::ptr_eq(&group.get_child(0).unwrap(), &first_group));
-        assert!(Arc::ptr_eq(&group.get_child(1).unwrap(), &second_group));
+        assert_eq!(2, group.count());
+
+        let contains_first_group = Arc::ptr_eq(&group.get_child(0).unwrap(), &first_group)
+            || Arc::ptr_eq(&group.get_child(1).unwrap(), &first_group);
+
+        let contains_second_group = Arc::ptr_eq(&group.get_child(0).unwrap(), &second_group)
+            || Arc::ptr_eq(&group.get_child(1).unwrap(), &second_group);
+
+        assert!(contains_first_group);
+        assert!(contains_second_group);
+    }
+
+    #[test]
+    fn given_an_obj_file_with_just_vertex_normals_when_parsing_should_correctly_parse_out_each_one()
+    {
+        // Arrange
+        let file_path = "tests/obj_files/vertex_normals.obj";
+
+        // Act
+        let result = ObjFileParser::parse_obj_file(
+            file_path.to_string(),
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::default()),
+            true,
+        )
+        .unwrap();
+
+        // Assert
+        assert_eq!(3, result.vertex_normals.len());
+        assert_eq!(Tuple::vector(0.0, 0.0, 1.0), result.vertex_normals[0]);
+        assert_eq!(Tuple::vector(0.707, 0.0, -0.707), result.vertex_normals[1]);
+        assert_eq!(Tuple::vector(1.0, 2.0, 3.0), result.vertex_normals[2]);
+    }
+
+    #[test]
+    fn given_an_obj_file_with_faces_with_normals_when_parsing_should_correctly_parse_out_each_one()
+    {
+        // Arrange
+        let file_path = "tests/obj_files/faces_with_normals.obj";
+
+        // Act
+        let result = ObjFileParser::parse_obj_file(
+            file_path.to_string(),
+            Arc::new(Matrix::identity(4)),
+            Arc::new(Phong::default()),
+            true,
+        )
+        .unwrap();
+
+        // Assert
+        assert_eq!(true, result.groups.get(&result.current_group).is_some());
+
+        let group = result.groups.get(&result.current_group).unwrap();
+
+        assert_eq!(2, group.count());
+
+        let t1_points = group.get_child(0).unwrap().points();
+        let t1_normals = group.get_child(0).unwrap().normals();
+
+        let t2_points = group.get_child(1).unwrap().points();
+        let t2_normals = group.get_child(1).unwrap().normals();
+
+        assert_eq!(result.vertices[0], t1_points.0);
+        assert_eq!(result.vertices[1], t1_points.1);
+        assert_eq!(result.vertices[2], t1_points.2);
+        assert_eq!(result.vertex_normals[2], t1_normals.0);
+        assert_eq!(result.vertex_normals[0], t1_normals.1);
+        assert_eq!(result.vertex_normals[1], t1_normals.2);
+
+        assert_eq!(t1_points.0, t2_points.0);
+        assert_eq!(t1_points.1, t2_points.1);
+        assert_eq!(t1_points.2, t2_points.2);
+        assert_eq!(t1_normals.0, t2_normals.0);
+        assert_eq!(t1_normals.1, t2_normals.1);
+        assert_eq!(t1_normals.2, t2_normals.2);
     }
 }
