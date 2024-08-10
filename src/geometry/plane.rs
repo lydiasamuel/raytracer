@@ -85,6 +85,15 @@ impl Shape for Plane {
         self.parent.read().unwrap().upgrade()
     }
 
+    fn includes(self: Arc<Self>, other: &Arc<dyn Shape>) -> bool {
+        let tmp: Arc<dyn Shape> = self;
+        Arc::ptr_eq(&tmp, other)
+    }
+
+    fn num_of_children(&self) -> usize {
+        0
+    }
+
     fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }

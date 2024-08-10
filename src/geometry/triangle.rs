@@ -122,8 +122,17 @@ impl Shape for Triangle {
         self.parent.read().unwrap().upgrade()
     }
 
+    fn includes(self: Arc<Self>, other: &Arc<dyn Shape>) -> bool {
+        let tmp: Arc<dyn Shape> = self;
+        Arc::ptr_eq(&tmp, other)
+    }
+
     fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
+    }
+
+    fn num_of_children(&self) -> usize {
+        0
     }
 
     fn casts_shadow(&self) -> bool {

@@ -56,6 +56,15 @@ impl Shape for TestShape {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 
+    fn includes(self: Arc<Self>, other: &Arc<dyn Shape>) -> bool {
+        let tmp: Arc<dyn Shape> = self;
+        Arc::ptr_eq(&tmp, other)
+    }
+
+    fn num_of_children(&self) -> usize {
+        0
+    }
+
     fn casts_shadow(&self) -> bool {
         true
     }

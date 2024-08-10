@@ -77,7 +77,7 @@ impl Group {
     }
 
     fn partition_children(self: Arc<Self>) -> (Vec<Arc<dyn Shape>>, Vec<Arc<dyn Shape>>) {
-        let n = self.count();
+        let n = self.num_of_children();
 
         let mut left = Vec::with_capacity(n);
         let mut right = Vec::with_capacity(n);
@@ -122,10 +122,6 @@ impl Group {
         } else {
             None
         }
-    }
-
-    pub fn count(&self) -> usize {
-        self.children.read().unwrap().len()
     }
 }
 
@@ -173,6 +169,22 @@ impl Shape for Group {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 
+    fn includes(self: Arc<Self>, other: &Arc<dyn Shape>) -> bool {
+        let mut result = false;
+
+        let children = self.children.read().unwrap();
+
+        for child in (*children).iter() {
+            result = result || child.clone().includes(other);
+        }
+
+        result
+    }
+
+    fn num_of_children(&self) -> usize {
+        self.children.read().unwrap().len()
+    }
+
     fn casts_shadow(&self) -> bool {
         self.casts_shadow
     }
@@ -213,7 +225,7 @@ impl Shape for Group {
         // If the threshold is less than or equal to the number of children in the group,
         // the children are partitioned and corresponding subgroups formed which are
         // added to the group.
-        if threshold <= self.count() {
+        if threshold <= self.num_of_children() {
             let (left, right) = self.clone().partition_children();
 
             if !left.is_empty() {
@@ -497,7 +509,7 @@ mod tests {
         let (left, right) = group.clone().partition_children();
 
         // Assert
-        assert_eq!(1, group.count());
+        assert_eq!(1, group.num_of_children());
         assert_eq!(true, Arc::ptr_eq(&group.children.read().unwrap()[0], &s1));
 
         assert_eq!(1, left.len());
@@ -519,7 +531,7 @@ mod tests {
         group.clone().make_subgroup(vec![s1.clone(), s2.clone()]);
 
         // Assert
-        assert_eq!(1, group.count());
+        assert_eq!(1, group.num_of_children());
 
         let p1 = s1.get_parent();
         let p2 = s2.get_parent();
@@ -527,6 +539,8 @@ mod tests {
         assert_eq!(true, p1.is_some());
         assert_eq!(true, p2.is_some());
         assert_eq!(true, Arc::ptr_eq(&p1.unwrap(), &p2.unwrap()));
+
+        assert_eq!(2, s1.get_parent().unwrap().num_of_children());
 
         let subgroup: Arc<dyn Shape> = s1.get_parent().unwrap();
 
@@ -585,11 +599,12 @@ mod tests {
         );
 
         // Assert
-        assert_eq!(2, subgroup.count());
+        assert_eq!(2, subgroup.num_of_children());
 
         let p1 = s1.get_parent();
         assert_eq!(true, p1.is_some());
 
+        assert_eq!(1, s1.get_parent().unwrap().num_of_children());
         assert_eq!(
             true,
             Arc::ptr_eq(
@@ -606,6 +621,7 @@ mod tests {
         assert_eq!(true, p3.is_some());
         assert_eq!(true, Arc::ptr_eq(&p2.unwrap(), &p3.unwrap()));
 
+        assert_eq!(2, s2.get_parent().unwrap().num_of_children());
         assert_eq!(
             true,
             Arc::ptr_eq(

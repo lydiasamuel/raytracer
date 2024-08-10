@@ -41,6 +41,10 @@ pub trait Shape: Sync + Send {
     // lose the weak reference and thus our parent
     fn set_parent(&self, parent: &Arc<dyn Shape>);
 
+    fn includes(self: Arc<Self>, other: &Arc<dyn Shape>) -> bool;
+
+    fn num_of_children(&self) -> usize;
+
     fn casts_shadow(&self) -> bool;
 
     // Assumes that the point will always be on the shape, also the hits are only used for smooth

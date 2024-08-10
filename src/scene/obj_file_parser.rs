@@ -302,7 +302,7 @@ mod tests {
 
         let group = result.groups.get(&result.current_group).unwrap();
 
-        assert_eq!(2, group.count());
+        assert_eq!(2, group.num_of_children());
 
         let t1_points = group.get_child(0).unwrap().points();
         let t2_points = group.get_child(1).unwrap().points();
@@ -335,7 +335,7 @@ mod tests {
 
         let first_group = result.groups.get("FirstGroup").unwrap();
 
-        assert_eq!(1, first_group.count());
+        assert_eq!(1, first_group.num_of_children());
 
         let t1_points = first_group.get_child(0).unwrap().points();
 
@@ -347,7 +347,7 @@ mod tests {
 
         let second_group = result.groups.get("SecondGroup").unwrap();
 
-        assert_eq!(1, second_group.count());
+        assert_eq!(1, second_group.num_of_children());
 
         let t2_points = second_group.get_child(0).unwrap().points();
 
@@ -380,7 +380,7 @@ mod tests {
 
         let group = result.obj_to_group(Arc::new(Matrix::identity(4)));
 
-        assert_eq!(2, group.count());
+        assert_eq!(2, group.num_of_children());
 
         let contains_first_group = Arc::ptr_eq(&group.get_child(0).unwrap(), &first_group)
             || Arc::ptr_eq(&group.get_child(1).unwrap(), &first_group);
@@ -434,7 +434,7 @@ mod tests {
 
         let group = result.groups.get(&result.current_group).unwrap();
 
-        assert_eq!(2, group.count());
+        assert_eq!(2, group.num_of_children());
 
         let t1_points = group.get_child(0).unwrap().points();
         let t1_normals = group.get_child(0).unwrap().normals();
