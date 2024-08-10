@@ -18,7 +18,7 @@ pub struct SmoothTriangle {
     id: Uuid,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
-    parent: RwLock<Weak<Group>>,
+    parent: RwLock<Weak<dyn Shape>>,
     casts_shadow: bool,
     p1: Tuple,
     p2: Tuple,
@@ -56,7 +56,7 @@ impl SmoothTriangle {
             id: Uuid::new_v4(),
             transform,
             material,
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow,
             p1,
             p2,
@@ -136,11 +136,11 @@ impl Shape for SmoothTriangle {
         self.material.clone()
     }
 
-    fn get_parent(&self) -> Option<Arc<Group>> {
+    fn get_parent(&self) -> Option<Arc<dyn Shape>> {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: &Arc<Group>) {
+    fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 

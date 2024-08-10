@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::geometry::group::Group;
 use crate::tuples::bounding_box::BoundingBox;
 use crate::tuples::color::Color;
 use crate::tuples::point_light::PointLight;
@@ -36,11 +35,11 @@ pub trait Shape: Sync + Send {
 
     fn get_material(&self) -> Arc<dyn Material>;
 
-    fn get_parent(&self) -> Option<Arc<Group>>;
+    fn get_parent(&self) -> Option<Arc<dyn Shape>>;
 
     // Have to use a reference here, since if we take ownership the value immediately drops and we
     // lose the weak reference and thus our parent
-    fn set_parent(&self, parent: &Arc<Group>);
+    fn set_parent(&self, parent: &Arc<dyn Shape>);
 
     fn casts_shadow(&self) -> bool;
 

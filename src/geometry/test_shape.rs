@@ -1,4 +1,3 @@
-use crate::geometry::group::Group;
 use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
 use crate::materials::phong::Phong;
@@ -11,16 +10,17 @@ use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use std::sync::{Arc, RwLock, Weak};
 use uuid::{uuid, Uuid};
+use crate::geometry::group::Group;
 
 pub struct TestShape {
-    parent: RwLock<Weak<Group>>,
+    parent: RwLock<Weak<dyn Shape>>,
     saved_ray: RwLock<Option<Ray>>,
 }
 
 impl TestShape {
     pub fn new() -> TestShape {
         TestShape {
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             saved_ray: RwLock::new(None),
         }
     }
@@ -48,11 +48,11 @@ impl Shape for TestShape {
         Arc::new(Phong::default())
     }
 
-    fn get_parent(&self) -> Option<Arc<Group>> {
+    fn get_parent(&self) -> Option<Arc<dyn Shape>> {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: &Arc<Group>) {
+    fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 

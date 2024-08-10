@@ -17,7 +17,7 @@ pub struct Group {
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
     children: RwLock<Vec<Arc<dyn Shape>>>,
-    parent: RwLock<Weak<Group>>,
+    parent: RwLock<Weak<dyn Shape>>,
     casts_shadow: bool,
     bounds: RwLock<Option<BoundingBox>>, // Lazy initialisation of bounding box for the group
 }
@@ -29,7 +29,7 @@ impl Group {
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
             children: RwLock::new(Vec::new()),
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow: true,
             bounds: RwLock::new(None),
         }
@@ -41,7 +41,7 @@ impl Group {
             transform,
             material: Arc::new(Phong::default()),
             children: RwLock::new(Vec::new()),
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow: true,
             bounds: RwLock::new(None),
         }
@@ -55,7 +55,8 @@ impl Group {
 
     pub fn add_child(self: &Arc<Self>, child: Arc<dyn Shape>) {
         // Set the child's parent using the interior mutability method
-        child.clone().set_parent(self);
+        let tmp: Arc<dyn Shape> = self.clone();
+        child.clone().set_parent(&tmp);
         // Add it to the child list
         self.children.write().unwrap().push(child);
         // Invalidate the stored bounds
@@ -164,11 +165,11 @@ impl Shape for Group {
         self.material.clone()
     }
 
-    fn get_parent(&self) -> Option<Arc<Group>> {
+    fn get_parent(&self) -> Option<Arc<dyn Shape>> {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: &Arc<Group>) {
+    fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 
@@ -527,8 +528,6 @@ mod tests {
         assert_eq!(true, p2.is_some());
         assert_eq!(true, Arc::ptr_eq(&p1.unwrap(), &p2.unwrap()));
 
-        assert_eq!(2, s1.get_parent().unwrap().count());
-
         let subgroup: Arc<dyn Shape> = s1.get_parent().unwrap();
 
         assert_eq!(
@@ -591,7 +590,6 @@ mod tests {
         let p1 = s1.get_parent();
         assert_eq!(true, p1.is_some());
 
-        assert_eq!(1, s1.get_parent().unwrap().count());
         assert_eq!(
             true,
             Arc::ptr_eq(
@@ -608,7 +606,6 @@ mod tests {
         assert_eq!(true, p3.is_some());
         assert_eq!(true, Arc::ptr_eq(&p2.unwrap(), &p3.unwrap()));
 
-        assert_eq!(2, s2.get_parent().unwrap().count());
         assert_eq!(
             true,
             Arc::ptr_eq(

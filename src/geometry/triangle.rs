@@ -17,7 +17,7 @@ pub struct Triangle {
     id: Uuid,
     transform: Arc<Matrix>,
     material: Arc<dyn Material>,
-    parent: RwLock<Weak<Group>>,
+    parent: RwLock<Weak<dyn Shape>>,
     casts_shadow: bool,
     // Three corners that make up the triangle in object space, transforming unit triangles is hard
     p1: Tuple,
@@ -51,7 +51,7 @@ impl Triangle {
             id: Uuid::new_v4(),
             transform,
             material,
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow,
             p1,
             p2,
@@ -118,11 +118,11 @@ impl Shape for Triangle {
         self.material.clone()
     }
 
-    fn get_parent(&self) -> Option<Arc<Group>> {
+    fn get_parent(&self) -> Option<Arc<dyn Shape>> {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: &Arc<Group>) {
+    fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 

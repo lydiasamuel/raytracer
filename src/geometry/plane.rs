@@ -17,7 +17,7 @@ pub struct Plane {
     id: Uuid,
     transform: Arc<Matrix>, // Used to translate a point from object space to world space
     material: Arc<dyn Material>,
-    parent: RwLock<Weak<Group>>,
+    parent: RwLock<Weak<dyn Shape>>,
     casts_shadow: bool,
 }
 
@@ -27,7 +27,7 @@ impl Plane {
             id: Uuid::new_v4(),
             transform,
             material,
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow,
         }
     }
@@ -37,7 +37,7 @@ impl Plane {
             id: Uuid::new_v4(),
             transform: Arc::new(Matrix::identity(4)),
             material: Arc::new(Phong::default()),
-            parent: RwLock::new(Weak::new()),
+            parent: RwLock::new(Weak::<Group>::new()),
             casts_shadow: true,
         }
     }
@@ -81,11 +81,11 @@ impl Shape for Plane {
         self.material.clone()
     }
 
-    fn get_parent(&self) -> Option<Arc<Group>> {
+    fn get_parent(&self) -> Option<Arc<dyn Shape>> {
         self.parent.read().unwrap().upgrade()
     }
 
-    fn set_parent(&self, parent: &Arc<Group>) {
+    fn set_parent(&self, parent: &Arc<dyn Shape>) {
         *self.parent.write().unwrap() = Arc::downgrade(parent);
     }
 
