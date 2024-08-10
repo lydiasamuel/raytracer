@@ -6,7 +6,7 @@ Made the rendering loop parallel with cyclic partitioning of the image to improv
 
 ## Example Input
 
-`cargo run --release tmp.ppm 1000 1000`
+`cargo run --release example_output.ppm 1000 1000`
 
 ## Example Output
 
