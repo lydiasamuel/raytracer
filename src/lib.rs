@@ -9,14 +9,14 @@ use crate::tuples::point_light::PointLight;
 use crate::tuples::tuple::Tuple;
 use crate::window::canvas::Canvas;
 
+use crate::geometry::cube::Cube;
+use crate::geometry::group::Group;
 use crate::geometry::shape::Shape;
+use crate::geometry::sphere::Sphere;
 use std::error::Error;
 use std::f64::consts::PI;
 use std::sync::{mpsc, Arc};
 use std::thread;
-use crate::geometry::cube::Cube;
-use crate::geometry::group::Group;
-use crate::geometry::sphere::Sphere;
 
 static MAX_RAY_RECURSION_DEPTH: usize = 5;
 static EPSILON: f64 = 0.00001;
@@ -177,28 +177,27 @@ pub fn build_world() -> World {
         1.0,
     ));
 
-    let standard_transform = (&Matrix::scaling(0.5, 0.5, 0.5) * &Matrix::translation(1.0, -1.0, 1.0)).unwrap();
+    let standard_transform =
+        (&Matrix::scaling(0.5, 0.5, 0.5) * &Matrix::translation(1.0, -1.0, 1.0)).unwrap();
 
     let large_object = (&Matrix::scaling(3.5, 3.5, 3.5) * &standard_transform).unwrap();
     let medium_object = (&Matrix::scaling(3.0, 3.0, 3.0) * &standard_transform).unwrap();
     let small_object = (&Matrix::scaling(2.0, 2.0, 2.0) * &standard_transform).unwrap();
 
-    let plane = Arc::new(
-        Plane::new(
-            Arc::new((&Matrix::translation(0.0, 0.0, 500.0) * &Matrix::rotation_x(PI / 2.0)).unwrap()),
-            Arc::new(Phong::new(
-                Box::new(Solid::new(Color::white())),
-                1.0,
-                0.0,
-                0.0,
-                200.0,
-                0.0,
-                0.0,
-                1.0,
-            )),
-            true
-        )
-    );
+    let plane = Arc::new(Plane::new(
+        Arc::new((&Matrix::translation(0.0, 0.0, 500.0) * &Matrix::rotation_x(PI / 2.0)).unwrap()),
+        Arc::new(Phong::new(
+            Box::new(Solid::new(Color::white())),
+            1.0,
+            0.0,
+            0.0,
+            200.0,
+            0.0,
+            0.0,
+            1.0,
+        )),
+        true,
+    ));
 
     let group = Arc::new(Group::default());
 
@@ -215,92 +214,92 @@ pub fn build_world() -> World {
                 0.7,
                 1.5,
             )),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(4.0, 0.0, 0.0) * &medium_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(8.5, 1.5, -0.5) * &large_object).unwrap()),
             blue_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(0.0, 0.0, 4.0) * &large_object).unwrap()),
             red_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(4.0, 0.0, 4.0) * &small_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(7.5, 0.5, 4.0) * &medium_object).unwrap()),
             purple_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(-0.25, 0.25, 8.0) * &medium_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(4.0, 1.0, 7.5) * &large_object).unwrap()),
             blue_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(10.0, 2.0, 7.5) * &medium_object).unwrap()),
             red_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(8.0, 2.0, 12.0) * &small_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(20.0, 1.0, 9.0) * &small_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(-0.5, -5.0, 0.25) * &large_object).unwrap()),
             blue_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(4.0, -4.0, 0.0) * &large_object).unwrap()),
             red_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(8.5, -4.0, 0.0) * &large_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(0.0, -4.0, 4.0) * &large_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(-0.5, -4.5, 8.0) * &large_object).unwrap()),
             purple_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(0.0, -8.0, 4.0) * &large_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
         Arc::new(Cube::new(
             Arc::new((&Matrix::translation(-0.5, 8.5, 8.0) * &large_object).unwrap()),
             white_material.clone(),
-            true
+            true,
         )),
     ];
 
@@ -309,13 +308,16 @@ pub fn build_world() -> World {
     group.clone().divide(1);
 
     World::new(
+        vec![plane, group.clone()],
         vec![
-            plane,
-            group.clone()
-        ],
-        vec![
-            Arc::new(PointLight::new(Tuple::point(50.0, 100.0, -50.0), Color::new(1.0, 1.0, 1.0))),
-            Arc::new(PointLight::new(Tuple::point(-400.0, 50.0, -10.0), Color::new(0.2, 0.2, 0.2))),
+            Arc::new(PointLight::new(
+                Tuple::point(50.0, 100.0, -50.0),
+                Color::new(1.0, 1.0, 1.0),
+            )),
+            Arc::new(PointLight::new(
+                Tuple::point(-400.0, 50.0, -10.0),
+                Color::new(0.2, 0.2, 0.2),
+            )),
         ],
     )
 }

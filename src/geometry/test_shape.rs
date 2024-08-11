@@ -1,3 +1,4 @@
+use crate::geometry::group::Group;
 use crate::geometry::shape::Shape;
 use crate::materials::material::Material;
 use crate::materials::phong::Phong;
@@ -10,7 +11,6 @@ use crate::tuples::ray::Ray;
 use crate::tuples::tuple::Tuple;
 use std::sync::{Arc, RwLock, Weak};
 use uuid::{uuid, Uuid};
-use crate::geometry::group::Group;
 
 pub struct TestShape {
     parent: RwLock<Weak<dyn Shape>>,

@@ -58,17 +58,13 @@ impl CSG {
         result
     }
 
-    pub fn default(
-        operation: Operation,
-        left: Arc<dyn Shape>,
-        right: Arc<dyn Shape>,
-    ) -> Arc<CSG> {
+    pub fn default(operation: Operation, left: Arc<dyn Shape>, right: Arc<dyn Shape>) -> Arc<CSG> {
         CSG::new(
             Arc::new(Matrix::identity(4)),
             Arc::new(Phong::default()),
             operation,
             left,
-            right
+            right,
         )
     }
 
@@ -81,7 +77,9 @@ impl CSG {
     }
 
     fn find_bounds(&self) -> BoundingBox {
-        BoundingBox::empty() + self.left().parent_space_bounds_of() + self.right().parent_space_bounds_of()
+        BoundingBox::empty()
+            + self.left().parent_space_bounds_of()
+            + self.right().parent_space_bounds_of()
     }
 
     pub fn filter_intersections(&self, intersections: Vec<Intersection>) -> Vec<Intersection> {
@@ -235,9 +233,8 @@ impl Shape for CSG {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use crate::geometry::csg::CSG;
     use crate::geometry::csg::Operation::{Difference, Intersection, Union};
+    use crate::geometry::csg::CSG;
     use crate::geometry::cube::Cube;
     use crate::geometry::shape::Shape;
     use crate::geometry::sphere::Sphere;
@@ -246,9 +243,11 @@ mod tests {
     use crate::matrices::matrix::Matrix;
     use crate::tuples::ray::Ray;
     use crate::tuples::tuple::Tuple;
+    use std::sync::Arc;
 
     #[test]
-    fn given_two_basic_shapes_and_an_operation_when_a_csg_is_created_should_set_parents_of_children_correctly() {
+    fn given_two_basic_shapes_and_an_operation_when_a_csg_is_created_should_set_parents_of_children_correctly(
+    ) {
         // Arrange
         let s1: Arc<dyn Shape> = Arc::new(Sphere::unit());
         let s2: Arc<dyn Shape> = Arc::new(Cube::default());
@@ -267,13 +266,14 @@ mod tests {
     }
 
     #[test]
-    fn given_a_csg_shape_when_calculating_the_bounds_should_return_box_that_contains_its_children() {
+    fn given_a_csg_shape_when_calculating_the_bounds_should_return_box_that_contains_its_children()
+    {
         // Arrange
         let left: Arc<dyn Shape> = Arc::new(Sphere::unit());
         let right: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(2.0, 3.0, 4.0)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let shape = CSG::default(Difference, left, right);
@@ -287,7 +287,8 @@ mod tests {
     }
 
     #[test]
-    fn given_the_union_operation_when_evaluating_hits_should_preserve_all_on_exterior_of_both_shapes() {
+    fn given_the_union_operation_when_evaluating_hits_should_preserve_all_on_exterior_of_both_shapes(
+    ) {
         // Arrange
         let truth_table = vec![
             (true, true, true, false),
@@ -308,7 +309,8 @@ mod tests {
     }
 
     #[test]
-    fn given_the_intersection_operation_when_evaluating_hits_should_preserve_all_where_shapes_overlap() {
+    fn given_the_intersection_operation_when_evaluating_hits_should_preserve_all_where_shapes_overlap(
+    ) {
         // Arrange
         let truth_table = vec![
             (true, true, true, true),
@@ -324,12 +326,16 @@ mod tests {
         // Act
         for (lhit, inl, inr, result) in truth_table {
             // Assert
-            assert_eq!(result, CSG::intersection_allowed(&Intersection, lhit, inl, inr));
+            assert_eq!(
+                result,
+                CSG::intersection_allowed(&Intersection, lhit, inl, inr)
+            );
         }
     }
 
     #[test]
-    fn given_the_difference_operation_when_evaluating_hits_should_preserve_all_not_exclusively_inside_the_right_shape() {
+    fn given_the_difference_operation_when_evaluating_hits_should_preserve_all_not_exclusively_inside_the_right_shape(
+    ) {
         // Arrange
         let truth_table = vec![
             (true, true, true, false),
@@ -345,21 +351,21 @@ mod tests {
         // Act
         for (lhit, inl, inr, result) in truth_table {
             // Assert
-            assert_eq!(result, CSG::intersection_allowed(&Difference, lhit, inl, inr));
+            assert_eq!(
+                result,
+                CSG::intersection_allowed(&Difference, lhit, inl, inr)
+            );
         }
     }
 
     #[test]
-    fn given_a_csg_shape_when_filtering_a_list_of_intersections_should_filter_according_to_operation() {
+    fn given_a_csg_shape_when_filtering_a_list_of_intersections_should_filter_according_to_operation(
+    ) {
         // Arrange
         let s1: Arc<dyn Shape> = Arc::new(Sphere::unit());
         let s2: Arc<dyn Shape> = Arc::new(Cube::default());
 
-        let examples = vec![
-            (Union, 0, 3),
-            (Intersection, 1, 2),
-            (Difference, 0, 1),
-        ];
+        let examples = vec![(Union, 0, 3), (Intersection, 1, 2), (Difference, 0, 1)];
 
         // Act
         for (op, x0, x1) in examples {
@@ -413,7 +419,7 @@ mod tests {
         let s2: Arc<dyn Shape> = Arc::new(Sphere::new(
             Arc::new(Matrix::translation(0.0, 0.0, 0.5)),
             Arc::new(Phong::default()),
-            true
+            true,
         ));
 
         let c = CSG::default(Union, s1.clone(), s2.clone());
@@ -434,7 +440,8 @@ mod tests {
     }
 
     #[test]
-    fn given_a_csg_shape_when_intersecting_with_a_ray_that_misses_should_not_test_children_if_bbox_is_missed() {
+    fn given_a_csg_shape_when_intersecting_with_a_ray_that_misses_should_not_test_children_if_bbox_is_missed(
+    ) {
         // Arrange
         let left = Arc::new(TestShape::new());
         let right = Arc::new(TestShape::new());
